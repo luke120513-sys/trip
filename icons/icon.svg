@@ -1,1 +1,8 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#2F5D8A"/><path d="M150 360V170l106 50 106-50v190l-106 50z" fill="none" stroke="#FBF5EC" stroke-width="34" stroke-linejoin="round"/><circle cx="256" cy="150" r="34" fill="#FBF5EC"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#2F5D8A"/>
+<g stroke="#13202B" stroke-width="16" stroke-linejoin="round" stroke-linecap="round">
+<path d="M84 170l110-40 124 40 110-40v240l-110 40-124-40-110 40z" fill="#FBF5EC"/>
+<path d="M194 130v240M318 170v240" fill="none"/></g>
+<path d="M130 330c40-10 50-70 100-60s60 60 110 30" fill="none" stroke="#2F5D8A" stroke-width="12" stroke-dasharray="4 22" stroke-linecap="round"/>
+<g stroke="#13202B" stroke-width="16" stroke-linejoin="round"><path d="M360 300c-46-52-68-84-68-116a68 68 0 0 1 136 0c0 32-22 64-68 116z" fill="#FBF5EC"/></g>
+<circle cx="360" cy="186" r="24" fill="#2F5D8A" stroke="#13202B" stroke-width="12"/>
+<path d="M60 92c50-40 120-50 170-30" fill="none" stroke="#FBF5EC" stroke-width="12" stroke-dasharray="22 18" stroke-linecap="round"/></svg>
