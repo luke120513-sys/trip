@@ -170,7 +170,7 @@
     (expenses || []).forEach(e => {
       const parts = Array.isArray(e.parts) ? e.parts.filter(Boolean) : [];
       if (!e.payer || parts.length < 2) return;
-      const twd = toTWD ? toTWD(e.amount, e.currency) : +e.amount;
+      const twd = toTWD ? toTWD(e.amount, e.currency, e) : +e.amount;
       if (!(twd > 0)) return;
       const share = twd / parts.length;
       nets.set(e.payer, (nets.get(e.payer) || 0) + twd);
