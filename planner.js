@@ -50,5 +50,6 @@ function swap(t,d,i,j){const s=t.days[i][j];const used=new Set(t.days.flat().map
 const norm=x=>(x||'').toLowerCase().normalize('NFKC').replace(/[\s・·\-–（）()'’.,、]/g,'').replace(/ou/g,'o').replace(/uu/g,'u');
 function match(d,q){q=norm(q);if(!q)return[];const sc=it=>{let b=0;for(const f of[it.name,it.local,it.rom,it.area&&it.name]){const n=norm(f);if(!n)continue;if(n===q)b=Math.max(b,100);else if(n.startsWith(q))b=Math.max(b,80);else if(n.includes(q))b=Math.max(b,60);else{let k=0;for(const c of n)if(c===q[k])k++;if(k===q.length&&q.length>=2)b=Math.max(b,30)}}return b?b+it.count:0};
  return d.items.map(it=>[sc(it),it]).filter(x=>x[0]).sort((a,b)=>b[0]-a[0]).slice(0,6).map(x=>x[1])}
-window.Planner={KEY,load,plan,swap,FX,match,toSpot,gmap};
+function best(d,q){const n=norm(q);if(n.length<2)return null;let b=null,bs=0;for(const it of d.items)for(const f of[it.name,it.local,it.rom]){const m=norm(f);if(!m)continue;const s=m===n?100:((m.startsWith(n)&&n.length/m.length>=.5)||(n.startsWith(m)&&m.length>=2))?80:((m.includes(n)&&n.length/m.length>=.5&&n.length>=2)||(n.includes(m)&&m.length>=3))?60:0;if(s>bs){bs=s;b=it}}return bs>=60?b:null}
+window.Planner={KEY,load,plan,swap,FX,match,toSpot,gmap,best};
 })();
