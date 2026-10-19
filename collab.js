@@ -119,8 +119,10 @@ function fromDoc(data, id) {
 function applyMerged(t, merged) {
   const members = t.members;
   const id = t.id;
+  const tickets = t.tickets;
   Object.keys(t).forEach(k => { if (k !== 'id') delete t[k]; });
   Object.assign(t, merged, { id, members: members || merged.members || [] });
+  if (Array.isArray(tickets)) t.tickets = tickets;
 }
 function listenTrip(id) {
   if (cloudUnsub) { cloudUnsub(); cloudUnsub = null; }
@@ -494,14 +496,35 @@ function scheduleBackup() {
 }
 async function pushBackup() {
   if (!cloudUser || !window.SharePack || !window.TM) return;
-  const trips = TM.trips ? TM.trips() : [];
-  const payload = { v: 1, at: Date.now(), trips: trips.map(t => SharePack.normTrip(t, 0, true)).filter(Boolean).slice(0, 40) };
+  const trips = (TM.trips ? TM.trips() : []).slice(0, 40);
+  let note = '';
+  const packed = [];
+  for (const t of trips) {
+    const n = SharePack.normTrip(t, 0, true);
+    if (!n) continue;
+    if (window.Tickets && Tickets.attachFiles) {
+      try {
+        const files = await Tickets.attachFiles(n, t.id, 160000);
+        n.tickets = files.tickets;
+        if (files.omitted) note = files.note;
+      } catch (e) { note = (Tickets && Tickets.NOTE) || note; }
+    }
+    packed.push(n);
+  }
+  let payload = { v: 1, at: Date.now(), trips: packed };
+  if (note) payload.ticketNote = note;
+  if (JSON.stringify(payload).length > 900000) {
+    packed.forEach(t => (t.tickets || []).forEach(tk => (tk.files || []).forEach(f => { delete f.data; })));
+    note = (window.Tickets && Tickets.NOTE) || note || '票券檔案留在這台裝置。';
+    payload = { v: 1, at: Date.now(), ticketNote: note, trips: packed };
+  }
   if (JSON.stringify(payload).length > 900000) {
     if (TM.toast) TM.toast('行程太大，這次沒有寫進雲端備份。請改匯出 JSON');
     return;
   }
   const { db, fsM } = await fbLoad();
   await fsM.setDoc(fsM.doc(db, 'backups', cloudUser.uid), payload);
+  if (note && !window.__tixCloudTold) { window.__tixCloudTold = true; if (TM.toast) TM.toast(note); }
 }
 async function pullBackup(user) {
   if (!user || !window.SharePack) return;
@@ -512,8 +535,9 @@ async function pullBackup(user) {
   if (!v.ok) return;
   const local = TM.trips ? TM.trips() : [];
   if (!local.length && v.trips.length && typeof TM.replaceTrips === 'function') {
+    if (window.Tickets && Tickets.ingestFiles) { for (const t of v.trips) { try { await Tickets.ingestFiles(t); } catch (e) {} } }
     TM.replaceTrips(v.trips);
-    if (TM.toast) TM.toast('已從雲端備份帶回行程');
+    if (TM.toast) TM.toast('已從雲端備份帶回行程' + (snap.data().ticketNote ? '。' + snap.data().ticketNote : ''));
     return;
   }
   window.__cloudBak = v.trips;
@@ -529,10 +553,12 @@ function paintBackupHint() {
   }
   el.innerHTML = '<p class="mut">已登入。這台裝置上的行程會自動存進你的雲端備份。</p>';
 }
-function restoreCloudBackup() {
+async function restoreCloudBackup() {
   if (!window.__cloudBak || !window.__cloudBak.length) return;
   if (!confirm('用雲端備份覆蓋這台裝置上的行程？')) return;
-  if (typeof TM.replaceTrips === 'function') TM.replaceTrips(window.__cloudBak.map(t => JSON.parse(JSON.stringify(t))));
+  const list = window.__cloudBak.map(t => JSON.parse(JSON.stringify(t)));
+  if (window.Tickets && Tickets.ingestFiles) { for (const t of list) { try { await Tickets.ingestFiles(t); } catch (e) {} } }
+  if (typeof TM.replaceTrips === 'function') TM.replaceTrips(list);
   if (TM.toast) TM.toast('已還原雲端備份');
 }
 function paintAccount() {

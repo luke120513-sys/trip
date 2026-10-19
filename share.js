@@ -59,6 +59,34 @@
     if (keepIds && +e.rev > 0) o.rev = +e.rev;
     return o;
   }
+  function normTicket(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const name = str(cleanStr(raw.name), 80).trim();
+    if (!name) return null;
+    const type = str(cleanStr(raw.type), 16).trim();
+    const o = { name, type: type || '其他' };
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw.date || '')) o.date = raw.date;
+    if (/^\d{2}:\d{2}$/.test(raw.time || '')) o.time = raw.time;
+    if (raw.day != null && raw.day !== '' && Number.isFinite(+raw.day) && +raw.day >= 0 && +raw.day < 40) o.day = +raw.day | 0;
+    const spot = str(cleanStr(raw.spot), 80).trim();
+    if (spot) o.spot = spot;
+    const booking = str(cleanStr(raw.booking), 40).trim();
+    if (booking) o.booking = booking;
+    const notes = str(cleanStr(raw.notes), 500).trim();
+    if (notes) o.notes = notes;
+    if (typeof raw.link === 'string' && /^https?:\/\//.test(raw.link) && raw.link.indexOf('data:') < 0) o.link = raw.link.slice(0, 300);
+    if (typeof raw.id === 'string' && raw.id) o.id = str(raw.id, 40);
+    const files = [];
+    (Array.isArray(raw.files) ? raw.files : []).slice(0, 4).forEach(f => {
+      if (!f || typeof f !== 'object' || !f.id) return;
+      const file = { id: str(f.id, 40), name: str(cleanStr(f.name || '檔案'), 80), mime: str(f.mime || '', 80) };
+      if (+f.bytes > 0 && +f.bytes < 9e6) file.bytes = Math.round(+f.bytes);
+      if (typeof f.data === 'string' && f.data.length > 16 && f.data.length < 1600000 && /^[A-Za-z0-9+/=]+$/.test(f.data)) file.data = f.data;
+      files.push(file);
+    });
+    if (files.length) o.files = files;
+    return o;
+  }
   function normTrip(t, level, keepIds) {
     if (!t || typeof t !== 'object' || Array.isArray(t)) return null;
     const dest = str(cleanStr(t.dest), 80).trim();
@@ -69,6 +97,10 @@
     const days = daysIn.slice(0, 40).map(d => Array.isArray(d) ? d.slice(0, 30).map(s => normSpot(s, level, keepIds)).filter(Boolean) : []);
     const expenses = Array.isArray(t.expenses) ? t.expenses.slice(0, 200).map(e => normExp(e, level, keepIds)).filter(Boolean) : [];
     const o = { dest, dep, ret, pax: Math.min(9, Math.max(1, (+t.pax | 0) || 1)), orig: str(t.orig || 'TPE', 8), days, expenses };
+    if (keepIds && Array.isArray(t.tickets)) {
+      const tickets = t.tickets.slice(0, 40).map(normTicket).filter(Boolean);
+      if (tickets.length) o.tickets = tickets;
+    }
     if (keepIds) {
       if (typeof t.id === 'string' && t.id) o.id = str(t.id, 40);
       if (typeof t.cloudId === 'string' && t.cloudId) o.cloudId = str(t.cloudId, 80);
@@ -136,5 +168,5 @@
       return { kind: 'trip', trip: v.trips[0] };
     } catch (e) { return { error: 'bad' }; }
   }
-  return { SOFT, HARD, normTrip, validateTrips, packTrip, unpackAdd, cleanStr };
+  return { SOFT, HARD, normTrip, normTicket, validateTrips, packTrip, unpackAdd, cleanStr };
 });
