@@ -10,6 +10,8 @@ const FB_CFG = {
   appId: '1:55694360376:web:86b32176cc3d3a679a4bcd',
   measurementId: 'G-ZGDHVDCK0F'
 };
+/* 空字串時不啟用 GIS。填入後，登入改走 Google 按鈕 + signInWithCredential，不再經過 firebaseapp.com/__/auth/handler。 */
+const GOOGLE_WEB_CLIENT_ID = '';
 let fbP = null, fbMods = null, cloudUser = null, cloudUnsub = null, memUnsub = null, cloudTimer = 0, cloudWriting = false, cloudAck = null;
 const AUTH_INTENT = 'trip_auth_intent';
 
@@ -17,15 +19,15 @@ function authErrText(code) {
   const map = {
     'auth/popup-closed-by-user': '登入視窗被關掉了，請再按一次',
     'auth/cancelled-popup-request': '請先關掉剛才的登入視窗，再按一次',
-    'auth/popup-blocked': '瀏覽器擋住了登入視窗。請允許彈出視窗後再按一次',
+    'auth/popup-blocked': '登入視窗被瀏覽器擋住了。請再按一次。若一般分頁一直失敗，用 Chrome 選單把旅伴「加到主畫面」，再從主畫面圖示打開後登入',
     'auth/unauthorized-domain': '這個網址還沒加入 Firebase 授權網域。請到主控台「驗證 → 設定 → 授權網域」加上目前的網址',
-    'auth/operation-not-supported-in-this-environment': '這個瀏覽器沒辦法用彈出視窗登入',
+    'auth/operation-not-supported-in-this-environment': '這個分頁沒辦法開登入視窗。請再按一次；若還是不行，用 Chrome 選單把旅伴「加到主畫面」，再從主畫面圖示打開後登入',
     'auth/network-request-failed': '網路不穩，登入沒有完成，請稍後再試',
-    'auth/web-storage-unsupported': '瀏覽器限制了本機儲存，沒辦法登入',
+    'auth/web-storage-unsupported': '瀏覽器限制了本機儲存，沒辦法登入。可改從主畫面圖示打開旅伴再試',
     'auth/redirect-cancelled-by-user': '登入被取消了，請再按一次',
     'auth/not-ready': '登入還沒準備好，請再按一次'
   };
-  return map[code] || '登入沒有完成，請再試一次';
+  return map[code] || '登入沒有完成，請再按一次。若一般分頁一直失敗，請從主畫面圖示打開旅伴再登入';
 }
 function rememberIntent(intent) {
   try { sessionStorage.setItem(AUTH_INTENT, JSON.stringify({ kind: intent.kind, code: intent.code || '', at: Date.now() })); } catch (e) {}
@@ -45,7 +47,6 @@ function fbLoad() {
   fbP = (async () => {
     const appM = await import(FB_BASE + 'firebase-app.js');
     const authM = await import(FB_BASE + 'firebase-auth.js');
-    const fsM = await import(FB_BASE + 'firebase-firestore.js');
     const app = appM.initializeApp(FB_CFG);
     let auth;
     try {
@@ -56,13 +57,21 @@ function fbLoad() {
     } catch (e) {
       auth = authM.getAuth(app);
     }
-    let db;
+    fbMods = { app, auth, db: null, authM, fsM: null, authReady: false };
+    try { await auth.authStateReady(); } catch (e) {}
+    fbMods.authReady = true;
+    try { bootGis(); } catch (e) {}
     try {
-      db = fsM.initializeFirestore(app, { localCache: fsM.persistentLocalCache({ tabManager: fsM.persistentMultipleTabManager() }) });
-    } catch (e) {
-      db = fsM.getFirestore(app);
-    }
-    fbMods = { app, auth, db, authM, fsM };
+      const fsM = await import(FB_BASE + 'firebase-firestore.js');
+      let db;
+      try {
+        db = fsM.initializeFirestore(app, { localCache: fsM.persistentLocalCache({ tabManager: fsM.persistentMultipleTabManager() }) });
+      } catch (e) {
+        db = fsM.getFirestore(app);
+      }
+      fbMods.db = db;
+      fbMods.fsM = fsM;
+    } catch (e) {}
     return fbMods;
   })().catch(e => { fbP = null; throw e; });
   return fbP;
@@ -173,23 +182,17 @@ async function pushNow(id) {
     if (TM.toast) TM.toast('雲端暫時存不了，這台裝置還留著');
   } finally { cloudWriting = false; }
 }
-function fallbackRedirect(auth, authM, provider, intent, err) {
+/* 一般分頁禁止整頁導向登入。Android Chrome 會把導向送進被分割的 firebaseapp.com，出現 missing initial state。彈出視窗失敗就留在本頁並說明。 */
+function popupFail(err) {
   const code = err && err.code || '';
-  if (code !== 'auth/popup-blocked' && code !== 'auth/operation-not-supported-in-this-environment') {
-    if (TM.toast) TM.toast(authErrText(code));
-    return Promise.reject(err);
-  }
-  if (intent) rememberIntent(intent);
-  return authM.signInWithRedirect(auth, provider).then(() => null).catch(e2 => {
-    if (TM.toast) TM.toast(authErrText(e2 && e2.code));
-    throw e2;
-  });
+  if (TM.toast) TM.toast(authErrText(code));
+  return Promise.reject(err);
 }
-/* 必須在點擊當下直接呼叫，前面不能 await，否則 Android Chrome 會把彈出視窗改成整頁導向。 */
+/* 必須在點擊當下直接呼叫，前面不能 await。Auth 已在頁面載入時初始化，這裡才能留在使用者手勢裡。 */
 function signInGoogle(intent) {
   if (cloudUser) return Promise.resolve(cloudUser);
   const mods = fbMods;
-  if (!mods) {
+  if (!mods || !mods.authReady) {
     fbLoad().catch(() => {});
     const err = new Error('auth-not-ready');
     err.code = 'auth/not-ready';
@@ -204,13 +207,57 @@ function signInGoogle(intent) {
   try {
     pending = authM.signInWithPopup(auth, provider);
   } catch (e) {
-    return fallbackRedirect(auth, authM, provider, intent, e);
+    return popupFail(e);
   }
   return pending.then(cred => {
     cloudUser = cred.user;
     paintAccount();
     return cred.user;
-  }).catch(e => fallbackRedirect(auth, authM, provider, intent, e));
+  }).catch(popupFail);
+}
+function signInWithGoogleToken(idToken) {
+  const mods = fbMods;
+  if (!mods || !mods.authReady || !idToken) return Promise.reject(new Error('auth-not-ready'));
+  const cred = mods.authM.GoogleAuthProvider.credential(idToken);
+  return mods.authM.signInWithCredential(mods.auth, cred).then(res => {
+    cloudUser = res.user;
+    paintAccount();
+    const intent = takeIntent();
+    if (intent && intent.kind === 'share') return finishShare(res.user);
+    if (intent && intent.kind === 'join' && intent.code) return finishJoin(intent.code, res.user);
+    return res.user;
+  }).catch(e => {
+    if (TM.toast) TM.toast(authErrText(e && e.code));
+    throw e;
+  });
+}
+function bootGis() {
+  if (!GOOGLE_WEB_CLIENT_ID || window.__gis) return;
+  window.__gis = 'loading';
+  const s = document.createElement('script');
+  s.src = 'https://accounts.google.com/gsi/client';
+  s.async = true;
+  s.onload = () => {
+    if (!window.google || !google.accounts || !google.accounts.id) return;
+    google.accounts.id.initialize({
+      client_id: GOOGLE_WEB_CLIENT_ID,
+      callback: (resp) => { if (resp && resp.credential) signInWithGoogleToken(resp.credential); },
+      auto_select: false,
+      ux_mode: 'popup',
+      use_fedcm_for_prompt: true
+    });
+    window.__gis = 'ready';
+    try { google.accounts.id.prompt(); } catch (e) {}
+    renderGisButton();
+  };
+  s.onerror = () => { window.__gis = ''; };
+  document.head.appendChild(s);
+}
+function renderGisButton() {
+  const el = document.querySelector('#gisbtn');
+  if (!el || !GOOGLE_WEB_CLIENT_ID || !window.google || !google.accounts || !google.accounts.id) return;
+  el.innerHTML = '';
+  google.accounts.id.renderButton(el, { type: 'standard', theme: 'outline', size: 'large', text: 'signin_with', shape: 'pill', width: 280 });
 }
 function signOutGoogle() {
   fbLoad().then(({ auth, authM }) => authM.signOut(auth)).then(() => { cloudUser = null; paintAccount(); if (TM.toast) TM.toast('已登出。行程仍留在這台裝置'); }).catch(() => {});
@@ -329,7 +376,9 @@ function paintAccount() {
   const el = $('#acct');
   if (!el) return;
   if (!cloudUser) {
-    el.innerHTML = `<div class="card"><b>Google 帳號</b><p class="mut">不登入也能排行程，資料只在這台裝置。登入之後才能把行程分享給朋友、一起改。</p><button type="button" class="btn" onclick="signInGoogle({kind:'account'}).then(()=>paintAccount()).catch(()=>{})">用 Google 登入</button></div>`;
+    const gis = GOOGLE_WEB_CLIENT_ID ? '<div id="gisbtn"></div><p class="mut">上面的 Google 按鈕不會離開這個網站。若沒有出現，再用下面的方式。</p>' : '';
+    el.innerHTML = `<div class="card"><b>Google 帳號</b><p class="mut">不登入也能排行程，資料只在這台裝置。登入之後才能把行程分享給朋友、一起改。</p>${gis}<button type="button" class="btn" onclick="signInGoogle({kind:'account'}).then(()=>paintAccount()).catch(()=>{})">用 Google 登入</button></div>`;
+    renderGisButton();
     return;
   }
   const name = cloudUser.displayName || cloudUser.email || '已登入';
