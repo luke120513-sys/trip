@@ -8,10 +8,71 @@
   const SIMP_TRAD = '门門东東车車龙龍风風馆館园園场場桥橋岛島广廣泽澤驿驛烧燒盐鹽龟龜图圖关關县縣丰豐价價铁鐵医醫体體学學湾灣旧舊点點来來发發对對变變乐樂气氣卖賣涩澀边邊圆圓鸡雞绿綠绘繪续續总總经經缘緣证證读讀团團满滿湿濕净淨状狀带帶处處压壓楼樓号號灯燈礼禮声聲双雙宝寶实實寿壽画画国國内內温溫黄黃台臺观觀会會浅淺';
   const TO_JP = {};
   for (let i = 0; i < JP_TRAD.length; i += 2) TO_JP[JP_TRAD[i + 1]] = JP_TRAD[i];
+  const SIMP_TO_TRAD = {};
   for (let i = 0; i < SIMP_TRAD.length; i += 2) {
     const jp = TO_JP[SIMP_TRAD[i + 1]];
     if (jp) TO_JP[SIMP_TRAD[i]] = jp;
+    if (SIMP_TRAD[i] !== SIMP_TRAD[i + 1]) SIMP_TO_TRAD[SIMP_TRAD[i]] = SIMP_TRAD[i + 1];
   }
+  delete SIMP_TO_TRAD['台'];
+  const MORE_TRAD = '韩韓马馬鸟鳥鱼魚页頁贝貝见見这這个個们們时時后後从從';
+  for (let i = 0; i < MORE_TRAD.length; i += 2) SIMP_TO_TRAD[MORE_TRAD[i]] = MORE_TRAD[i + 1];
+  const PLACES = [
+    ['東京都', '東京'], ['东京', '東京'], ['Tokyo', '東京'],
+    ['北海道', '北海道'], ['Hokkaido', '北海道'],
+    ['大阪府', '大阪'], ['大阪市', '大阪'], ['大阪', '大阪'], ['Osaka', '大阪'],
+    ['京都府', '京都'], ['京都市', '京都'], ['京都', '京都'], ['Kyoto', '京都'],
+    ['神奈川県', '神奈川縣'], ['神奈川县', '神奈川縣'], ['Kanagawa', '神奈川'],
+    ['横浜市', '橫濱市'], ['横浜', '橫濱'], ['Yokohama', '橫濱'],
+    ['福岡市', '福岡'], ['福岡', '福岡'], ['福冈', '福岡'], ['Fukuoka', '福岡'],
+    ['札幌市', '札幌'], ['札幌', '札幌'], ['Sapporo', '札幌'],
+    ['名古屋市', '名古屋'], ['名古屋', '名古屋'], ['Nagoya', '名古屋'],
+    ['沖縄県', '沖繩'], ['沖縄', '沖繩'], ['冲绳', '沖繩'], ['Okinawa', '沖繩'],
+    ['奈良市', '奈良'], ['奈良', '奈良'], ['Nara', '奈良'],
+    ['神戸市', '神戶'], ['神戸', '神戶'], ['Kobe', '神戶'],
+    ['広島市', '廣島'], ['広島', '廣島'], ['广岛', '廣島'], ['Hiroshima', '廣島'],
+    ['千代田区', '千代田區'], ['Chiyoda', '千代田區'],
+    ['中央区', '中央區'], ['Chuo', '中央區'],
+    ['港区', '港區'], ['Minato', '港區'],
+    ['新宿区', '新宿區'], ['Shinjuku', '新宿區'],
+    ['文京区', '文京區'], ['Bunkyo', '文京區'],
+    ['台東区', '台東區'], ['台东区', '台東區'], ['Taito', '台東區'],
+    ['墨田区', '墨田區'], ['Sumida', '墨田區'],
+    ['江東区', '江東區'], ['江东区', '江東區'], ['Koto', '江東區'],
+    ['品川区', '品川區'], ['Shinagawa', '品川區'],
+    ['目黒区', '目黑區'], ['目黑区', '目黑區'], ['Meguro', '目黑區'],
+    ['大田区', '大田區'], ['Ota', '大田區'],
+    ['世田谷区', '世田谷區'], ['Setagaya', '世田谷區'],
+    ['渋谷区', '澀谷區'], ['涩谷区', '澀谷區'], ['Shibuya', '澀谷區'],
+    ['中野区', '中野區'], ['Nakano', '中野區'],
+    ['杉並区', '杉並區'], ['杉并区', '杉並區'], ['Suginami', '杉並區'],
+    ['豊島区', '豐島區'], ['丰岛区', '豐島區'], ['Toshima', '豐島區'],
+    ['北区', '北區'], ['Kita', '北區'],
+    ['荒川区', '荒川區'], ['Arakawa', '荒川區'],
+    ['板橋区', '板橋區'], ['板桥区', '板橋區'], ['Itabashi', '板橋區'],
+    ['練馬区', '練馬區'], ['练马区', '練馬區'], ['Nerima', '練馬區'],
+    ['足立区', '足立區'], ['Adachi', '足立區'],
+    ['葛飾区', '葛飾區'], ['葛饰区', '葛飾區'], ['Katsushika', '葛飾區'],
+    ['江戸川区', '江戶川區'], ['江户川区', '江戶川區'], ['Edogawa', '江戶川區'],
+    ['武蔵野市', '武藏野市'], ['武藏野市', '武藏野市'], ['Musashino', '武藏野市'],
+    ['青葉区', '青葉區'], ['青叶区', '青葉區'], ['Aoba', '青葉區'],
+    ['日本', '日本'], ['Japan', '日本'],
+    ['韓国', '韓國'], ['韩国', '韓國'], ['South Korea', '韓國'], ['Korea', '韓國'],
+    ['タイ', '泰國'], ['泰国', '泰國'], ['Thailand', '泰國'],
+    ['台湾', '台灣'], ['台灣', '台灣'], ['Taiwan', '台灣'],
+    ['香港', '香港'], ['Hong Kong', '香港'],
+    ['中国', '中國'], ['China', '中國'],
+    ['新加坡', '新加坡'], ['Singapore', '新加坡'],
+    ['美国', '美國'], ['美國', '美國'], ['United States', '美國'],
+    ['法国', '法國'], ['法國', '法國'], ['France', '法國'],
+    ['英国', '英國'], ['英國', '英國'], ['England', '英國'],
+    ['首尔', '首爾'], ['首爾', '首爾'], ['Seoul', '首爾'],
+    ['釜山', '釜山'], ['Busan', '釜山'],
+    ['曼谷', '曼谷'], ['Bangkok', '曼谷'],
+    ['巴黎', '巴黎'], ['Paris', '巴黎'],
+    ['伦敦', '倫敦'], ['倫敦', '倫敦'], ['London', '倫敦'],
+    ['纽约', '紐約'], ['紐約', '紐約'], ['New York', '紐約']
+  ].sort((a, b) => b[0].length - a[0].length);
   const WORDS = [
     ['咖啡廳', 'カフェ', 'cafe'],
     ['咖啡厅', 'カフェ', 'cafe'],
@@ -107,6 +168,46 @@
     const s = Math.sin(dlat / 2) ** 2 + Math.cos(a.lat * p) * Math.cos(b.lat * p) * Math.sin(dlon / 2) ** 2;
     return 2 * R * Math.asin(Math.min(1, Math.sqrt(s)));
   }
+  function trad(s) {
+    let o = '';
+    for (const c of String(s || '')) o += SIMP_TO_TRAD[c] || c;
+    return o;
+  }
+  function zhText(s) {
+    let t = trad(String(s || ''));
+    if (!t) return '';
+    for (const row of PLACES) {
+      const from = row[0], to = row[1];
+      if (!from || from === to) continue;
+      if (/[A-Za-z]/.test(from)) t = t.replace(new RegExp('\\b' + from.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'gi'), to);
+      else if (t.includes(from)) t = t.split(from).join(to);
+    }
+    t = t.replace(/([一-龯々]{1,6})区/g, '$1區').replace(/([一-龯々]{1,8})県/g, '$1縣');
+    return t;
+  }
+  function foodHint(name) {
+    let o = String(name || '');
+    let changed = false;
+    const rows = WORDS.slice().sort((a, b) => (b[1] || '').length - (a[1] || '').length);
+    for (const row of rows) {
+      const ja = row[1], zh = row[0];
+      if (!ja || ja === zh || !o.includes(ja)) continue;
+      if (/^[a-z0-9 ]+$/i.test(ja)) continue;
+      o = o.split(ja).join(zh);
+      changed = true;
+    }
+    o = trad(o);
+    return changed && o !== name ? o : '';
+  }
+  function hintOf(name, query) {
+    const fromName = foodHint(name);
+    if (fromName) return fromName;
+    const q = trad(String(query || '').trim());
+    if (!q || q === name || !/[\u4e00-\u9fff]/.test(q)) return '';
+    const ja = sub(q, 0);
+    if (ja && (name === ja || String(name).includes(ja))) return q;
+    return '';
+  }
   function addr(parts) {
     const out = [];
     for (const part of parts) {
@@ -126,14 +227,18 @@
       const c = f.geometry && f.geometry.coordinates;
       if (!c || c.length < 2) return null;
       const city = p.city || p.state || '';
-      return hit(p.name || p.street || q, +c[1], +c[0], addr([p.street, p.locality, p.district, p.city, p.state, city ? '' : p.country]), city);
+      return hit(p.name || p.street || q, +c[1], +c[0], addr([p.street, p.locality, p.district, p.city, p.state, p.country]), city);
     }).filter(Boolean);
   }
   function fromNominatim(j, q) {
     return (Array.isArray(j) ? j : []).map(x => {
-      const name = (x.namedetails && (x.namedetails.name || x.namedetails['name:ja'] || x.namedetails['name:zh'])) || x.name || String(x.display_name || q).split(',')[0];
+      const d = x.namedetails || {};
+      const name = d['name:ja'] || d.name || x.name || String(x.display_name || q).split(',')[0];
+      const zhName = d['name:zh-TW'] || d['name:zh-Hant'] || d['name:zh'] || '';
       const city = (x.address && (x.address.city || x.address.town || x.address.state)) || '';
-      return hit(String(name).trim(), +x.lat, +x.lon, String(x.display_name || ''), city);
+      const row = hit(String(name).trim(), +x.lat, +x.lon, String(x.display_name || ''), city);
+      if (row && zhName) row.hint = trad(zhName);
+      return row;
     }).filter(Boolean);
   }
   function dedupe(list) {
@@ -157,8 +262,22 @@
     copy.sort((a, b) => km(bias, a) - km(bias, b));
     return copy;
   }
-  async function lookup(query, bias, limit, fetchFn) {
+  let photonLang = 'zh';
+  async function fetchPhoton(url, fetchFn) {
     const fetch = fetchFn || globalThis.fetch;
+    const langs = photonLang === 'zh' ? ['zh', 'default'] : [photonLang];
+    let last = null;
+    for (const lang of langs) {
+      const u = new URL(url, 'https://photon.komoot.io');
+      u.searchParams.set('lang', lang);
+      const r = await fetch(u, { signal: AbortSignal.timeout(8000) });
+      last = r;
+      if (r && r.status === 400 && lang === 'zh') { photonLang = 'default'; continue; }
+      if (r && r.ok) return r;
+    }
+    return last;
+  }
+  async function lookup(query, bias, limit, fetchFn) {
     try {
       const u = new URL('https://photon.komoot.io/api/');
       u.searchParams.set('q', query);
@@ -167,18 +286,23 @@
         u.searchParams.set('lat', String(bias.lat));
         u.searchParams.set('lon', String(bias.lng));
       }
-      const r = await fetch(u, { signal: AbortSignal.timeout(8000) });
+      const r = await fetchPhoton(u, fetchFn);
       if (r && r.ok) {
         const hits = fromPhoton(await r.json(), query);
         if (hits.length) return hits;
       }
     } catch (e) {}
     try {
-      const u = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&addressdetails=1&accept-language=zh-TW&q=' + encodeURIComponent(query);
-      const r = await fetch(u, { signal: AbortSignal.timeout(8000), headers: { 'Accept-Language': 'zh-TW' } });
+      const fetch = fetchFn || globalThis.fetch;
+      const u = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&addressdetails=1&namedetails=1&accept-language=' + encodeURIComponent('zh-TW,zh,ja') + '&q=' + encodeURIComponent(query);
+      const r = await fetch(u, { signal: AbortSignal.timeout(8000), headers: { 'Accept-Language': 'zh-TW,zh,ja' } });
       if (r && r.ok) return fromNominatim(await r.json(), query);
     } catch (e) {}
     return [];
+  }
+  function decorate(h, query) {
+    const hint = h.hint || hintOf(h.name, query);
+    return { name: h.name, hint: hint && hint !== h.name ? hint : '', addr: zhText(h.addr), city: zhText(h.city), lat: h.lat, lng: h.lng };
   }
   async function search(q, opt) {
     opt = opt || {};
@@ -199,8 +323,8 @@
     };
     await run(queries.primary);
     if (near(all, bias).length < few) await run(queries.fallback);
-    return rank(near(all, bias), bias).slice(0, limit);
+    return rank(near(all, bias), bias).slice(0, limit).map(h => decorate(h, q));
   }
 
-  return { plan, kanji, dedupe, search, km };
+  return { plan, kanji, dedupe, search, km, hint: foodHint, zhText, fetchPhoton };
 });

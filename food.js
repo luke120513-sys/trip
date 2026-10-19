@@ -178,7 +178,8 @@ function foodChips() {
 }
 function extraFood() {
   const name = foodPlace && foodPlace.name || (TM.T() ? ((TM.cityOf && TM.cityOf(TM.T().dest)) || TM.T().dest) : '');
-  return `<h2 id="foodtitle">${name ? TM.esc(name) + ' 美食' : '美食'}</h2>
+  const hint = foodPlace && foodPlace.hint && foodPlace.hint !== name ? '（' + foodPlace.hint + '）' : '';
+  return `<h2 id="foodtitle">${name ? TM.esc(name + hint) + ' 美食' : '美食'}</h2>
 <div class="caveat">在地人推薦度是依開放街圖標籤粗估的，不是 Google 評分。旅伴評分是大家在美食日記留下的星星，也不是 Google。店家可能缺漏或已歇業。</div>
 <label class="fld">城市或地區<input id="foodq" autocomplete="off" placeholder="例如：大阪、台南、清邁" oninput="foodType()" value="${TM.esc(name)}"></label>
 <div id="foodsug"></div>
@@ -195,7 +196,7 @@ function setFoodPlace(p) {
   foodPlace = p;
   if (p && p.user) { try { TM.ls.set('foodplace', { name: p.name, lat: p.lat, lng: p.lng, user: true }); } catch (e) {} }
   const h = $('#foodtitle');
-  if (h && p) h.textContent = p.name + ' 美食';
+  if (h && p) h.textContent = p.name + (p.hint && p.hint !== p.name ? '（' + p.hint + '）' : '') + ' 美食';
   const q = $('#foodq');
   if (q && p && document.activeElement !== q) q.value = p.name;
   paintFood(true);
@@ -235,9 +236,9 @@ async function runFoodSug(q, tok) {
   foodSug = hits.slice(0, 6);
   const box = $('#foodsug');
   if (!box) return;
-  box.innerHTML = foodSug.length ? foodSug.map((g, i) => `<button type="button" class="sg" onclick="foodPick(${i})"><span><b>${TM.esc(g.name)}</b><br><small class="mut">${TM.esc(g.addr || '')}</small></span></button>`).join('') : '<div class="mut">找不到這個地方，換個說法再試。</div>';
+  box.innerHTML = foodSug.length ? foodSug.map((g, i) => `<button type="button" class="sg" onclick="foodPick(${i})"><span><b>${TM.esc(g.name)}</b>${g.hint && g.hint !== g.name ? ` <small class="mut">${TM.esc(g.hint)}</small>` : ''}<br><small class="mut">${TM.esc(g.addr || '')}</small></span></button>`).join('') : '<div class="mut">找不到這個地方，換個說法再試。</div>';
 }
-function foodPick(i) { const g = foodSug[i]; if (!g) return; foodSugTok++; const box = $('#foodsug'); if (box) box.innerHTML = ''; setFoodPlace({ name: g.name, lat: g.lat, lng: g.lng, user: true }); }
+function foodPick(i) { const g = foodSug[i]; if (!g) return; foodSugTok++; const box = $('#foodsug'); if (box) box.innerHTML = ''; setFoodPlace({ name: g.name, hint: g.hint || '', lat: g.lat, lng: g.lng, user: true }); }
 function foodChip(name) {
   name = String(name || '');
   const b = typeof cityBias === 'function' ? cityBias(name) : null;
@@ -421,7 +422,9 @@ function showOsm() {
     const localS = localsStars(p.score);
     const mateLine = mate && mate.n ? `旅伴評分 ${mate.avg} ${starText(mate.avg)}（${mate.n} 則）` : '還沒有旅伴評分';
     const price = p.priceLevel ? priceMarks(p.priceLevel) : '價格未標';
-    return `<div class="card fcard"><img class="fphoto" alt="${TM.esc(p.name)}" loading="lazy" src="${art}" data-key="${TM.esc(p.placeKey)}" onerror="this.onerror=null;this.src='${art}'"><div class="fbody"><div class="row"><b>${TM.esc(p.name)}</b><span class="chip sm" style="flex:0">${lvl}</span></div><div class="fstars">在地人推薦度 ${localS} ${starText(localS)}</div><div class="fstars">${TM.esc(mateLine)}</div>${mine ? `<div class="mut">我的評分 ${mine} ${starText(mine)}</div>` : ''}<div class="mut">${[p.cuisine, price, p.addr, km].filter(Boolean).map(TM.esc).join(' · ')}</div><div>${(p.reasons || []).map(r => `<span class="tagchip">${TM.esc(r)}</span>`).join('')}</div><div class="fattr">示意插圖，不是店家照片</div><div class="row" style="margin-top:8px"><button type="button" class="btn sm" onclick="addOsm(${i})">加入行程</button><button type="button" class="btn ghost sm" onclick="openDiary(${i})">寫進日記</button><a class="btn ghost sm" href="${TM.esc(gmaps(p))}" target="_blank" rel="noopener">Google 地圖</a></div></div></div>`;
+    const hint = typeof PlaceQ !== 'undefined' && PlaceQ.hint ? PlaceQ.hint(p.name) : '';
+    const addr = typeof PlaceQ !== 'undefined' && PlaceQ.zhText ? PlaceQ.zhText(p.addr || '') : (p.addr || '');
+    return `<div class="card fcard"><img class="fphoto" alt="${TM.esc(p.name)}" loading="lazy" src="${art}" data-key="${TM.esc(p.placeKey)}" onerror="this.onerror=null;this.src='${art}'"><div class="fbody"><div class="row"><b>${TM.esc(p.name)}</b>${hint ? ` <small class="mut">${TM.esc(hint)}</small>` : ''}<span class="chip sm" style="flex:0">${lvl}</span></div><div class="fstars">在地人推薦度 ${localS} ${starText(localS)}</div><div class="fstars">${TM.esc(mateLine)}</div>${mine ? `<div class="mut">我的評分 ${mine} ${starText(mine)}</div>` : ''}<div class="mut">${[p.cuisine, price, addr, km].filter(Boolean).map(TM.esc).join(' · ')}</div><div>${(p.reasons || []).map(r => `<span class="tagchip">${TM.esc(r)}</span>`).join('')}</div><div class="fattr">示意插圖，不是店家照片</div><div class="row" style="margin-top:8px"><button type="button" class="btn sm" onclick="addOsm(${i})">加入行程</button><button type="button" class="btn ghost sm" onclick="openDiary(${i})">寫進日記</button><a class="btn ghost sm" href="${TM.esc(gmaps(p))}" target="_blank" rel="noopener">Google 地圖</a></div></div></div>`;
   }).join('') + '<p class="mut">在地人推薦度與旅伴評分都不是 Google 評分。Mapillary 需要金鑰，所以沒有用。</p>';
   watchFoodPhotos();
 }
@@ -529,7 +532,7 @@ async function diarySearch() {
   const hits = await foodGeo(q + (foodPlace && foodPlace.name && foodPlace.name !== '我的位置' ? ' ' + foodPlace.name : ''));
   diaryDraft.hits = hits.slice(0, 5);
   if (!box) return;
-  box.innerHTML = diaryDraft.hits.length ? diaryDraft.hits.map((g, i) => `<button type="button" class="sg" onclick="diaryPickHit(${i})"><span><b>${TM.esc(g.name)}</b><br><small class="mut">${TM.esc(g.addr || '')}</small></span></button>`).join('') : '<div class="mut">地圖上沒有這家。仍可用你打的店名儲存。</div>';
+  box.innerHTML = diaryDraft.hits.length ? diaryDraft.hits.map((g, i) => `<button type="button" class="sg" onclick="diaryPickHit(${i})"><span><b>${TM.esc(g.name)}</b>${g.hint && g.hint !== g.name ? ` <small class="mut">${TM.esc(g.hint)}</small>` : ''}<br><small class="mut">${TM.esc(g.addr || '')}</small></span></button>`).join('') : '<div class="mut">地圖上沒有這家。仍可用你打的店名儲存。</div>';
 }
 function diaryPickHit(i) {
   const g = diaryDraft && diaryDraft.hits && diaryDraft.hits[i];
@@ -621,7 +624,9 @@ function addOsm(i) {
   const p = FOOD_VIEW[i], t = TM.T();
   if (!p || !t) { TM.toast('請先建立行程，才能加進某一天'); return; }
   askDay('加入「' + p.name + '」？' + (p.cuisine ? '（' + p.cuisine + '）' : ''), di => {
-    pushFood(di, { time: '12:30', name: p.name, note: [p.cuisine, (p.reasons || []).slice(0, 2).join('、')].filter(Boolean).join(' · '), icon: 'food', ptype: '餐廳', lat: p.lat, lng: p.lng, link: gmaps(p) });
+    const hint = typeof PlaceQ !== 'undefined' && PlaceQ.hint ? PlaceQ.hint(p.name) : '';
+    const addr = typeof PlaceQ !== 'undefined' && PlaceQ.zhText ? PlaceQ.zhText(p.addr || '') : (p.addr || '');
+    pushFood(di, { time: '12:30', name: p.name, zh: hint || undefined, note: [hint && hint !== p.name ? hint : '', p.cuisine, addr, (p.reasons || []).slice(0, 2).join('、')].filter(Boolean).join(' · '), icon: 'food', ptype: '餐廳', lat: p.lat, lng: p.lng, link: gmaps(p) });
   });
 }
 async function addDish(key, idx) {
@@ -636,7 +641,7 @@ async function addDish(key, idx) {
   try { const hits = await geoSearch(d.q || d.name, (foodPlace && foodPlace.name) || t.dest); hit = hits[0] || null; } catch (e) {}
   const label = hit ? '要加入「' + d.name + '」。地圖上找到「' + hit.name + '」。' : '要加入「' + d.name + '」（' + d.where + '）。';
   askDay(label, i => {
-    const spot = { time: '12:30', name: hit ? hit.name : d.name, note: [d.name !== (hit && hit.name) ? d.name : '', d.why, hit ? hit.addr : d.where].filter(Boolean).join(' · ').slice(0, 180), icon: 'food', ptype: '餐廳' };
+    const spot = { time: '12:30', name: hit ? hit.name : d.name, zh: hit && hit.hint || undefined, note: [d.name !== (hit && hit.name) ? d.name : '', hit && hit.hint && hit.hint !== hit.name ? hit.hint : '', d.why, hit ? hit.addr : d.where].filter(Boolean).join(' · ').slice(0, 180), icon: 'food', ptype: '餐廳' };
     if (hit) { spot.lat = hit.lat; spot.lng = hit.lng; spot.link = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(hit.lat + ',' + hit.lng); }
     pushFood(i, spot);
   });
