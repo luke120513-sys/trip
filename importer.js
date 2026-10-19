@@ -68,7 +68,7 @@ function toDays(rows,dep){const dated=rows.filter(r=>r.date);let base=dep;if(dat
  for(const r of rows){let i=idx(r);if(i==null||i<0)i=last;last=i;(D[i]=D[i]||[]).push(r)}for(let i=0;i<D.length;i++)D[i]=D[i]||[];if(!D.length)D.push([]);
  return{dep:base,days:D}}
 function guessDest(rows){if(rows.dest)return rows.dest;const s=rows.map(r=>r.name+' '+r.note).join(' ');for(const k of Object.keys(PK))if(k.length>=2&&!/^[A-Z]{3}$/.test(k)&&s.includes(k))return k;return''}
-let R=null;
+let R=null;function toEdit(){if($('#sheet').classList.contains('on')){hideSheet();history.replaceState({tab:'edit'},'')}tab='edit';render()}
 window.importSheet=function(){$('#sheetBody').innerHTML=`<h2>匯入行程</h2><p class="mut">支援旅伴匯出的 JSON、CSV、Excel（.xlsx）、行事曆（.ics），、訂購明細 PDF（需有文字層），或直接貼上文字（例如「Day1 10:00 淺草寺」）。不支援截圖與掃描檔。</p>
 <label class="btn blk" style="text-align:center;cursor:pointer">選擇檔案<input type="file" id="impf" accept=".pdf,.json,.csv,.tsv,.txt,.xlsx,.xls,.ods,.ics" hidden onchange="impFile(this.files[0])"></label>
 <label class="fld" style="margin-top:10px">或貼上行程文字<textarea id="impt" rows="6" placeholder="Day1\n10:00 淺草寺\n12:00 淺草今半 - 壽喜燒\nDay2\n09:00 明治神宮\nBR198 08:50 TPE→NRT"></textarea></label>
@@ -83,7 +83,7 @@ function preview(){if(R.trips){$('#sheetBody').innerHTML=`<h2>匯入旅伴行程
  <div style="max-height:34vh;overflow:auto;border:1px solid var(--bd);border-radius:12px;padding:6px 10px;margin-bottom:10px">${days.map((d,i)=>`<div style="margin:4px 0"><b>Day ${i+1}</b>${d.map(r=>`<div class="mut" style="font-size:13px">${esc(r.time||'—')}　${esc(r.name)}${r.note?' · '+esc(r.note):''}</div>`).join('')||'<div class="mut">（空）</div>'}</div>`).join('')}</div>
  <label class="fld">目的地<input id="imd" list="cities" value="${esc(dest)}" placeholder="例：東京"></label><label class="fld">第一天日期<input type="date" id="imdep" value="${dep}"></label>
  <div class="row"><button class="btn ghost" onclick="closeSheet()">取消</button>${t?`<button class="btn ghost" onclick="impApply('merge')">合併到目前行程</button>`:''}<button class="btn" onclick="impApply('new')">建立新行程</button></div>${t?`<p class="mut">合併會依天數加到「${esc(t.dest)} ${esc(t.dep)}」，不刪除原有景點。</p>`:''}`}
-window.impApply=async function(mode){if(mode==='json'){for(const x of R.trips){const t={...x,id:Date.now().toString(36)+Math.random().toString(36).slice(2,5)};trips.unshift(t);cur=t.id}save();closeSheet();go('edit');toast('已匯入 '+R.trips.length+' 個行程');return}
+window.impApply=async function(mode){if(mode==='json'){for(const x of R.trips){const t={...x,id:Date.now().toString(36)+Math.random().toString(36).slice(2,5)};trips.unshift(t);cur=t.id}save();toEdit();toast('已匯入 '+R.trips.length+' 個行程');return}
  const dest=$('#imd').value.trim(),dep=$('#imdep').value;if(!dest||!dep)return toast('請填寫目的地與日期');const dd=toDays(R.rows,dep).days;
  let t;if(mode==='merge'){t=T()}else{const r=new Date(dep);r.setDate(r.getDate()+dd.length-1);t={id:Date.now().toString(36),dest,dep,ret:iso(r),pax:2,orig:'TPE',days:[]};trips.unshift(t);cur=t.id}
  const off=mode==='merge'?Math.max(0,Math.round((new Date(dep)-new Date(t.dep))/864e5)):0;if(mode==='merge'){const need=off+dd.length;const r=new Date(t.dep);r.setDate(r.getDate()+need-1);if(iso(r)>t.ret)t.ret=iso(r)}
@@ -93,5 +93,5 @@ window.impApply=async function(mode){if(mode==='json'){for(const x of R.trips){c
   else if(r.kind==='hotel'){s={time:r.time,name:r.name,note:r.note,kind:'hotel',link:'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(r.addr||r.name)}}
   else{const it=ds&&P.best(ds,r.name);if(it){hit++;s={...P.toSpot(it,540,ds),kind:'ds',time:r.time,note:r.note||[it.area,it.note].filter(Boolean).join(' · ')}}else{s={time:r.time,name:r.name,note:r.note};if(k){s.link='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(r.name+' '+t.dest);s.nodata=1}}}
   td.push(s)}td.sort((a,b)=>(a.time||'99').localeCompare(b.time||'99'))});
- save();closeSheet();go('edit');toast(`已匯入 ${R.rows.length} 筆${hit?`，${hit} 筆帶入推薦資料`:''}`)};
+ save();toEdit();toast(`已匯入 ${R.rows.length} 筆${hit?`，${hit} 筆帶入推薦資料`:''}`)};
 })();
