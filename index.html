@@ -1,5 +1,5 @@
 <!doctype html><html lang="zh-TW"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>旅伴｜行程規劃</title><link rel="prefetch" href="/flysave/"><link rel="prefetch" href="/fansave/"><link rel="manifest" href="manifest.json"><link rel="icon" href="icons/icon.svg"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="theme-color" content="#F4F8FC">
+<title>旅伴｜行程規劃</title><link rel="manifest" href="manifest.json"><link rel="icon" href="icons/icon.svg"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="theme-color" content="#F4F8FC">
 <style>
 :root{--g:#2F5D8A;--lg:#DCE8F4;--acc:#2F5D8A;--hd:#F4F8FC;--hdtx:#16283A;--line:#D5E0EB;--tint:#DCE8F4;--tintfg:#1F4468;--bg:#FBF5EC;--card:#FFFDF9;--tx:#111;--mut:#7A6E62;--bd:#E7D8C6;--fly:#388153;--fan:#C2410C}
 html.dark{color-scheme:dark;--g:#3B6A99;--lg:#1E3247;--acc:#8DB6E0;--hd:#18212C;--hdtx:#EAF0F6;--line:#2A3846;--tint:#22344A;--tintfg:#8DB6E0;--bg:#11161D;--card:#1C2530;--tx:#EEF2F6;--mut:#A3AFBC;--bd:#334355;--fly:#2F6E47;--fan:#A93A0B}
@@ -128,5 +128,6 @@ document.addEventListener('pointerdown',e=>{const b=e.target.closest('.btn');if(
 addEventListener('storage',e=>{if(e.key==='shared_tripInbox'&&e.newValue)consumeInbox();else if(e.key===P+'trips'||e.key===P+'cur'){trips=ls.get('trips',[]);cur=ls.get('cur',null);render()}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)consumeInbox()});
 pubCur();(window.requestIdleCallback||setTimeout)(consumeInbox);
+addEventListener('load',()=>(window.requestIdleCallback||setTimeout)(()=>['/flysave/','/fansave/'].forEach(h=>{const l=document.createElement('link');l.rel='prefetch';l.href=h;document.head.append(l)})));
 if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js',{scope:'./'});
 </script></body></html>
