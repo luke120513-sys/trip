@@ -1,0 +1,78 @@
+<!doctype html><html lang="zh-TW"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>旅伴｜行程規劃</title><link rel="manifest" href="manifest.json"><link rel="icon" href="icons/icon.svg"><meta name="theme-color" content="#2F5D8A">
+<style>
+:root{--p:#2F5D8A;--pl:#5B8DBF;--pll:#A9C8E6;--bg:#FBF5EC;--card:#fff;--tx:#2B2A27;--mut:#7A746A;--bd:#E9E1D3;--fly:#388153;--fan:#C2410C}
+[data-theme=dark]{--bg:#10151C;--card:#1A2330;--tx:#F1EBDD;--mut:#A39D90;--bd:#2A3646;--p:#5B8DBF}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;background:var(--bg);color:var(--tx);padding:64px 0 84px}
+header{position:fixed;top:0;left:0;right:0;height:56px;display:flex;align-items:center;gap:10px;padding:0 12px;background:var(--bg);border-bottom:1px solid var(--bd);z-index:5}
+header .t{flex:1;display:flex;align-items:center;gap:8px}header b{font-size:18px}#tag{font-size:12px;color:var(--mut);transition:opacity .4s}
+.ib{background:none;border:0;font-size:20px;cursor:pointer;position:relative;color:var(--tx)}.dot{position:absolute;top:2px;right:2px;width:8px;height:8px;background:#E0483E;border-radius:50%}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav button{flex:1;border:0;background:none;padding:8px 0;font-size:11px;color:var(--mut);display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer}
+nav button.on{color:var(--p);font-weight:700}.ico{width:26px;height:26px;border-radius:8px;background:var(--mut);color:#FBF5EC;display:grid;place-items:center;font-size:14px}nav .on .ico{background:var(--p)}
+main{max-width:720px;margin:auto;padding:0 14px}.card{background:var(--card);border:1px solid var(--bd);border-radius:16px;padding:14px;margin:10px 0}
+h2{font-size:18px;margin:12px 4px}.mut{color:var(--mut);font-size:13px}label{display:block;font-size:13px;margin:10px 0 4px;color:var(--mut)}
+input,textarea,select{width:100%;padding:10px;border-radius:10px;border:1px solid var(--bd);background:var(--bg);color:var(--tx);font:inherit}
+.btn{white-space:nowrap;text-align:center;text-decoration:none;flex:0 0 auto;border:0;border-radius:12px;padding:10px 14px;font:inherit;font-weight:600;cursor:pointer;background:var(--p);color:#FBF5EC}.btn.s{background:none;color:var(--p);border:1px solid var(--p)}
+.btn.fly{background:var(--fly)}.btn.fan{background:var(--fan)}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row>*{flex:1}.row>.btn{flex:1}
+.spot{display:flex;gap:8px;align-items:flex-start;border-top:1px dashed var(--bd);padding:8px 0}.spot .tm{font-weight:700;color:var(--p);min-width:48px}.spot .x{flex:1}
+.mini{border:0;background:none;cursor:pointer;color:var(--mut);font-size:16px;padding:2px}.deal{display:flex;justify-content:space-between;align-items:center}.price{color:var(--fly);font-weight:800;font-size:18px}
+footer{text-align:center;font-size:12px;color:var(--mut);margin:24px 0}footer a{color:var(--mut)}
+.sheet{position:fixed;inset:0;background:#0007;display:none;align-items:flex-end;z-index:9}.sheet.on{display:flex}.sheet>div{background:var(--card);width:100%;max-width:720px;margin:auto auto 0;border-radius:20px 20px 0 0;padding:18px}
+@media print{header,nav,footer,.noprint{display:none!important}body{padding:0;background:#fff;color:#000}.card{border:1px solid #ccc}}
+</style></head><body>
+<header><button class="ib" id="ann" title="公告">📢<span class="dot" id="annDot"></span></button><div class="t"><img src="icons/icon.svg" width="28"><div><b>旅伴</b><div id="tag">排好行程，機票飯店一起省</div></div></div>
+<button class="ib" id="theme" title="深色模式">🌙</button><button class="ib" id="bell" title="通知">🔔</button></header>
+<main id="app"></main>
+<nav id="nav"></nav>
+<div class="sheet" id="sheet"><div id="sheetBody"></div></div>
+<script>
+const P='trip_',$=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ls={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(P+k))??d}catch{return d}},set:(k,v)=>localStorage.setItem(P+k,JSON.stringify(v))};
+const CITY={東京:'NRT',大阪:'KIX',福岡:'FUK',札幌:'CTS',沖繩:'OKA',名古屋:'NGO',首爾:'ICN',釜山:'PUS',曼谷:'BKK',香港:'HKG',新加坡:'SIN',吉隆坡:'KUL',馬尼拉:'MNL',胡志明市:'SGN',河內:'HAN',峇里島:'DPS',巴黎:'CDG',倫敦:'LHR',紐約:'JFK',高雄:'KHH'};
+const BASE=location.origin+'/';let trips=ls.get('trips',[]),cur=ls.get('cur',null),tab='list',deals=null;
+const save=()=>{ls.set('trips',trips);ls.set('cur',cur)},T=()=>trips.find(t=>t.id===cur);
+const code=d=>CITY[d]||(/^[A-Za-z]{3}$/.test(d)?d.toUpperCase():d);
+const days=t=>{const n=Math.max(1,Math.round((new Date(t.ret)-new Date(t.dep))/864e5)+1);while(t.days.length<n)t.days.push([]);t.days.length=n;return n};
+const dayDate=(t,i)=>{const d=new Date(t.dep);d.setDate(d.getDate()+i);return `${d.getMonth()+1}/${d.getDate()}（${'日一二三四五六'[d.getDay()]}）`};
+const flyUrl=t=>`${BASE}flysave/?to=${encodeURIComponent(code(t.dest))}&dep=${t.dep}&ret=${t.ret}&pax=${t.pax}&orig=${t.orig||'TPE'}&from=trip`;
+const fanUrl=t=>`${BASE}fansave/?city=${encodeURIComponent(code(t.dest))}&in=${t.dep}&out=${t.ret}&guests=${Math.min(8,t.pax)}&from=trip`;
+const TABS=[['list','我的行程','🧳'],['new','新增行程','＋'],['edit','行程編輯','✎'],['deals','優惠','％'],['more','其他','⋯']];
+function go(t){tab=t;history.pushState({tab:t},'');render()}
+function render(){$('#nav').innerHTML=TABS.map(([k,n,i])=>`<button class="${k===tab?'on':''}" onclick="go('${k}')"><span class="ico">${i}</span>${n}</button>`).join('');$('#app').innerHTML=V[tab]()+foot();if(tab==='deals'||tab==='edit')loadDeals()}
+const foot=()=>`<footer>贊助 · <a href="#" onclick="share();return false">分享</a> · 關於 | 隱私 | 條款<br><a href="${BASE}flysave/?from=trip">✈️ 飛省</a> · <a href="${BASE}fansave/?from=trip">🏨 飯省</a></footer>`;
+const V={
+list:()=>`<h2>我的行程</h2>`+(trips.length?trips.map(t=>`<div class="card" onclick="cur='${t.id}';save();go('edit')" style="cursor:pointer"><div class="row"><div><b>${esc(t.dest)}</b> <span class="mut">${t.dep} → ${t.ret} · ${t.pax} 人</span></div><button class="mini" style="flex:0" onclick="event.stopPropagation();delTrip('${t.id}')">🗑</button></div><div class="mut">${t.days.flat().length} 個景點</div></div>`).join(''):`<div class="card mut">還沒有行程，點「新增行程」開始吧！</div>`),
+new:()=>{const d=new Date(Date.now()+14*864e5).toISOString().slice(0,10),r=new Date(Date.now()+18*864e5).toISOString().slice(0,10);return `<h2>新增行程</h2><div class="card"><label>目的地（城市或機場代碼）</label><input id="nd" list="cities" placeholder="例：東京"><datalist id="cities">${Object.keys(CITY).map(c=>`<option>${c}`).join('')}</datalist>
+<div class="row"><div><label>出發</label><input type="date" id="ndep" value="${d}"></div><div><label>回程</label><input type="date" id="nret" value="${r}"></div></div>
+<div class="row"><div><label>人數</label><input type="number" id="npax" min="1" max="9" value="2"></div><div><label>出發機場</label><select id="norig"><option>TPE</option><option>KHH</option></select></div></div><br><button class="btn" style="width:100%" onclick="addTrip()">建立行程</button></div>`},
+edit:()=>{const t=T();if(!t)return `<h2>行程編輯</h2><div class="card mut">請先建立或選擇一個行程。</div>`;const n=days(t);return `<h2>${esc(t.dest)} ${n} 天 <span class="mut">${t.dep} → ${t.ret} · ${t.pax} 人</span></h2>
+<div class="row noprint"><a class="btn fly" href="${flyUrl(t)}" target="_blank">✈️ 飛省查機票</a><a class="btn fan" href="${fanUrl(t)}" target="_blank">🏨 飯省找飯店</a></div>
+<div class="row noprint" style="margin-top:8px"><button class="btn s" onclick="print()">🖨 列印</button><button class="btn s" onclick="share()">🔗 分享</button></div>
+<div id="tdeals"></div>`+t.days.map((d,i)=>`<div class="card"><div class="row"><b>Day ${i+1} · ${dayDate(t,i)}</b><button class="btn s noprint" style="flex:0;padding:4px 10px" onclick="spot(${i})">＋景點</button></div>`+(d.length?d.map((s,j)=>`<div class="spot"><span class="tm">${esc(s.time)||'—'}</span><div class="x"><b>${esc(s.name)}</b>${s.note?`<div class="mut">${esc(s.note)}</div>`:''}</div><span class="noprint"><button class="mini" onclick="mv(${i},${j},-1)">▲</button><button class="mini" onclick="mv(${i},${j},1)">▼</button><button class="mini" onclick="spot(${i},${j})">✎</button><button class="mini" onclick="rm(${i},${j})">✕</button></span></div>`).join(''):`<div class="mut">尚未安排</div>`)+`</div>`).join('')},
+deals:()=>`<h2>最新機票優惠 <span class="mut">來自飛省</span></h2><div id="dl" class="mut">載入中…</div>`,
+more:()=>`<h2>其他</h2><div class="card"><b>關於旅伴</b><p class="mut">旅伴幫你排每日行程，並一鍵帶參數到飛省查機票、飯省找住宿。資料只存在你的裝置。</p></div><div class="card"><button class="btn s" onclick="exp()">匯出行程 JSON</button></div>`};
+function addTrip(){const dest=$('#nd').value.trim(),dep=$('#ndep').value,ret=$('#nret').value;if(!dest||!dep||!ret||ret<dep)return alert('請填寫目的地與正確日期');const t={id:Date.now().toString(36),dest,dep,ret,pax:+$('#npax').value||2,orig:$('#norig').value,days:[]};days(t);trips.unshift(t);cur=t.id;save();go('edit')}
+function delTrip(id){if(!confirm('刪除這個行程？'))return;trips=trips.filter(t=>t.id!==id);if(cur===id)cur=null;save();render()}
+function spot(i,j){const s=j!=null?T().days[i][j]:{};$('#sheetBody').innerHTML=`<b>${j!=null?'編輯':'新增'}景點 · Day ${i+1}</b><label>時間</label><input type="time" id="st" value="${esc(s.time)}"><label>景點</label><input id="sn" value="${esc(s.name)}"><label>備註</label><textarea id="so" rows="2">${esc(s.note)}</textarea><br><br><div class="row"><button class="btn s" onclick="closeSheet()">取消</button><button class="btn" onclick="saveSpot(${i},${j??-1})">儲存</button></div>`;openSheet()}
+function saveSpot(i,j){const s={time:$('#st').value,name:$('#sn').value.trim(),note:$('#so').value.trim()};if(!s.name)return;const d=T().days[i];j<0?d.push(s):d[j]=s;save();closeSheet();render()}
+function mv(i,j,k){const d=T().days[i],n=j+k;if(n<0||n>=d.length)return;[d[j],d[n]]=[d[n],d[j]];save();render()}
+function rm(i,j){T().days[i].splice(j,1);save();render()}
+function openSheet(){$('#sheet').classList.add('on');history.pushState({sheet:1},'')}function closeSheet(){if($('#sheet').classList.contains('on')){$('#sheet').classList.remove('on');history.back()}}
+$('#sheet').onclick=e=>{if(e.target.id==='sheet')closeSheet()};
+let lastBack=0;addEventListener('popstate',e=>{if($('#sheet').classList.contains('on')){$('#sheet').classList.remove('on');return}if(e.state?.tab){tab=e.state.tab;render();return}if(tab!=='list'){tab='list';render();history.pushState({tab:'list'},'');return}if(Date.now()-lastBack>2000){lastBack=Date.now();history.pushState({tab:'list'},'');toast('再按一次返回離開')}});
+function toast(m){const d=document.createElement('div');d.textContent=m;d.style.cssText='position:fixed;bottom:96px;left:50%;transform:translateX(-50%);background:#333;color:#fff;padding:8px 14px;border-radius:20px;z-index:20;font-size:13px';document.body.append(d);setTimeout(()=>d.remove(),1800)}
+async function loadDeals(){if(!deals){const c=ls.get('deals',null);if(c&&Date.now()-c.at<3*36e5)deals=c.d;else try{deals=await (await fetch('https://luke120513-sys.github.io/flysave/deals.json')).json();ls.set('deals',{at:Date.now(),d:deals})}catch{deals=c?.d||{short:[],long:[]}}}
+const all=[...(deals.short||[]),...(deals.long||[])].sort((a,b)=>a.price-b.price),card=x=>`<div class="card deal"><div><b>${esc(x.dest)}</b> <span class="mut">${esc(x.origin)}→${esc(x.code)} · ${esc(x.dates)} · ${esc(x.airline)}</span></div><a class="price" href="${BASE}flysave/?to=${x.code}&dep=${x.depart}&ret=${x.return}&orig=${x.origin}&from=trip" target="_blank">$${x.price.toLocaleString()}</a></div>`;
+if($('#dl'))$('#dl').innerHTML=(all.length?all.map(card).join(''):'目前沒有優惠')+`<p class="mut">更新：${esc(deals.updatedAt||'')}</p>`;
+const t=T();if($('#tdeals')&&t){const c=code(t.dest),m=all.filter(x=>x.code===c||x.dest===t.dest).slice(0,3);$('#tdeals').innerHTML=m.length?`<h2 class="noprint">🔥 ${esc(t.dest)} 機票優惠</h2><div class="noprint">${m.map(card).join('')}</div>`:''}}
+function share(){const t=T(),txt=t?`${t.dest} ${t.dep}~${t.ret}\n`+t.days.map((d,i)=>`Day${i+1} `+d.map(s=>`${s.time} ${s.name}`).join('、')).join('\n'):'旅伴 行程規劃';navigator.share?navigator.share({title:'旅伴',text:txt,url:location.href}).catch(()=>{}):navigator.clipboard?.writeText(txt+'\n'+location.href).then(()=>toast('已複製行程'))}
+function exp(){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(trips,null,2)],{type:'application/json'}));a.download='tripmate.json';a.click()}
+const TAGS=['排好行程，機票飯店一起省','✈️ 機票找飛省','🏨 住宿找飯省','每日行程，一頁搞定'];let ti=0;setInterval(()=>{const e=$('#tag');e.style.opacity=0;setTimeout(()=>{e.textContent=TAGS[++ti%TAGS.length];e.style.opacity=1},400)},4000);
+function applyTheme(){const m=ls.get('theme','auto'),d=m==='dark'||(m==='auto'&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.dataset.theme=d?'dark':'light';$('#theme').textContent=d?'☀️':'🌙';document.querySelector('meta[name=theme-color]').content=d?'#10151C':'#2F5D8A'}
+$('#theme').onclick=()=>{ls.set('theme',document.documentElement.dataset.theme==='dark'?'light':'dark');applyTheme()};matchMedia('(prefers-color-scheme:dark)').onchange=applyTheme;applyTheme();
+if(ls.get('annRead',0))$('#annDot').remove();$('#ann').onclick=()=>{ls.set('annRead',1);$('#annDot')?.remove();$('#sheetBody').innerHTML=`<b>📢 公告</b><p>旅伴上線！可一鍵串連飛省與飯省。</p><button class="btn" onclick="closeSheet()">知道了</button>`;openSheet()};
+$('#bell').onclick=()=>{$('#sheetBody').innerHTML=`<b>🔔 通知</b><p class="mut">目前沒有通知</p><button class="btn" onclick="closeSheet()">關閉</button>`;openSheet()};
+history.replaceState({tab:trips.length?'list':'new'},'');tab=trips.length?'list':'new';render();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js',{scope:'./'});
+</script></body></html>
