@@ -10,8 +10,36 @@ const FB_CFG = {
   appId: '1:55694360376:web:86b32176cc3d3a679a4bcd',
   measurementId: 'G-ZGDHVDCK0F'
 };
-let fbP = null, cloudUser = null, cloudUnsub = null, memUnsub = null, cloudTimer = 0, cloudWriting = false, cloudAck = null;
+let fbP = null, fbMods = null, cloudUser = null, cloudUnsub = null, memUnsub = null, cloudTimer = 0, cloudWriting = false, cloudAck = null;
+const AUTH_INTENT = 'trip_auth_intent';
 
+function authErrText(code) {
+  const map = {
+    'auth/popup-closed-by-user': '登入視窗被關掉了，請再按一次',
+    'auth/cancelled-popup-request': '請先關掉剛才的登入視窗，再按一次',
+    'auth/popup-blocked': '瀏覽器擋住了登入視窗。請允許彈出視窗後再按一次',
+    'auth/unauthorized-domain': '這個網址還沒加入 Firebase 授權網域。請到主控台「驗證 → 設定 → 授權網域」加上目前的網址',
+    'auth/operation-not-supported-in-this-environment': '這個瀏覽器沒辦法用彈出視窗登入',
+    'auth/network-request-failed': '網路不穩，登入沒有完成，請稍後再試',
+    'auth/web-storage-unsupported': '瀏覽器限制了本機儲存，沒辦法登入',
+    'auth/redirect-cancelled-by-user': '登入被取消了，請再按一次',
+    'auth/not-ready': '登入還沒準備好，請再按一次'
+  };
+  return map[code] || '登入沒有完成，請再試一次';
+}
+function rememberIntent(intent) {
+  try { sessionStorage.setItem(AUTH_INTENT, JSON.stringify({ kind: intent.kind, code: intent.code || '', at: Date.now() })); } catch (e) {}
+}
+function takeIntent() {
+  try {
+    const raw = sessionStorage.getItem(AUTH_INTENT);
+    sessionStorage.removeItem(AUTH_INTENT);
+    if (!raw) return null;
+    const o = JSON.parse(raw);
+    if (!o || !o.kind || Date.now() - (+o.at || 0) > 10 * 60 * 1000) return null;
+    return o;
+  } catch (e) { return null; }
+}
 function fbLoad() {
   if (fbP) return fbP;
   fbP = (async () => {
@@ -19,14 +47,23 @@ function fbLoad() {
     const authM = await import(FB_BASE + 'firebase-auth.js');
     const fsM = await import(FB_BASE + 'firebase-firestore.js');
     const app = appM.initializeApp(FB_CFG);
-    const auth = authM.getAuth(app);
+    let auth;
+    try {
+      auth = authM.initializeAuth(app, {
+        persistence: [authM.indexedDBLocalPersistence, authM.browserLocalPersistence],
+        popupRedirectResolver: authM.browserPopupRedirectResolver
+      });
+    } catch (e) {
+      auth = authM.getAuth(app);
+    }
     let db;
     try {
       db = fsM.initializeFirestore(app, { localCache: fsM.persistentLocalCache({ tabManager: fsM.persistentMultipleTabManager() }) });
     } catch (e) {
       db = fsM.getFirestore(app);
     }
-    return { app, auth, db, authM, fsM };
+    fbMods = { app, auth, db, authM, fsM };
+    return fbMods;
   })().catch(e => { fbP = null; throw e; });
   return fbP;
 }
@@ -136,19 +173,44 @@ async function pushNow(id) {
     if (TM.toast) TM.toast('雲端暫時存不了，這台裝置還留著');
   } finally { cloudWriting = false; }
 }
-async function signInGoogle() {
-  const { auth, authM } = await fbLoad();
-  if (auth.currentUser) { cloudUser = auth.currentUser; return cloudUser; }
+function fallbackRedirect(auth, authM, provider, intent, err) {
+  const code = err && err.code || '';
+  if (code !== 'auth/popup-blocked' && code !== 'auth/operation-not-supported-in-this-environment') {
+    if (TM.toast) TM.toast(authErrText(code));
+    return Promise.reject(err);
+  }
+  if (intent) rememberIntent(intent);
+  return authM.signInWithRedirect(auth, provider).then(() => null).catch(e2 => {
+    if (TM.toast) TM.toast(authErrText(e2 && e2.code));
+    throw e2;
+  });
+}
+/* 必須在點擊當下直接呼叫，前面不能 await，否則 Android Chrome 會把彈出視窗改成整頁導向。 */
+function signInGoogle(intent) {
+  if (cloudUser) return Promise.resolve(cloudUser);
+  const mods = fbMods;
+  if (!mods) {
+    fbLoad().catch(() => {});
+    const err = new Error('auth-not-ready');
+    err.code = 'auth/not-ready';
+    if (TM.toast) TM.toast(authErrText(err.code));
+    return Promise.reject(err);
+  }
+  const { auth, authM } = mods;
+  if (auth.currentUser) { cloudUser = auth.currentUser; return Promise.resolve(cloudUser); }
   const provider = new authM.GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
+  let pending;
   try {
-    const cred = await authM.signInWithPopup(auth, provider);
-    cloudUser = cred.user;
-    return cloudUser;
+    pending = authM.signInWithPopup(auth, provider);
   } catch (e) {
-    if (TM.toast) TM.toast('登入沒有完成。若瀏覽器擋住視窗，請允許後再按一次');
-    throw e;
+    return fallbackRedirect(auth, authM, provider, intent, e);
   }
+  return pending.then(cred => {
+    cloudUser = cred.user;
+    paintAccount();
+    return cred.user;
+  }).catch(e => fallbackRedirect(auth, authM, provider, intent, e));
 }
 function signOutGoogle() {
   fbLoad().then(({ auth, authM }) => authM.signOut(auth)).then(() => { cloudUser = null; paintAccount(); if (TM.toast) TM.toast('已登出。行程仍留在這台裝置'); }).catch(() => {});
@@ -177,13 +239,10 @@ function shareInvite() {
   if (navigator.share && v) navigator.share({ title: '旅伴行程', text, url: v }).catch(e => { if (e && e.name === 'AbortError') return; copyInvite(); });
   else copyInvite();
 }
-async function shareCloud() {
+async function finishShare(user) {
   const t = curTrip();
-  if (!t) { if (TM.toast) TM.toast('請先選一個行程'); return; }
+  if (!t || !user) return;
   if (t.cloudId && t.inviteCode) { showInvite(t); listenTrip(t.cloudId); return; }
-  let user;
-  try { user = await signInGoogle(); } catch (e) { return; }
-  if (!user) return;
   try {
     const { db, fsM } = await fbLoad();
     ensureIds(t);
@@ -215,16 +274,21 @@ async function shareCloud() {
     TM.toast('分享沒有成功。請確認已開啟 Firestore，並貼上規則');
   }
 }
+function shareCloud() {
+  const t = curTrip();
+  if (!t) { if (TM.toast) TM.toast('請先選一個行程'); return; }
+  if (t.cloudId && t.inviteCode) { showInvite(t); listenTrip(t.cloudId); return; }
+  const pending = signInGoogle({ kind: 'share' });
+  pending.then(user => { if (user) return finishShare(user); }).catch(() => {});
+}
 function openJoin(code) {
+  fbLoad().catch(() => {});
   const preset = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6);
   $('#sheetBody').innerHTML = `<h2>加入朋友的行程</h2><p class="mut">輸入 6 碼邀請碼。要加入雲端行程，需要用 Google 登入。不登入仍可自己排，資料留在這台裝置。</p><label class="fld">邀請碼<input id="jcode" maxlength="6" value="${TM.esc(preset)}" style="letter-spacing:4px;text-transform:uppercase"></label><div class="row"><button type="button" class="btn ghost" onclick="closeSheet()">取消</button><button type="button" class="btn" onclick="submitJoin()">加入</button></div>`;
   TM.openSheet();
 }
-async function submitJoin() {
-  const code = ($('#jcode') && $('#jcode').value || '').trim().toUpperCase();
-  if (!/^[A-Z0-9]{6}$/.test(code)) { TM.toast('邀請碼是 6 個英數'); return; }
-  let user;
-  try { user = await signInGoogle(); } catch (e) { return; }
+async function finishJoin(code, user) {
+  if (!user) return;
   try {
     const { db, fsM } = await fbLoad();
     const inv = await fsM.getDoc(fsM.doc(db, 'invites', code));
@@ -255,11 +319,17 @@ async function submitJoin() {
     TM.toast('加入沒有成功。請確認邀請碼，以及 Firestore 規則已貼上');
   }
 }
+function submitJoin() {
+  const code = ($('#jcode') && $('#jcode').value || '').trim().toUpperCase();
+  if (!/^[A-Z0-9]{6}$/.test(code)) { TM.toast('邀請碼是 6 個英數'); return; }
+  const pending = signInGoogle({ kind: 'join', code });
+  pending.then(user => { if (user) return finishJoin(code, user); }).catch(() => {});
+}
 function paintAccount() {
   const el = $('#acct');
   if (!el) return;
   if (!cloudUser) {
-    el.innerHTML = `<div class="card"><b>Google 帳號</b><p class="mut">不登入也能排行程，資料只在這台裝置。登入之後才能把行程分享給朋友、一起改。</p><button type="button" class="btn" onclick="signInGoogle().then(()=>paintAccount()).catch(()=>{})">用 Google 登入</button></div>`;
+    el.innerHTML = `<div class="card"><b>Google 帳號</b><p class="mut">不登入也能排行程，資料只在這台裝置。登入之後才能把行程分享給朋友、一起改。</p><button type="button" class="btn" onclick="signInGoogle({kind:'account'}).then(()=>paintAccount()).catch(()=>{})">用 Google 登入</button></div>`;
     return;
   }
   const name = cloudUser.displayName || cloudUser.email || '已登入';
@@ -276,6 +346,23 @@ function memberBar(t) {
   }).join('');
   return `<div class="memrow noprint">${ava || ''}<span class="mut">邀請碼 ${TM.esc(t.inviteCode || '')}</span></div>`;
 }
+function afterAuthReady(mods) {
+  const { auth, authM } = mods;
+  authM.onAuthStateChanged(auth, user => {
+    cloudUser = user || null;
+    paintAccount();
+    const trip = curTrip();
+    if (user && trip && trip.cloudId) listenTrip(trip.cloudId);
+  });
+  authM.getRedirectResult(auth).then(cred => {
+    if (!(cred && cred.user)) return;
+    cloudUser = cred.user;
+    const intent = takeIntent();
+    if (!intent) return;
+    if (intent.kind === 'share') finishShare(cred.user);
+    else if (intent.kind === 'join' && intent.code) finishJoin(intent.code, cred.user);
+  }).catch(e => { if (TM.toast && e && e.code) TM.toast(authErrText(e.code)); });
+}
 function bootCloud() {
   if (!window.TM) return;
   const q = window.__join || new URLSearchParams(location.search).get('join');
@@ -284,13 +371,8 @@ function bootCloud() {
   if (t && t.cloudId) {
     ensureIds(t);
     cloudAck = JSON.parse(JSON.stringify(t));
-    fbLoad().then(({ auth, authM }) => {
-      authM.onAuthStateChanged(auth, user => {
-        cloudUser = user;
-        paintAccount();
-        if (user) listenTrip(t.cloudId);
-      });
-    }).catch(() => {});
   }
+  fbLoad().then(afterAuthReady).catch(() => {});
 }
 addEventListener('DOMContentLoaded', () => setTimeout(bootCloud, 0));
+fbLoad().catch(() => {});
