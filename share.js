@@ -59,12 +59,12 @@
     if (keepIds && +e.rev > 0) o.rev = +e.rev;
     return o;
   }
-  const TIX_TYPES = ['機票', '飯店', '交通', '門票', '餐廳', '其他'];
   function normTicket(raw) {
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     const name = str(cleanStr(raw.name), 80).trim();
     if (!name) return null;
-    const o = { name, type: TIX_TYPES.indexOf(raw.type) >= 0 ? raw.type : '其他' };
+    const type = str(cleanStr(raw.type), 16).trim();
+    const o = { name, type: type || '其他' };
     if (/^\d{4}-\d{2}-\d{2}$/.test(raw.date || '')) o.date = raw.date;
     if (/^\d{2}:\d{2}$/.test(raw.time || '')) o.time = raw.time;
     if (raw.day != null && raw.day !== '' && Number.isFinite(+raw.day) && +raw.day >= 0 && +raw.day < 40) o.day = +raw.day | 0;

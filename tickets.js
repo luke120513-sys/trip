@@ -12,7 +12,6 @@
     ['餐廳', 'icons/cat-food.svg'],
     ['其他', 'icons/cat-custom.svg']
   ];
-  const TYPE_SET = new Set(TYPES.map(t => t[0]));
   const NOTE = '票券圖片與 PDF 留在這台裝置，這份備份只有名稱、日期與訂位編號。';
   const MONTH = { jan: 1, feb: 2, mar: 3, apr: 4, may: 5, jun: 6, jul: 7, aug: 8, sep: 9, oct: 10, nov: 11, dec: 12 };
 
@@ -72,7 +71,7 @@
     if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
     const name = String(raw.name || '').trim().slice(0, 80);
     if (!name) return null;
-    const o = { name, type: TYPE_SET.has(raw.type) ? raw.type : '其他' };
+    const o = { name, type: normType(raw.type) };
     if (/^\d{4}-\d{2}-\d{2}$/.test(raw.date || '')) o.date = raw.date;
     if (/^\d{2}:\d{2}$/.test(raw.time || '')) o.time = raw.time;
     if (raw.day != null && raw.day !== '' && Number.isFinite(+raw.day) && +raw.day >= 0 && +raw.day < 40) o.day = +raw.day | 0;
@@ -121,12 +120,16 @@
     const note = !omitted ? '' : (keep.length ? '有些票券檔案太大，這份備份沒有帶那些圖片與 PDF。' : NOTE);
     return { keep, omitted, used, note };
   }
+  function normType(raw) {
+    const t = String(raw || '').replace(/[\u0000-\u001f]/g, '').trim().slice(0, 16);
+    return t || '其他';
+  }
   function iconOf(type) {
     const row = TYPES.find(t => t[0] === type);
     return row ? row[1] : 'icons/cat-custom.svg';
   }
 
-  return { TYPES, NOTE, todayYmd, dayYmd, guessType, parsePasted, normTicket, sortTickets, isToday, decideFiles, iconOf };
+  return { TYPES, NOTE, todayYmd, dayYmd, guessType, parsePasted, normTicket, normType, sortTickets, isToday, decideFiles, iconOf };
 });
 
 /* 以下只在瀏覽器跑：IndexedDB 存檔、表單與全螢幕檢視。 */
@@ -280,15 +283,29 @@ async function ticketForm(id) {
       } catch (e) {}
     }
   }
-  const type = cur && cur.type || '其他';
+  const preset = !cur || !cur.type ? '其他' : (Tickets.TYPES.some(([n]) => n === cur.type) ? cur.type : '');
+  const custom = preset ? '' : (cur && cur.type || '');
   const days = '<option value="">不指定</option>' + t.days.map((_, i) => `<option value="${i}"${cur && cur.day === i ? ' selected' : ''}>Day ${i + 1} · ${tixEsc(TM.dayDate(t, i))}</option>`).join('');
   const spots = ticketSpots(t, cur && cur.day != null ? cur.day : '');
   const spotOpts = '<option value="">不指定景點</option>' + spots.map(n => `<option${cur && cur.spot === n ? ' selected' : ''}>${tixEsc(n)}</option>`).join('');
-  $('#sheetBody').innerHTML = `<h2>${cur ? '編輯票券' : '新增票券'}</h2><p class="mut">可上傳照片、截圖或 PDF，或貼上郵件內文。分享連結不會帶這些票券。</p><label class="fld">貼上郵件文字或連結<textarea id="tixpaste" rows="3" placeholder="例如：訂單編號、日期、Gmail 裡複製的一段"></textarea></label><button type="button" class="btn ghost sm" onclick="ticketApplyPaste()">帶入貼上的內容</button><label class="fld">名稱<input id="tixname" maxlength="80" value="${tixEsc(cur && cur.name || '')}"></label><div class="fld">種類</div><div class="row" id="tixtypes">${Tickets.TYPES.map(([n]) => `<button type="button" class="chip${n === type ? ' on' : ''}" data-tixt="${n}" onclick="ticketSetType('${n}')"><img src="${Tickets.iconOf(n)}" alt="" width="16" height="16">${n}</button>`).join('')}</div><div class="row"><label class="fld">日期<input type="date" id="tixdate" value="${tixEsc(cur && cur.date || '')}"></label><label class="fld">時間<input type="time" id="tixtime" value="${tixEsc(cur && cur.time || '')}"></label></div><div class="row"><label class="fld">哪一天<select id="tixday" onchange="ticketDayChange()">${days}</select></label><label class="fld">哪個景點<select id="tixspot">${spotOpts}</select></label></div><label class="fld">訂位編號<input id="tixbook" maxlength="40" value="${tixEsc(cur && cur.booking || '')}"></label><label class="fld">備註<textarea id="tixnote" rows="2">${tixEsc(cur && cur.notes || '')}</textarea></label><label class="fld">照片、截圖或 PDF<input id="tixfile" type="file" accept="image/*,application/pdf" multiple onchange="ticketFiles(this)"></label><div id="tixfiles">${tixFileList()}</div><p class="mut" id="tixocr"></p><div class="row"><button type="button" class="btn ghost" onclick="closeSheet()">取消</button><button type="button" class="btn" onclick="ticketSave()">儲存</button></div>`;
+  $('#sheetBody').innerHTML = `<h2>${cur ? '編輯票券' : '新增票券'}</h2><p class="mut">可上傳照片、截圖或 PDF，或貼上郵件內文。名稱和種類都可以自己取，之後按編輯就能改。分享連結不會帶這些票券。</p><label class="fld">貼上郵件文字或連結<textarea id="tixpaste" rows="3" placeholder="例如：訂單編號、日期、Gmail 裡複製的一段"></textarea></label><button type="button" class="btn ghost sm" onclick="ticketApplyPaste()">帶入貼上的內容</button><label class="fld">名稱（自己取，隨時可改）<input id="tixname" maxlength="80" placeholder="例如：去程登機證、迪士尼一日券" value="${tixEsc(cur && cur.name || '')}"></label><div class="fld">種類</div><div class="row" id="tixtypes">${Tickets.TYPES.map(([n]) => `<button type="button" class="chip${n === preset ? ' on' : ''}" data-tixt="${n}" onclick="ticketSetType('${n}')"><img src="${Tickets.iconOf(n)}" alt="" width="16" height="16">${n}</button>`).join('')}</div><label class="fld">自訂種類（選填，會取代上面的選項）<input id="tixtcustom" maxlength="16" placeholder="例如：演唱會、SIM 卡、JR Pass" value="${tixEsc(custom)}" oninput="ticketCustomInput()"></label><div class="row"><label class="fld">日期<input type="date" id="tixdate" value="${tixEsc(cur && cur.date || '')}"></label><label class="fld">時間<input type="time" id="tixtime" value="${tixEsc(cur && cur.time || '')}"></label></div><div class="row"><label class="fld">哪一天<select id="tixday" onchange="ticketDayChange()">${days}</select></label><label class="fld">哪個景點<select id="tixspot">${spotOpts}</select></label></div><label class="fld">訂位編號<input id="tixbook" maxlength="40" value="${tixEsc(cur && cur.booking || '')}"></label><label class="fld">備註<textarea id="tixnote" rows="2">${tixEsc(cur && cur.notes || '')}</textarea></label><label class="fld">照片、截圖或 PDF<input id="tixfile" type="file" accept="image/*,application/pdf" multiple onchange="ticketFiles(this)"></label><div id="tixfiles">${tixFileList()}</div><p class="mut" id="tixocr"></p><div class="row"><button type="button" class="btn ghost" onclick="closeSheet()">取消</button><button type="button" class="btn" onclick="ticketSave()">儲存</button></div>`;
   TM.openSheet();
 }
-function ticketSetType(n) { document.querySelectorAll('[data-tixt]').forEach(b => b.classList.toggle('on', b.dataset.tixt === n)); }
-function ticketType() { const b = document.querySelector('[data-tixt].on'); return b ? b.dataset.tixt : '其他'; }
+function ticketSetType(n) {
+  document.querySelectorAll('[data-tixt]').forEach(b => b.classList.toggle('on', b.dataset.tixt === n));
+  const c = $('#tixtcustom'); if (c) c.value = '';
+}
+function ticketCustomInput() {
+  const c = $('#tixtcustom');
+  if (c && c.value.trim()) document.querySelectorAll('[data-tixt]').forEach(b => b.classList.remove('on'));
+  else if (!document.querySelector('[data-tixt].on')) document.querySelectorAll('[data-tixt]').forEach(b => b.classList.toggle('on', b.dataset.tixt === '其他'));
+}
+function ticketType() {
+  const custom = ($('#tixtcustom') && $('#tixtcustom').value || '').trim();
+  if (custom) return Tickets.normType(custom);
+  const b = document.querySelector('[data-tixt].on');
+  return b ? b.dataset.tixt : '其他';
+}
 function ticketDayChange() {
   const t = TM.T(); const day = $('#tixday') && $('#tixday').value;
   const box = $('#tixspot'); if (!box || !t) return;
@@ -300,7 +317,7 @@ function ticketApplyPaste() {
   const set = (id, val) => { const el = $('#' + id); if (el && val && !el.value.trim()) el.value = val; };
   set('tixname', parsed.name); set('tixdate', parsed.date); set('tixtime', parsed.time); set('tixbook', parsed.booking);
   const note = $('#tixnote'); if (note && parsed.notes && !note.value.trim()) note.value = parsed.notes;
-  if (parsed.type && parsed.type !== '其他') ticketSetType(parsed.type);
+  if (parsed.type && parsed.type !== '其他' && ticketType() === '其他') ticketSetType(parsed.type);
   if (!parsed.booking && !parsed.date && !parsed.name) TM.toast('這段裡沒有看出訂位編號或日期，請再改一下欄位');
   else TM.toast('已帶入看得懂的欄位，請再對一下');
 }

@@ -109,12 +109,28 @@ assert.equal(kept.files[2].data, undefined);
 const meta = Tickets.normTicket(wallet.tickets[0]);
 assert.equal(meta.files[0].data, undefined);
 assert.equal(meta.booking, 'SECRET99');
+const renamed = Tickets.normTicket({ name: '  去程登機證  ', type: '演唱會' });
+assert.equal(renamed.name, '去程登機證');
+assert.equal(renamed.type, '演唱會');
+assert.equal(Tickets.normTicket({ name: '券', type: '   ' }).type, '其他');
+assert.equal(Tickets.iconOf('演唱會'), 'icons/cat-custom.svg');
+const customTrip = {
+  dest: '東京', dep: '2026-11-02', ret: '2026-11-04', pax: 1, orig: 'TPE',
+  days: [[{ name: '淺草寺' }]], expenses: [],
+  tickets: [{ id: 'c1', name: '我的票', type: '演唱會', booking: 'LIVE1' }]
+};
+const customBak = Share.validateTrips({ v: 1, trips: [customTrip] }, { backup: true });
+assert.equal(customBak.trips[0].tickets[0].name, '我的票');
+assert.equal(customBak.trips[0].tickets[0].type, '演唱會');
+const again = Tickets.normTicket({ name: '回程登機證', type: 'SIM 卡' });
+assert.equal(again.name, '回程登機證');
+assert.equal(again.type, 'SIM 卡');
 assert.equal(Tickets.iconOf('機票'), 'icons/ui-fly.svg');
 assert.equal(Tickets.iconOf('餐廳'), 'icons/cat-food.svg');
 assert.equal(Tickets.guessType('迪士尼門票'), '門票');
 
 const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v32/);
+assert.match(sw, /tripmate-v33/);
 assert.match(sw, /tickets\.js/);
 const collab = readFileSync(new URL('../collab.js', import.meta.url), 'utf8');
 assert.match(collab, /const tickets = t\.tickets/);
