@@ -181,8 +181,10 @@ function extraFood() {
   const hint = foodPlace && foodPlace.hint && foodPlace.hint !== name ? '（' + foodPlace.hint + '）' : '';
   return `<h2 id="foodtitle">${name ? TM.esc(name + hint) + ' 美食' : '美食'}</h2>
 <div class="caveat">在地人推薦度是依開放街圖標籤粗估的，不是 Google 評分。旅伴評分是大家在美食日記留下的星星，也不是 Google。店家可能缺漏或已歇業。</div>
-<label class="fld">城市或地區<input id="foodq" autocomplete="off" placeholder="例如：大阪、台南、清邁" oninput="foodType()" value="${TM.esc(name)}"></label>
+<label class="fld">城市，或貼上餐廳網址<input id="foodq" autocomplete="off" placeholder="例如：大阪，或 Google 地圖、食べログ連結" oninput="foodType()" value="${TM.esc(name)}"></label>
 <div id="foodsug"></div>
+<div class="dh"><h2 style="font-size:16px;margin:0">收藏的店</h2></div>
+<div id="foodfavs"></div>
 ${foodChips()}
 <div class="row" id="foodsort">${foodSortBar()}</div>
 <p class="mut" id="foodfltlbl">${TM.esc(foodFltLabel())}</p>
@@ -222,7 +224,57 @@ async function ensureFoodPlace() {
   } catch (e) {}
   return null;
 }
-function foodType() { const q = $('#foodq') && $('#foodq').value.trim(); const tok = ++foodSugTok; clearTimeout(foodSugTimer); if (!q || q.length < 2) { const box = $('#foodsug'); if (box) box.innerHTML = ''; return; } foodSugTimer = setTimeout(() => runFoodSug(q, tok), 280); }
+let foodUrlSpot = null;
+function foodType() { const q = $('#foodq') && $('#foodq').value.trim(); const tok = ++foodSugTok; clearTimeout(foodSugTimer); const box = $('#foodsug'); if (!q || q.length < 2) { if (box) box.innerHTML = ''; return; } if (window.PlaceUrl && PlaceUrl.isUrl(q)) { if (!PlaceUrl.ready(q)) { if (box) box.innerHTML = '<div class="mut">貼上完整的店家網址，會直接帶出這一間。</div>'; return; } if (box) box.innerHTML = '<div class="mut">正在讀這個網址…</div>'; foodSugTimer = setTimeout(() => runFoodUrl(q, tok), 280); return; } foodSugTimer = setTimeout(() => runFoodSug(q, tok), 280); }
+async function runFoodUrl(q, tok) {
+  const box = $('#foodsug');
+  let res;
+  try { res = await PlaceUrl.resolve(q, { dest: TM.T() && TM.T().dest, search: qq => foodGeo(qq) }); }
+  catch (e) { res = { ok: false, message: PlaceUrl.FAIL }; }
+  if (tok !== foodSugTok || !box) return;
+  if (!res.ok) { foodUrlSpot = null; box.innerHTML = `<div class="mut">${TM.esc(res.message)}</div>`; return; }
+  const s = res.spot;
+  foodUrlSpot = s;
+  const hint = s.hint && s.hint !== s.name ? ` <small class="mut">${TM.esc(s.hint)}</small>` : '';
+  const where = s.addr || (s.lat != null ? '已取得座標' : '還沒有座標，仍可收藏');
+  box.innerHTML = `<div class="card" id="foodurl" style="padding:10px"><b>${TM.esc(s.name)}</b>${hint}<div class="mut">${TM.esc(where)}</div><div class="mut">${TM.esc(s.source || '')}${s.rating ? ' · 評分 ' + TM.esc(s.rating) : ''}</div><div class="row" style="margin-top:8px"><button type="button" class="btn sm" onclick="foodFavAdd()">加入收藏</button><button type="button" class="btn ghost sm" onclick="foodDiaryFromUrl()">寫進日記</button></div></div>`;
+}
+function foodFavList() { try { return TM.ls.get('foodfav', []) || []; } catch (e) { return []; } }
+function paintFoodFavs() {
+  const box = $('#foodfavs');
+  if (!box) return;
+  const list = foodFavList();
+  if (!list.length) { box.innerHTML = '<div class="card mut">貼上餐廳網址後，可以收到這裡，或寫進美食日記。</div>'; return; }
+  box.innerHTML = list.map((s, i) => `<div class="card"><b>${TM.esc(s.name)}</b>${s.hint && s.hint !== s.name ? ` <small class="mut">${TM.esc(s.hint)}</small>` : ''}<div class="mut">${TM.esc(s.addr || '')}</div><button type="button" class="btn ghost sm" onclick="foodFavRm(${i})">移除</button></div>`).join('');
+}
+function foodFavAdd() {
+  const s = foodUrlSpot;
+  if (!s) return;
+  const key = placeKey(s.name, s.lat, s.lng);
+  const list = foodFavList().filter(x => placeKey(x.name, x.lat, x.lng) !== key);
+  list.unshift({ name: s.name, hint: s.hint || '', addr: s.addr || '', lat: +s.lat || 0, lng: +s.lng || 0, url: s.url || '', at: Date.now() });
+  TM.ls.set('foodfav', list.slice(0, 30));
+  TM.toast('已加入收藏');
+  paintFoodFavs();
+}
+function foodFavRm(i) {
+  const list = foodFavList();
+  list.splice(i, 1);
+  TM.ls.set('foodfav', list);
+  paintFoodFavs();
+}
+function foodDiaryFromUrl() {
+  const s = foodUrlSpot;
+  if (!s) return;
+  openDiary(-1);
+  if (!diaryDraft) return;
+  diaryDraft.placeName = s.name;
+  diaryDraft.lat = +s.lat || 0;
+  diaryDraft.lng = +s.lng || 0;
+  diaryDraft.placeKey = placeKey(s.name, s.lat, s.lng);
+  const n = $('#dname');
+  if (n) n.value = s.name;
+}
 async function foodGeo(q) {
   q = String(q || '').trim();
   if (q.length < 2) return [];
@@ -429,6 +481,7 @@ function showOsm() {
   watchFoodPhotos();
 }
 function paintDiary() {
+  paintFoodFavs();
   const box = $('#fooddiary');
   if (!box) return;
   const list = diaryList();
