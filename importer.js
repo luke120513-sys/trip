@@ -2,8 +2,10 @@
 (function(){
 const H={day:/^(第?幾?天|第\s*\d*\s*天|day|天數|日次|d)$/i,date:/^(日期|date|日付)$/i,time:/^(時間|time|時刻|開始時間|start)$/i,name:/^(地點|景點|名稱|行程|活動|項目|place|name|location|spot|title|summary|地名)$/i,note:/^(備註|說明|note|notes|memo|描述|description|remark)$/i};
 const pad=n=>String(n).padStart(2,'0'),iso=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
-function normDate(v){if(v==null||v==='')return null;if(v instanceof Date)return iso(v);if(typeof v==='number'&&v>20000&&v<80000){const d=new Date(Math.round((v-25569)*864e5));return d.toISOString().slice(0,10)}
- const s=String(v).trim();let m=/^(\d{4})[-/.年](\d{1,2})[-/.月](\d{1,2})/.exec(s);if(m)return m[1]+'-'+pad(m[2])+'-'+pad(m[3]);m=/^(\d{1,2})[/月-](\d{1,2})日?$/.exec(s);if(m){const y=new Date().getFullYear();return y+'-'+pad(m[1])+'-'+pad(m[2])}return null}
+// YYYY-MM-DD 且為真實存在的日期（排除 2026-02-31、2026-13-01）
+const okDate=s=>{if(typeof s!=='string'||!/^\d{4}-\d\d-\d\d$/.test(s))return false;const d=new Date(s+'T00:00:00');return!isNaN(d)&&iso(d)===s},vd=s=>okDate(s)?s:null;
+function normDate(v){if(v==null||v==='')return null;if(v instanceof Date)return iso(v);if(typeof v==='number'&&v>20000&&v<80000){const d=new Date(Math.round((v-25569)*864e5));return vd(d.toISOString().slice(0,10))}
+ const s=String(v).trim();let m=/^(\d{4})[-/.年](\d{1,2})[-/.月](\d{1,2})/.exec(s);if(m)return vd(m[1]+'-'+pad(m[2])+'-'+pad(m[3]));m=/^(\d{1,2})[/月-](\d{1,2})日?$/.exec(s);if(m){const y=new Date().getFullYear();return vd(y+'-'+pad(m[1])+'-'+pad(m[2]))}return null}
 function normTime(v){if(v==null||v==='')return'';if(typeof v==='number'&&v<1){const m=Math.round(v*1440);return pad(Math.floor(m/60))+':'+pad(m%60)}const m=/(\d{1,2})[:：時](\d{2})?/.exec(String(v));return m?pad(m[1])+':'+(m[2]||'00'):''}
 function dayNum(v){const m=/(\d+)/.exec(String(v??''));return m?+m[1]:null}
 function fromTable(rows){rows=rows.filter(r=>r&&r.some(c=>String(c??'').trim()!==''));if(!rows.length)return{rows:[]};
@@ -18,7 +20,7 @@ function csv(text){const rows=[];let r=[],f='',q=false;text=text.replace(/^\uFEF
 function ics(text){const L=text.replace(/\r?\n[ \t]/g,'').split(/\r?\n/);const out=[];let e=null;
  const val=l=>l.slice(l.indexOf(':')+1).replace(/\\n/gi,' ').replace(/\\([,;\\])/g,'$1').trim();
  for(const l of L){if(l==='BEGIN:VEVENT')e={};else if(l==='END:VEVENT'){if(e&&e.s&&e.name)out.push(e);e=null}else if(e){const k=l.split(/[;:]/)[0];
-  if(k==='DTSTART'){const v=val(l);const m=/^(\d{4})(\d\d)(\d\d)(?:T(\d\d)(\d\d)(\d\d)?(Z)?)?/.exec(v);if(m){if(m[7]){const d=new Date(Date.UTC(+m[1],m[2]-1,+m[3],+m[4],+m[5]));e.s=iso(d);e.t=pad(d.getHours())+':'+pad(d.getMinutes())}else{e.s=m[1]+'-'+m[2]+'-'+m[3];e.t=m[4]?m[4]+':'+m[5]:''}}}
+  if(k==='DTSTART'){const v=val(l);const m=/^(\d{4})(\d\d)(\d\d)(?:T(\d\d)(\d\d)(\d\d)?(Z)?)?/.exec(v);if(m){if(m[7]){const d=new Date(Date.UTC(+m[1],m[2]-1,+m[3],+m[4],+m[5]));e.s=iso(d);e.t=pad(d.getHours())+':'+pad(d.getMinutes())}else{e.s=vd(m[1]+'-'+m[2]+'-'+m[3]);e.t=m[4]?m[4]+':'+m[5]:''}}}
   else if(k==='SUMMARY')e.name=val(l);else if(k==='LOCATION')e.loc=val(l);else if(k==='DESCRIPTION')e.desc=val(l)}}
  return{rows:out.map(e=>({date:e.s,time:e.t,name:e.name,note:[e.loc&&e.loc!==e.name?e.loc:'',e.desc].filter(Boolean).join(' · ').slice(0,200)})),cols:['date','time','name','note']}}
 function text(t){const out=[];let day=null,date=null;
@@ -31,7 +33,19 @@ function text(t){const out=[];let day=null,date=null;
  return{rows:out,cols:['day','time','name','note']}}
 async function xlsx(buf){if(!window.XLSX)await new Promise((ok,no)=>{const s=document.createElement('script');s.src='vendor/xlsx.full.min.js';s.onload=ok;s.onerror=no;document.head.append(s)});
  const wb=XLSX.read(buf,{type:'array',cellDates:true});const ws=wb.Sheets[wb.SheetNames[0]];return fromTable(XLSX.utils.sheet_to_json(ws,{header:1,raw:true,defval:''}))}
-function json(t){const j=JSON.parse(t);const arr=Array.isArray(j)?j:j.trips||[j];const ok=arr.filter(x=>x&&x.dest&&x.dep&&Array.isArray(x.days));if(!ok.length)throw new Error('不是旅伴匯出的 JSON');return{trips:ok}}
+const S=v=>v==null?'':typeof v==='string'?v:typeof v==='number'?String(v):'';
+function jSpot(s){if(!s||typeof s!=='object'||Array.isArray(s))return null;const o={...s,time:/^\d\d:\d\d$/.test(s.time)?s.time:'',name:S(s.name).trim(),note:S(s.note)};if(!o.name)return null;
+ o.link=typeof s.link==='string'&&/^(https?:\/\/|\/)/.test(s.link)?s.link:undefined;if(s.src!=null)o.src=Array.isArray(s.src)?s.src.filter(u=>typeof u==='string'&&/^https?:\/\//.test(u)):[];
+ if(s.price!=null&&!Number.isFinite(+s.price))delete o.price;if(s.arr!=null&&!/^\d\d:\d\d$/.test(s.arr))delete o.arr;return o}
+function json(t){let j;try{j=JSON.parse(t)}catch{throw new Error('JSON 格式有誤，無法解析')}const arr=Array.isArray(j)?j:j&&Array.isArray(j.trips)?j.trips:[j];
+ const isT=x=>x&&typeof x==='object'&&x.dest!=null&&x.dep!=null&&Array.isArray(x.days);const cand=arr.filter(isT);if(!cand.length)throw new Error('不是旅伴匯出的 JSON');
+ const ok=[],bad=[];for(const x of cand){const dest=S(x.dest).trim(),dep=x.dep,ret=x.ret==null||x.ret===''?dep:x.ret;
+  if(!dest){bad.push('（未命名）缺少目的地');continue}
+  if(!okDate(dep)||!okDate(ret)){bad.push(`「${dest}」日期需為 YYYY-MM-DD 格式的有效日期`);continue}
+  if(ret<dep){bad.push(`「${dest}」回程日期早於出發日期`);continue}
+  const n=Math.round((new Date(ret)-new Date(dep))/864e5)+1;if(n>366){bad.push(`「${dest}」行程超過 366 天`);continue}
+  const pax=Math.round(+x.pax);ok.push({...x,dest,dep,ret,pax:pax>=1&&pax<=9?pax:2,orig:/^[A-Z]{3}$/.test(x.orig)?x.orig:'TPE',days:x.days.map(d=>Array.isArray(d)?d.map(jSpot).filter(Boolean):[])})}
+ if(!ok.length)throw new Error('無法匯入：'+bad.slice(0,3).join('；'));if(bad.length)ok.skipped=bad.length;return{trips:ok}}
 async function pdfText(buf){const L=await import(new URL('vendor/pdfjs/pdf.min.mjs',location.href).href);L.GlobalWorkerOptions.workerSrc=new URL('vendor/pdfjs/pdf.worker.min.mjs',location.href).href;
  const doc=await L.getDocument({data:new Uint8Array(buf)}).promise;let out=[];
  for(let p=1;p<=doc.numPages;p++){const c=await (await doc.getPage(p)).getTextContent();const ln=[];
@@ -76,12 +90,12 @@ window.importSheet=function(){$('#sheetBody').innerHTML=`<h2>匯入行程</h2><p
 <p class="mut" style="margin-top:10px">範本下載：<a href="data/import-template.csv" download>CSV</a>・<a href="data/import-template.xlsx" download>Excel</a>（欄位：第幾天／日期、時間、地點、備註；表頭名稱寫法不拘）</p>`;openSheet()};
 window.impFile=async function(f){if(!f)return;try{R=await parseFile(f);preview()}catch(e){toast(e.message||'無法讀取這個檔案')}};
 window.impPaste=function(){const t=$('#impt').value;if(!t.trim())return toast('請先貼上內容');try{R=parseText(t);preview()}catch(e){toast(e.message||'無法解析')}};
-function preview(){if(R.trips){$('#sheetBody').innerHTML=`<h2>匯入旅伴行程</h2><p>找到 ${R.trips.length} 個行程：</p>${R.trips.map(t=>`<div class="card"><b>${esc(t.dest)}</b> <span class="mut">${esc(t.dep)} → ${esc(t.ret)} · ${t.days.flat().length} 個景點</span></div>`).join('')}<p class="mut">會新增為新行程，不會覆蓋現有行程。</p><div class="row"><button class="btn ghost" onclick="closeSheet()">取消</button><button class="btn" onclick="impApply('json')">匯入</button></div>`;return}
+function preview(){if(R.trips){$('#sheetBody').innerHTML=`<h2>匯入旅伴行程</h2><p>找到 ${R.trips.length} 個行程${R.trips.skipped?`（另有 ${R.trips.skipped} 個資料有誤，已略過）`:''}：</p>${R.trips.map(t=>`<div class="card"><b>${esc(t.dest)}</b> <span class="mut">${esc(t.dep)} → ${esc(t.ret)} · ${t.days.flat().length} 個景點</span></div>`).join('')}<p class="mut">會新增為新行程，不會覆蓋現有行程。</p><div class="row"><button class="btn ghost" onclick="closeSheet()">取消</button><button class="btn" onclick="impApply('json')">匯入</button></div>`;return}
  if(!R.rows.length)return toast('沒有找到可匯入的行程項目');const t=T();const def=t?.dep||new Date(Date.now()+14*864e5).toISOString().slice(0,10);const {dep,days}=toDays(R.rows,def);
  const dest=guessDest(R.rows)||t?.dest||'';const nF=R.rows.filter(r=>FL.test(r.name)&&AL[FL.exec(r.name)[1]]).length;
  $('#sheetBody').innerHTML=`<h2>預覽匯入</h2><p class="mut">共 ${R.rows.length} 筆、${days.length} 天${nF?`，其中 ${nF} 筆航班`:''}。地點若在推薦清單中，會自動帶入評分、價格與座標。</p>
  <div style="max-height:34vh;overflow:auto;border:1px solid var(--bd);border-radius:12px;padding:6px 10px;margin-bottom:10px">${days.map((d,i)=>`<div style="margin:4px 0"><b>Day ${i+1}</b>${d.map(r=>`<div class="mut" style="font-size:13px">${esc(r.time||'—')}　${esc(FL.test(r.name)?apTxt(r.name):r.name)}${r.note?' · '+esc(r.note):''}</div>`).join('')||'<div class="mut">（空）</div>'}</div>`).join('')}</div>
- <label class="fld">目的地<input id="imd" list="cities" value="${esc(dest)}" placeholder="例：東京"></label><label class="fld">第一天日期<input type="date" id="imdep" value="${dep}"></label>
+ <label class="fld">目的地<input id="imd" list="cities" value="${esc(dest)}" placeholder="例：東京"></label><label class="fld">第一天日期<input type="date" id="imdep" value="${esc(dep)}"></label>
  <div class="row"><button class="btn ghost" onclick="closeSheet()">取消</button>${t?`<button class="btn ghost" onclick="impApply('merge')">合併到目前行程</button>`:''}<button class="btn" onclick="impApply('new')">建立新行程</button></div>${t?`<p class="mut">合併會依天數加到「${esc(t.dest)} ${esc(t.dep)}」，不刪除原有景點。</p>`:''}`}
 window.impApply=async function(mode){if(mode==='json'){for(const x of R.trips){const t={...x,id:Date.now().toString(36)+Math.random().toString(36).slice(2,5)};trips.unshift(t);cur=t.id}save();toEdit();toast('已匯入 '+R.trips.length+' 個行程');return}
  const dest=$('#imd').value.trim(),dep=$('#imdep').value;if(!dest||!dep)return toast('請填寫目的地與日期');const dd=toDays(R.rows,dep).days;
