@@ -10,9 +10,9 @@ const FB_CFG = {
   appId: '1:55694360376:web:86b32176cc3d3a679a4bcd',
   measurementId: 'G-ZGDHVDCK0F'
 };
-/* 空字串時不啟用 GIS。填入後，登入改走 Google 按鈕 + signInWithCredential，不再經過 firebaseapp.com/__/auth/handler。 */
+/* 有網頁用戶端 ID 時，登入先走 Google 按鈕 + signInWithCredential。彈出視窗只做備援。 */
 const GOOGLE_WEB_CLIENT_ID = '55694360376-msm09rbmep1egq816gk98gfbqs0300n3.apps.googleusercontent.com';
-let fbP = null, fbMods = null, cloudUser = null, cloudUnsub = null, memUnsub = null, cloudTimer = 0, cloudWriting = false, cloudAck = null;
+let fbP = null, fbMods = null, cloudUser = null, cloudUnsub = null, memUnsub = null, actUnsub = null, cloudTimer = 0, cloudWriting = false, cloudAck = null, backupTimer = 0;
 const AUTH_INTENT = 'trip_auth_intent';
 
 function authErrText(code) {
@@ -125,6 +125,7 @@ function applyMerged(t, merged) {
 function listenTrip(id) {
   if (cloudUnsub) { cloudUnsub(); cloudUnsub = null; }
   if (memUnsub) { memUnsub(); memUnsub = null; }
+  if (actUnsub) { actUnsub(); actUnsub = null; }
   fbLoad().then(({ db, fsM }) => {
     cloudUnsub = fsM.onSnapshot(fsM.doc(db, 'trips', id), snap => {
       if (!snap.exists() || cloudWriting) return;
@@ -146,6 +147,20 @@ function listenTrip(id) {
       cloudPersist();
       if (TM.getTab && (TM.getTab() === 'edit' || TM.getTab() === 'expense')) TM.render();
     }, () => {});
+    let actFirst = true;
+    actUnsub = fsM.onSnapshot(fsM.collection(db, 'trips', id, 'activity'), snap => {
+      if (actFirst) {
+        actFirst = false;
+        snap.forEach(d => { if (typeof noteMarkSeen === 'function') noteMarkSeen(d.id); });
+        return;
+      }
+      snap.docChanges().forEach(ch => {
+        if (ch.type !== 'added') return;
+        const data = ch.doc.data() || {};
+        if (data.uid && data.uid === cloudUid()) return;
+        if (typeof noteActivity === 'function') noteActivity(ch.doc.id, data);
+      });
+    }, () => {});
   }).catch(() => {});
 }
 function cloudPush() {
@@ -164,6 +179,7 @@ async function pushNow(id) {
   stampAgainst(t, cloudAck);
   const payload = tripDoc(t);
   if (cloudAck && JSON.stringify(tripDoc(cloudAck)) === JSON.stringify(payload)) return;
+  const expBefore = JSON.stringify((cloudAck && cloudAck.expenses) || []);
   cloudWriting = true;
   try {
     const { db, fsM } = await fbLoad();
@@ -178,6 +194,7 @@ async function pushNow(id) {
       cloudAck = JSON.parse(JSON.stringify(merged));
     });
     cloudPersist();
+    if (JSON.stringify(t.expenses || []) !== expBefore) logActivity(id, 'expense', '支出有更新').catch(() => {});
   } catch (e) {
     if (TM.toast) TM.toast('雲端暫時存不了，這台裝置還留著');
   } finally { cloudWriting = false; }
@@ -385,6 +402,7 @@ async function finishJoin(code, user) {
     cloudAck = JSON.parse(JSON.stringify(t));
     cloudPersist();
     listenTrip(tripId);
+    logActivity(tripId, 'join', (user.displayName || '朋友') + '加入了行程').catch(() => {});
     TM.closeSheet();
     TM.go('edit');
     TM.toast('已加入，之後的修改會互相更新');
@@ -400,19 +418,138 @@ function submitJoin() {
   const pending = signInGoogle({ kind: 'join', code });
   pending.then(user => { if (user) return finishJoin(code, user); }).catch(() => {});
 }
+async function logActivity(tripId, type, text) {
+  if (!cloudUser || !tripId) return;
+  const { db, fsM } = await fbLoad();
+  const id = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  await fsM.setDoc(fsM.doc(db, 'trips', tripId, 'activity', id), {
+    type: type === 'join' || type === 'expense' ? type : 'edit',
+    text: String(text || '').slice(0, 180),
+    uid: cloudUser.uid,
+    at: Date.now()
+  });
+}
+function reviewDocId(uid, key, date) {
+  return uid + '_' + String(key || '').replace(/[^a-zA-Z0-9]/g, '').slice(0, 24) + '_' + date;
+}
+async function saveFoodReview(item) {
+  const uid = cloudUid();
+  if (!uid || !item) return { ok: false };
+  const key = String(item.placeKey || '').replace(/[^a-zA-Z0-9]/g, '').slice(0, 24);
+  const date = String(item.date || '');
+  if (!key || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return { ok: false };
+  const stars = Math.min(5, Math.max(1, Math.round(+item.stars || 0)));
+  const { db, fsM } = await fbLoad();
+  const id = reviewDocId(uid, key, date);
+  const ref = fsM.doc(db, 'reviews', id);
+  const prev = await fsM.getDoc(ref);
+  if (prev.exists()) return { ok: false, reason: 'dup' };
+  const photos = (item.photos || []).filter(s => typeof s === 'string' && s.indexOf('data:image/jpeg') === 0 && s.length < 280000).slice(0, 3);
+  while (photos.length && JSON.stringify(photos).length > 800000) photos.pop();
+  await fsM.setDoc(ref, {
+    uid,
+    placeKey: key,
+    placeName: String(item.placeName || '').slice(0, 80),
+    date,
+    stars,
+    text: String(item.text || '').slice(0, 500),
+    dishes: String(item.dishes || '').slice(0, 200),
+    price: +item.price > 0 ? +item.price : 0,
+    currency: String(item.currency || 'TWD').slice(0, 8),
+    photos,
+    at: Date.now()
+  });
+  return { ok: true, id };
+}
+async function deleteFoodReview(id) {
+  if (!cloudUid() || !id) return;
+  const { db, fsM } = await fbLoad();
+  await fsM.deleteDoc(fsM.doc(db, 'reviews', id));
+}
+async function communityScores(keys) {
+  const uniq = [...new Set((keys || []).map(k => String(k || '').replace(/[^a-zA-Z0-9]/g, '').slice(0, 24)).filter(Boolean))].slice(0, 10);
+  if (!uniq.length) return {};
+  const { db, fsM } = await fbLoad();
+  const q = fsM.query(fsM.collection(db, 'reviews'), fsM.where('placeKey', 'in', uniq));
+  const snap = await fsM.getDocs(q);
+  const bag = {};
+  snap.forEach(d => {
+    const x = d.data() || {};
+    if (!x.placeKey) return;
+    if (!bag[x.placeKey]) bag[x.placeKey] = [];
+    if (+x.stars > 0) bag[x.placeKey].push(+x.stars);
+  });
+  const out = {};
+  Object.keys(bag).forEach(k => {
+    const a = bag[k];
+    if (!a.length) return;
+    out[k] = { avg: Math.round((a.reduce((s, n) => s + n, 0) / a.length) * 10) / 10, n: a.length };
+  });
+  return out;
+}
+function scheduleBackup() {
+  if (!cloudUser || !window.SharePack || !window.TM) return;
+  clearTimeout(backupTimer);
+  backupTimer = setTimeout(() => { pushBackup().catch(() => {}); }, 1200);
+}
+async function pushBackup() {
+  if (!cloudUser || !window.SharePack || !window.TM) return;
+  const trips = TM.trips ? TM.trips() : [];
+  const payload = { v: 1, at: Date.now(), trips: trips.map(t => SharePack.normTrip(t, 0, true)).filter(Boolean).slice(0, 40) };
+  if (JSON.stringify(payload).length > 900000) {
+    if (TM.toast) TM.toast('行程太大，這次沒有寫進雲端備份。請改匯出 JSON');
+    return;
+  }
+  const { db, fsM } = await fbLoad();
+  await fsM.setDoc(fsM.doc(db, 'backups', cloudUser.uid), payload);
+}
+async function pullBackup(user) {
+  if (!user || !window.SharePack) return;
+  const { db, fsM } = await fbLoad();
+  const snap = await fsM.getDoc(fsM.doc(db, 'backups', user.uid));
+  if (!snap.exists()) { paintBackupHint(); return; }
+  const v = SharePack.validateTrips(snap.data(), { backup: true });
+  if (!v.ok) return;
+  const local = TM.trips ? TM.trips() : [];
+  if (!local.length && v.trips.length && typeof TM.replaceTrips === 'function') {
+    TM.replaceTrips(v.trips);
+    if (TM.toast) TM.toast('已從雲端備份帶回行程');
+    return;
+  }
+  window.__cloudBak = v.trips;
+  paintBackupHint();
+}
+function paintBackupHint() {
+  const el = document.querySelector('#bakhint');
+  if (!el) return;
+  if (!cloudUser) { el.innerHTML = '<p class="mut">未登入，所以沒有雲端備份。行程仍完整留在這台裝置。</p>'; return; }
+  if (window.__cloudBak && window.__cloudBak.length) {
+    el.innerHTML = `<p class="mut">雲端備份有 ${window.__cloudBak.length} 份行程。</p><button type="button" class="btn ghost" onclick="restoreCloudBackup()">用雲端備份覆蓋這台裝置</button>`;
+    return;
+  }
+  el.innerHTML = '<p class="mut">已登入。這台裝置上的行程會自動存進你的雲端備份。</p>';
+}
+function restoreCloudBackup() {
+  if (!window.__cloudBak || !window.__cloudBak.length) return;
+  if (!confirm('用雲端備份覆蓋這台裝置上的行程？')) return;
+  if (typeof TM.replaceTrips === 'function') TM.replaceTrips(window.__cloudBak.map(t => JSON.parse(JSON.stringify(t))));
+  if (TM.toast) TM.toast('已還原雲端備份');
+}
 function paintAccount() {
   const el = $('#acct');
   if (!el) return;
   if (!cloudUser) {
     const gis = GOOGLE_WEB_CLIENT_ID ? '<div id="gisbtn"></div><p class="mut">請用上面的 Google 按鈕。它直接在這個網站登入，不會打開 firebaseapp.com。</p>' : '';
     const label = GOOGLE_WEB_CLIENT_ID ? '改用彈出視窗登入' : '用 Google 登入';
-    el.innerHTML = `<div class="card"><b>Google 帳號</b><p class="mut">不登入也能排行程，資料只在這台裝置。登入之後才能把行程分享給朋友、一起改。</p>${gis}<button type="button" class="btn${GOOGLE_WEB_CLIENT_ID ? ' ghost' : ''}" onclick="signInGoogle({kind:'account'}).then(()=>paintAccount()).catch(()=>{})">${label}</button></div>`;
+    el.innerHTML = `<div class="card"><b>Google 帳號</b><p class="mut">不登入也能排行程，資料只在這台裝置。登入之後才能把行程分享給朋友、一起改，也才有雲端備份。</p>${gis}<button type="button" class="btn${GOOGLE_WEB_CLIENT_ID ? ' ghost' : ''}" onclick="signInGoogle({kind:'account'}).then(()=>paintAccount()).catch(()=>{})">${label}</button></div>`;
     renderGisButton();
+    paintBackupHint();
     return;
   }
   const name = cloudUser.displayName || cloudUser.email || '已登入';
   const photo = /^https:\/\//.test(cloudUser.photoURL || '') ? `<img class="ava" src="${TM.esc(cloudUser.photoURL)}" alt="">` : '';
-  el.innerHTML = `<div class="card"><div class="memrow">${photo}<b>${TM.esc(name)}</b></div><button type="button" class="btn ghost" style="margin-top:8px" onclick="signOutGoogle()">登出</button></div>`;
+  el.innerHTML = `<div class="card"><div class="memrow">${photo}<b>${TM.esc(name)}</b></div><p class="mut">登入後行程會自動存進雲端備份。沒登入時，用「其他」的 JSON 匯出即可。</p><button type="button" class="btn ghost" style="margin-top:8px" onclick="signOutGoogle()">登出</button></div>`;
+  paintBackupHint();
 }
 function memberBar(t) {
   if (!t || !t.cloudId) return '';
@@ -429,8 +566,11 @@ function afterAuthReady(mods) {
   authM.onAuthStateChanged(auth, user => {
     cloudUser = user || null;
     paintAccount();
+    paintBackupHint();
     const trip = curTrip();
     if (user && trip && trip.cloudId) listenTrip(trip.cloudId);
+    if (user) pullBackup(user).catch(() => {});
+    else window.__cloudBak = null;
   });
   authM.getRedirectResult(auth).then(cred => {
     if (!(cred && cred.user)) return;

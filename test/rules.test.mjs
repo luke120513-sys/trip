@@ -65,5 +65,21 @@ await assertFails(setDoc(doc(db('owner'), 'invites/ZX98QW'), { tripId: 't2', own
 await assertSucceeds(setDoc(doc(db('owner'), 'trips/t2/members/owner'), member('ZX98QW')));
 await assertSucceeds(deleteDoc(doc(db('owner'), 'trips/t1')));
 
+const review = { uid: 'owner', placeKey: 'abc', placeName: '一蘭', date: '2026-10-19', stars: 5, text: '好吃', dishes: '醬油', price: 980, currency: 'JPY', photos: [], at: Date.now() };
+await assertSucceeds(setDoc(doc(db('owner'), 'reviews/owner_abc_2026-10-19'), review));
+await assertFails(setDoc(doc(db('owner'), 'reviews/owner_abc_2026-10-19'), Object.assign({}, review, { text: '改' })));
+await assertFails(setDoc(doc(db('stranger'), 'reviews/stranger_abc_2026-10-19'), Object.assign({}, review, { uid: 'owner' })));
+await assertSucceeds(getDoc(doc(anon(), 'reviews/owner_abc_2026-10-19')));
+await assertSucceeds(deleteDoc(doc(db('owner'), 'reviews/owner_abc_2026-10-19')));
+await assertFails(deleteDoc(doc(db('stranger'), 'reviews/owner_abc_2026-10-19')));
+
+await assertSucceeds(setDoc(doc(db('owner'), 'backups/owner'), { v: 1, at: Date.now(), trips: [{ dest: '東京' }] }));
+await assertFails(getDoc(doc(db('stranger'), 'backups/owner')));
+await assertFails(getDoc(doc(anon(), 'backups/owner')));
+await assertFails(getDocs(collection(db('owner'), 'backups')));
+
+await assertSucceeds(setDoc(doc(db('friend'), 'trips/t1/activity/a1'), { type: 'join', text: '朋友加入了行程', uid: 'friend', at: Date.now() }));
+await assertFails(setDoc(doc(db('stranger'), 'trips/t1/activity/a2'), { type: 'join', text: '陌生人', uid: 'stranger', at: Date.now() }));
+
 await env.cleanup();
 console.log('rules tests ok');
