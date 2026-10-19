@@ -1,15 +1,15 @@
 /* 旅伴 一鍵排行程（延遲載入） */
 (function(){
-const KEY={東京:'tokyo',大阪:'osaka',京都:'kyoto',福岡:'fukuoka',沖繩:'okinawa',首爾:'seoul',釜山:'busan',曼谷:'bangkok',NRT:'tokyo',HND:'tokyo',KIX:'osaka',ITM:'osaka',FUK:'fukuoka',OKA:'okinawa',ICN:'seoul',GMP:'seoul',PUS:'busan',BKK:'bangkok',DMK:'bangkok'};
+const KEY={東京:'tokyo',大阪:'osaka',京都:'kyoto',福岡:'fukuoka',沖繩:'okinawa',首爾:'seoul',釜山:'busan',曼谷:'bangkok',NRT:'tokyo',HND:'tokyo',KIX:'osaka',ITM:'osaka',FUK:'fukuoka',OKA:'okinawa',ICN:'seoul',GMP:'seoul',PUS:'busan',BKK:'bangkok',DMK:'bangkok',香港:'hongkong',HKG:'hongkong',新加坡:'singapore',SIN:'singapore'};
 const cache={};
 const FX={JPY:.21,KRW:.023,THB:.95};
 async function load(k){if(cache[k])return cache[k];const r=await fetch('data/'+k+'.json');if(!r.ok)throw 0;return cache[k]=await r.json()}
-const dist=(a,b)=>a.lat!=null&&b.lat!=null?Math.hypot(a.lat-b.lat,(a.lng-b.lng)*Math.cos(a.lat*Math.PI/180))*111:(a.area&&a.area===b.area?1.5:8);
+const LA=x=>x.lat??x.alat,LN=x=>x.lng??x.alng;const dist=(a,b)=>a.area&&a.area===b.area?Math.min(1,LA(a)!=null&&LA(b)!=null?Math.hypot(LA(a)-LA(b),(LN(a)-LN(b))*Math.cos(LA(a)*Math.PI/180))*111:1):LA(a)!=null&&LA(b)!=null?Math.hypot(LA(a)-LA(b),(LN(a)-LN(b))*Math.cos(LA(a)*Math.PI/180))*111:8;
 const SLOT={早:0,午:1,下午:2,晚:3};
 const hm=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(Math.round(m%60/5)*5%60).padStart(2,'0');
 const toMin=s=>{const m=/^(\d\d?):(\d\d)/.exec(s||'');return m?+m[1]*60+ +m[2]:null};
 const gmap=it=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(it.lat!=null?it.lat+','+it.lng:it.local+' '+(it.area||''));
-function toSpot(it,time,d){return{time:hm(time),name:it.name,note:[it.area,it.note].filter(Boolean).join(' · '),kind:'auto',ptype:it.type,pid:it.id,meal:it.meal,link:gmap(it),rating:it.rating,priceInfo:it.price,summary:it.summary,src:it.src,count:it.count,checked:d.checked,lat:it.lat,lng:it.lng,area:it.area}}
+function toSpot(it,time,d){return{time:hm(time),name:it.name,note:[it.area,it.note].filter(Boolean).join(' · '),kind:'auto',ptype:it.type,pid:it.id,meal:it.meal,link:gmap(it),rating:it.rating,priceInfo:it.price,summary:it.summary,src:it.src,count:it.count,checked:d.checked,lat:it.lat,lng:it.lng,alat:it.alat,alng:it.alng,area:it.area}}
 function windowOf(day,isFirst,isLast){let s=9*60,e=21*60+30;const fl=day.filter(x=>x.kind==='flight'&&toMin(x.time)!=null);
  const out=fl.filter(x=>x.leg!=='return'),ret=fl.filter(x=>x.leg==='return');if(isFirst){const f=out[0];if(f){const arr=toMin(f.arr)??toMin((f.note||'').match(/抵達 (\d\d?:\d\d)/)?.[1])??toMin(f.time)+180;s=Math.max(s,arr+90)}else if(!ret.length)s=13*60}
  if(isLast){const f=ret[ret.length-1]||(!isFirst&&fl[fl.length-1]);if(f)e=Math.min(e,toMin(f.time)-180);else if(!fl.length)e=15*60}
@@ -28,14 +28,21 @@ function plan(t,d,opt){const cap={輕鬆:2,標準:3,緊湊:4}[opt.pace]||3;const
    while(pick.length<c){const cand=POI.filter(i=>!take.has(i.id));if(!cand.length)break;const nx=cand.reduce((m,i)=>dist(i,seed)-i.count*.8<dist(m,seed)-m.count*.8?i:m);
     if(dist(nx,seed)>15&&pick.length>=2)break;pick.push(nx);take.add(nx.id)}}
   pick.sort((a,b)=>SLOT[a.slot]-SLOT[b.slot]);
-  const sp=[];let cur=ws;const center=pick[0];let lunch=false,dinner=false;
-  const meal=(m,ref)=>{const c=R.filter(r=>!take.has(r.id)&&(r.meal===m||(m==='午'&&r.meal==='點心'&&false)));if(!c.length)return null;const best=c.reduce((x,r)=>dist(r,ref)-r.count*1.2<dist(x,ref)-x.count*1.2?r:x);take.add(best.id);return best};
-  for(const p of pick){const st=p.slot==='晚'?Math.max(cur,16*60):cur;if(!lunch&&cur<=14*60&&ws<13*60&&(cur>=11*60||st+Math.min(p.dur,120)>12*60+30)){const r=meal('午',p);if(r){const lt=Math.max(cur,11*60+30);sp.push(toSpot(r,lt,d));cur=lt+r.dur+20}lunch=true}
-   if(!dinner&&(p.slot==='晚'&&cur>=16*60+30||cur>=17*60+30)&&cur<we){const r=meal('晚',p);if(r){sp.push(toSpot(r,cur,d));cur+=r.dur+20}dinner=true}
-   if(p.slot==='晚'&&cur<16*60)cur=16*60;if(cur+p.dur>we+30)continue;sp.push(toSpot(p,cur,d));cur+=p.dur+30}
-  if(center&&!lunch&&ws<=12*60&&cur<=14*60&&we>=cur+60){const r=meal('午',pick[pick.length-1]);if(r){const lt=Math.max(cur,11*60+30);sp.push(toSpot(r,lt,d));cur=lt+r.dur+20}}
-  if(center&&!dinner&&we>=19*60&&cur<=20*60){const r=meal('晚',pick[pick.length-1]);if(r)sp.push(toSpot(r,Math.max(cur,18*60+30),d))}
-  if(!center&&hours>=2){const r=meal(we>=19*60?'晚':'午',{area:''});if(r)sp.push(toSpot(r,we>=19*60?Math.max(ws,18*60+30):Math.max(ws,12*60),d))}
+  const sp=[];let cur=ws,pos=pick[0]||null;const center=pick[0];let lunch=false,dinner=false;
+  const ms=(r,ref)=>dist(r,ref)+(LA(r)==null||LA(ref)==null?3:0)-Math.min(r.count,4)*.35;
+  const meal=(m,ref)=>{const c=R.filter(r=>!take.has(r.id)&&r.meal===m);if(!c.length)return null;const best=c.reduce((x,r)=>ms(r,ref)<ms(x,ref)?r:x);take.add(best.id);return best};
+  const fill=(until,ref)=>{while(until-cur>=90){const room=until-cur-30;const c=its.filter(i=>!take.has(i.id)&&i.note!=='近郊'&&i.dur<=room&&i.slot!=='晚'&&(i.type==='餐廳'?i.meal==='點心':(want.has(i.type)||i.type==='景點'||i.type==='購物'))&&dist(i,ref)<=6);
+    if(!c.length)break;const b=c.reduce((x,i)=>dist(i,ref)-i.count*.5<dist(x,ref)-x.count*.5?i:x);take.add(b.id);sp.push(toSpot(b,cur,d));cur+=b.dur+30;ref=b}return ref};
+  const eat=(m,t0)=>{const r=meal(m,pos||center);if(r){const t=Math.max(cur,t0);sp.push(toSpot(r,t,d));cur=t+r.dur+20;pos=r}};
+  for(const p of pick){let st=p.slot==='晚'?Math.max(cur,16*60):cur;
+   if(!lunch&&ws<13*60&&cur<=14*60&&(cur>=11*60||st+Math.min(p.dur,120)>12*60+30)){eat('午',11*60+30);lunch=true}
+   if(!dinner&&(p.slot==='晚'&&cur>=16*60+30||cur>=17*60+30)&&cur<we){eat('晚',cur);dinner=true}
+   st=p.slot==='晚'?Math.max(cur,16*60):cur;if(st-cur>=90)pos=fill(st,pos||p);cur=Math.max(cur,st);
+   if(cur+p.dur>we+30)continue;sp.push(toSpot(p,cur,d));cur+=p.dur+30;pos=p}
+  if(center&&!lunch&&ws<=12*60&&cur<=14*60&&we>=cur+60){eat('午',11*60+30);lunch=true}
+  if(center&&we-cur>=150&&cur<17*60)pos=fill(Math.min(we,17*60+30),pos);
+  if(center&&!dinner&&we>=19*60&&cur<=20*60){eat('晚',18*60);dinner=true}
+  if(!center&&hours>=2){eat(we>=19*60?'晚':'午',we>=19*60?Math.max(ws,18*60+30):Math.max(ws,12*60))}
   out.push(sp)}
  return out}
 function swap(t,d,i,j){const s=t.days[i][j];const used=new Set(t.days.flat().map(x=>x.pid));const c=d.items.filter(it=>!used.has(it.id)&&it.type===s.ptype&&(s.ptype!=='餐廳'||it.meal===s.meal||(!it.meal)));
