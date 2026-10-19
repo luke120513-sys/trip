@@ -39,7 +39,7 @@ assert.ok(src.includes('GOOGLE_WEB_CLIENT_ID'));
 assert.ok(src.includes('加到主畫面'));
 assert.ok(src.includes('這個網址還沒加入 Firebase 授權網域'));
 assert.ok(src.includes('登入視窗被關掉了'));
-assert.match(sw, /tripmate-v27/);
+assert.match(sw, /tripmate-v28/);
 assert.ok(sw.includes('/__/auth/'));
 assert.ok(sw.includes('firebaseapp.com'));
 assert.ok(sw.includes('accounts.google.com'));
