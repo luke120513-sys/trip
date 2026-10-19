@@ -65,6 +65,8 @@ html.dark .xsw{--xsw-bg:#232B35;--xsw-tx:#A3AFBC;--xsw-on:#2E3A48}html.dark .xsw
 const P='trip_',$=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ls={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(P+k))??d}catch{return d}},set:(k,v)=>localStorage.setItem(P+k,JSON.stringify(v))};
 const CITY={東京:'NRT',大阪:'KIX',京都:'KIX',福岡:'FUK',札幌:'CTS',沖繩:'OKA',名古屋:'NGO',首爾:'ICN',釜山:'PUS',曼谷:'BKK',香港:'HKG',新加坡:'SIN',吉隆坡:'KUL',馬尼拉:'MNL',胡志明市:'SGN',河內:'HAN',峇里島:'DPS',巴黎:'CDG',倫敦:'LHR',紐約:'JFK',高雄:'KHH'};
+const CALIAS={TYO:'東京',HND:'東京',NRT:'東京',OSA:'大阪',KIX:'大阪',ITM:'大阪',UKY:'京都',KYO:'京都',SEL:'首爾',ICN:'首爾',GMP:'首爾',SPK:'札幌',CTS:'札幌',BKK:'曼谷',DMK:'曼谷',FUK:'福岡',OKA:'沖繩',PUS:'釜山',HKG:'香港',SIN:'新加坡',NGO:'名古屋',KUL:'吉隆坡',MNL:'馬尼拉',SGN:'胡志明市',HAN:'河內',DPS:'峇里島',PAR:'巴黎',CDG:'巴黎',LON:'倫敦',LHR:'倫敦',NYC:'紐約',JFK:'紐約',KHH:'高雄'};
+const cityOf=c=>{if(!c)return'';const u=String(c).trim().toUpperCase();return CALIAS[u]||Object.keys(CITY).find(k=>CITY[k]===u)||(CITY[String(c).trim()]?String(c).trim():'')||String(c).trim()};
 const BASE=location.origin+'/';let trips=ls.get('trips',[]),cur=ls.get('cur',null),tab='list',deals=null;
 const save=()=>{ls.set('trips',trips);ls.set('cur',cur);pubCur()},T=()=>trips.find(t=>t.id===cur);
 const code=d=>CITY[d]||(/^[A-Za-z]{3}$/.test(d)?d.toUpperCase():d);
@@ -86,8 +88,8 @@ function ibDup(t,it){const d=it.data,i=Math.round((new Date(ibDate(it))-new Date
 function ibPlace(t,it){days(t);const d=it.data,idx=dt=>{const n=Math.round((new Date(dt)-new Date(t.dep))/864e5);return n>=0&&n<t.days.length?n:-1};
  if(it.type==='flight'){let i=idx(d.date||'');if(i<0)i=d.leg==='return'?t.days.length-1:0;t.days[i].push({time:d.time||'',name:`${d.flightNo||'航班'} ${d.from||''}→${d.to||''}`.trim(),note:[d.airline,d.arrTime?'抵達 '+d.arrTime:''].filter(Boolean).join(' · '),price:+d.price||undefined,link:safeLink(d.link),kind:'flight',leg:d.leg==='return'?'return':'out',arr:d.arrTime});t.days[i].sort((a,b)=>(a.time||'99').localeCompare(b.time||'99'));return'航班'}
  let a=idx(d.checkin||t.dep),b=idx(d.checkout||t.ret);if(a<0)a=0;if(b<0)b=t.days.length-1;for(let i=a;i<Math.max(a+1,b);i++)t.days[i].push({time:i===a?(d.checkinTime||'15:00'):'',name:`${d.name||'住宿'}`,note:i===a?'入住':'續住',price:i===a?(+d.price||undefined):undefined,priceLabel:i===a&&+d.price?`${Math.max(1,Math.round((new Date(d.checkout||t.ret)-new Date(d.checkin||t.dep))/864e5))} 晚共 NT$${Math.round(+d.price).toLocaleString()}`:undefined,link:safeLink(d.link),lat:d.lat,lng:d.lng,kind:'hotel'});if(b>a&&b<t.days.length)t.days[b].unshift({time:d.checkoutTime||'11:00',name:`${d.name||'住宿'}`,note:'退房',kind:'hotel'});return'住宿'}
-function ibCity(it){const d=it.data;const c=it.type==='flight'?(d.leg==='return'?d.from:d.to):(d.city||d.dest||'');if(!c)return'';const u=String(c).toUpperCase();return Object.keys(CITY).find(k=>CITY[k]===u||(u==='HND'&&k==='東京')||(u==='ITM'&&k==='大阪'))||c}
-function ibPrefill(it){const d=it.data;let dep=it.type==='flight'?d.date:d.checkin,ret=it.type==='hotel'?d.checkout:'';if(it.type==='flight'&&d.leg==='return'&&dep){ret=dep;const x=new Date(dep);x.setDate(x.getDate()-3);dep=x.toISOString().slice(0,10)}PF={dest:ibCity(it)||PF?.dest||'',dep,ret,from:it.from||(it.type==='hotel'?'fansave':'flysave')}}
+function ibCity(it){const d=it.data;const c=it.type==='flight'?(d.leg==='return'?d.from:d.to):(d.city||d.dest||'');return cityOf(c)}
+function ibPrefill(it){const d=it.data;let dep=it.type==='flight'?d.date:d.checkin,ret=it.type==='hotel'?d.checkout:'';if(it.type==='flight'&&d.leg==='return'&&dep){ret=dep;const x=new Date(dep);x.setDate(x.getDate()-3);dep=x.toISOString().slice(0,10)}PF={dest:ibCity(it)||PF?.dest||'',dep:dep||PF?.dep,ret:ret||PF?.ret,from:it.from||(it.type==='hotel'?'fansave':'flysave')}}
 let ibAsking=false;
 function consumeInbox(){const box=ibGet();if(!box.length)return;const keep=[],msgs=[],seen=new Set();let ask=null,skip=0;
  for(const it of box){if(!it||!it.data||!/^(flight|hotel)$/.test(it.type))continue;const k=ibKey(it);if(seen.has(k))continue;seen.add(k);
@@ -104,7 +106,7 @@ window.ibTo=function(id){const box=ibGet(),it=box.find(x=>x&&x.data&&!x.force&&!
  if(id==='new'){ibPrefill(it);hideSheet();history.replaceState({tab:'new'},'');tab='new';render();return}
  if(!id){ibSet(box.filter(x=>x!==it));closeSheet();setTimeout(consumeInbox,300);return}
  it.force=id;ibSet(box);closeSheet();setTimeout(consumeInbox,300)};
-function ibFromUrl(q){const raw=q.get('add');if(!raw)return false;try{const o=JSON.parse(raw);if(!o||!/^(flight|hotel)$/.test(o.type)||!o.data||typeof o.data!=='object')throw 0;const it={type:o.type,data:o.data,addedAt:Date.now(),from:q.get('from')||undefined};const box=ibGet();if(!box.some(x=>x&&x.data&&ibKey(x)===ibKey(it)))box.push(it);ibSet(box);return it}catch{toast('加入行程的資料格式有誤');return false}}
+function ibFromUrl(q){const raw=q.get('add');if(!raw)return false;try{const o=JSON.parse(raw);if(!o||!/^(flight|hotel)$/.test(o.type)||!o.data||typeof o.data!=='object')throw 0;const it={type:o.type,data:o.data,tripId:o.tripId||undefined,addedAt:Date.now(),from:q.get('from')||undefined};const box=ibGet();if(!box.some(x=>x&&x.data&&ibKey(x)===ibKey(it)))box.push(it);ibSet(box);return it}catch{toast('加入行程的資料格式有誤');return false}}
 const PK={東京:'tokyo',大阪:'osaka',京都:'kyoto',福岡:'fukuoka',沖繩:'okinawa',首爾:'seoul',釜山:'busan',曼谷:'bangkok',NRT:'tokyo',HND:'tokyo',KIX:'osaka',ITM:'osaka',FUK:'fukuoka',OKA:'okinawa',ICN:'seoul',GMP:'seoul',PUS:'busan',BKK:'bangkok',DMK:'bangkok',香港:'hongkong',HKG:'hongkong',新加坡:'singapore',SIN:'singapore'},PDATE='2026-10-19';
 const PKEY=t=>PK[t.dest]||PK[code(t.dest)];
 const rIco=r=>/\d\.\d/.test(r)?'⭐':'📝';function spotIcon(s){if(s.kind==='flight')return'fly';if(s.kind==='hotel')return'hotel';return{餐廳:'food',購物:'shop',夜景:'night'}[s.ptype]||'spot'}
@@ -202,8 +204,8 @@ $('#thbtn').onclick=()=>{ls.set('theme',document.documentElement.classList.conta
 if(ls.get('annRead',0))$('#annn').textContent='';$('#annbell').onclick=()=>{ls.set('annRead',1);$('#annn').textContent='';$('#sheetBody').innerHTML=`<h2>📢 公告</h2><p>旅伴上線！可一鍵串連飛省與飯省。</p><button class="btn blk" onclick="closeSheet()">知道了</button>`;openSheet()};
 $('#nfybell').onclick=()=>{$('#sheetBody').innerHTML=`<h2>🔔 通知</h2><p class="mut">目前沒有通知</p><button class="btn blk" onclick="closeSheet()">關閉</button>`;openSheet()};
 const Q=new URLSearchParams(location.search);let PF=null;const ADD=ibFromUrl(Q);
-if(Q.get('dest')){const d=Q.get('dest'),c=Object.keys(CITY).find(k=>CITY[k]===d.toUpperCase()||(d.toUpperCase()==='HND'&&k==='東京')||(d.toUpperCase()==='ITM'&&k==='大阪'));PF={dest:c||d,dep:Q.get('dep'),ret:Q.get('ret'),pax:Q.get('pax'),orig:Q.get('orig'),from:Q.get('from')}}
-if(ADD){PF=null;if(!trips.length)ibPrefill(ADD)}history.replaceState({tab:PF||!trips.length?'new':'list'},'',location.pathname);tab=PF||!trips.length?'new':'list';render();
+if(Q.get('dest')){const d=Q.get('dest');PF={dest:cityOf(d),dep:Q.get('dep'),ret:Q.get('ret'),pax:Q.get('pax'),orig:Q.get('orig'),from:Q.get('from')}}
+if(ADD){if(trips.length)PF=null;else ibPrefill(ADD)}history.replaceState({tab:PF||!trips.length?'new':'list'},'',location.pathname);tab=PF||!trips.length?'new':'list';render();
 document.addEventListener('pointerdown',e=>{const b=e.target.closest('.btn');if(!b||b.disabled)return;b.classList.remove('press');void b.offsetWidth;b.classList.add('press')});
 addEventListener('storage',e=>{if(e.key==='shared_tripInbox'&&e.newValue)consumeInbox();else if(e.key===P+'trips'||e.key===P+'cur'){trips=ls.get('trips',[]);cur=ls.get('cur',null);render()}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)consumeInbox()});
