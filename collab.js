@@ -11,7 +11,7 @@ const FB_CFG = {
   measurementId: 'G-ZGDHVDCK0F'
 };
 /* 空字串時不啟用 GIS。填入後，登入改走 Google 按鈕 + signInWithCredential，不再經過 firebaseapp.com/__/auth/handler。 */
-const GOOGLE_WEB_CLIENT_ID = '';
+const GOOGLE_WEB_CLIENT_ID = '55694360376-msm09rbmep1egq816gk98gfbqs0300n3.apps.googleusercontent.com';
 let fbP = null, fbMods = null, cloudUser = null, cloudUnsub = null, memUnsub = null, cloudTimer = 0, cloudWriting = false, cloudAck = null;
 const AUTH_INTENT = 'trip_auth_intent';
 
@@ -321,10 +321,36 @@ async function finishShare(user) {
     TM.toast('分享沒有成功。請確認已開啟 Firestore，並貼上規則');
   }
 }
+function gisReady() {
+  return !!(GOOGLE_WEB_CLIENT_ID && window.__gis === 'ready' && window.google && google.accounts && google.accounts.id);
+}
+function offerGis(intent, hint) {
+  if (!gisReady()) return false;
+  rememberIntent(intent);
+  window.__gisIntent = intent;
+  $('#sheetBody').innerHTML = `<h2>用 Google 登入</h2><p class="mut">${TM.esc(hint || '這個按鈕不會離開旅伴，也不會經過登入跳轉頁。')}</p><div id="gisbtn"></div><p class="mut">若按鈕沒有出現，再用下面的彈出視窗。</p><button type="button" class="btn ghost" onclick="gisPopupFallback()">改用彈出視窗登入</button>`;
+  if (!$('#sheet').classList.contains('on')) TM.openSheet();
+  renderGisButton();
+  try { google.accounts.id.prompt(); } catch (e) {}
+  return true;
+}
+function gisPopupFallback() {
+  const intent = window.__gisIntent || null;
+  try { sessionStorage.removeItem(AUTH_INTENT); } catch (e) {}
+  const pending = signInGoogle(intent);
+  pending.then(user => {
+    if (!user) return;
+    if (intent && intent.kind === 'share') return finishShare(user);
+    if (intent && intent.kind === 'join' && intent.code) return finishJoin(intent.code, user);
+    paintAccount();
+  }).catch(() => {});
+}
 function shareCloud() {
   const t = curTrip();
   if (!t) { if (TM.toast) TM.toast('請先選一個行程'); return; }
   if (t.cloudId && t.inviteCode) { showInvite(t); listenTrip(t.cloudId); return; }
+  if (cloudUser) { finishShare(cloudUser); return; }
+  if (offerGis({ kind: 'share' }, '登入後就會分享這份行程。請用上面的 Google 按鈕，它不會整頁跳走。')) return;
   const pending = signInGoogle({ kind: 'share' });
   pending.then(user => { if (user) return finishShare(user); }).catch(() => {});
 }
@@ -369,6 +395,8 @@ async function finishJoin(code, user) {
 function submitJoin() {
   const code = ($('#jcode') && $('#jcode').value || '').trim().toUpperCase();
   if (!/^[A-Z0-9]{6}$/.test(code)) { TM.toast('邀請碼是 6 個英數'); return; }
+  if (cloudUser) { finishJoin(code, cloudUser); return; }
+  if (offerGis({ kind: 'join', code }, '登入後就會加入這份行程。請用上面的 Google 按鈕。')) return;
   const pending = signInGoogle({ kind: 'join', code });
   pending.then(user => { if (user) return finishJoin(code, user); }).catch(() => {});
 }
@@ -376,8 +404,9 @@ function paintAccount() {
   const el = $('#acct');
   if (!el) return;
   if (!cloudUser) {
-    const gis = GOOGLE_WEB_CLIENT_ID ? '<div id="gisbtn"></div><p class="mut">上面的 Google 按鈕不會離開這個網站。若沒有出現，再用下面的方式。</p>' : '';
-    el.innerHTML = `<div class="card"><b>Google 帳號</b><p class="mut">不登入也能排行程，資料只在這台裝置。登入之後才能把行程分享給朋友、一起改。</p>${gis}<button type="button" class="btn" onclick="signInGoogle({kind:'account'}).then(()=>paintAccount()).catch(()=>{})">用 Google 登入</button></div>`;
+    const gis = GOOGLE_WEB_CLIENT_ID ? '<div id="gisbtn"></div><p class="mut">請用上面的 Google 按鈕。它直接在這個網站登入，不會打開 firebaseapp.com。</p>' : '';
+    const label = GOOGLE_WEB_CLIENT_ID ? '改用彈出視窗登入' : '用 Google 登入';
+    el.innerHTML = `<div class="card"><b>Google 帳號</b><p class="mut">不登入也能排行程，資料只在這台裝置。登入之後才能把行程分享給朋友、一起改。</p>${gis}<button type="button" class="btn${GOOGLE_WEB_CLIENT_ID ? ' ghost' : ''}" onclick="signInGoogle({kind:'account'}).then(()=>paintAccount()).catch(()=>{})">${label}</button></div>`;
     renderGisButton();
     return;
   }
