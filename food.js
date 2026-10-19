@@ -225,31 +225,8 @@ function foodType() { const q = $('#foodq') && $('#foodq').value.trim(); const t
 async function foodGeo(q) {
   q = String(q || '').trim();
   if (q.length < 2) return [];
-  try {
-    const u = new URL('https://photon.komoot.io/api/');
-    u.searchParams.set('q', q); u.searchParams.set('limit', '6');
-    const r = await fetch(u, { signal: AbortSignal.timeout(8000) });
-    if (r.ok) {
-      const j = await r.json();
-      const hits = (j.features || []).map(f => {
-        const p = f.properties || {}, c = f.geometry && f.geometry.coordinates;
-        if (!c) return null;
-        const name = p.name || p.city || p.state || q;
-        return { name: String(name), addr: [p.city, p.state, p.country].filter(Boolean).join(' · '), lat: +c[1], lng: +c[0] };
-      }).filter(x => x && Number.isFinite(x.lat));
-      if (hits.length) return hits;
-    }
-  } catch (e) {}
-  try {
-    const u = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&accept-language=zh-TW&q=' + encodeURIComponent(q);
-    const r = await fetch(u, { signal: AbortSignal.timeout(8000), headers: { 'Accept-Language': 'zh-TW' } });
-    if (r.ok) {
-      const j = await r.json();
-      const hits = (Array.isArray(j) ? j : []).map(x => ({ name: String((x.namedetails && (x.namedetails.name || x.namedetails['name:zh'])) || x.name || q).split(',')[0], addr: String(x.display_name || ''), lat: +x.lat, lng: +x.lon })).filter(x => Number.isFinite(x.lat));
-      if (hits.length) return hits;
-    }
-  } catch (e) {}
-  try { if (typeof geoFind === 'function') { const g = await geoFind(q); if (g && g.latitude != null) return [{ name: g.name || q, addr: [g.admin1, g.country].filter(Boolean).join(' · '), lat: +g.latitude, lng: +g.longitude }]; } } catch (e) {}
+  const dest = (typeof TM !== 'undefined' && TM.T && TM.T() && TM.T().dest) || '';
+  if (typeof geoSearch === 'function') return geoSearch(q, dest);
   return [];
 }
 async function runFoodSug(q, tok) {

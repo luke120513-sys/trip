@@ -8,12 +8,9 @@ let FXR=null,expTok=0,FOODDB=null,pendingAdd=null,expCat='餐飲',ocrTok=0,rateK
 
 function loadScript(src){return new Promise((ok,no)=>{if([...document.scripts].some(s=>s.src===src)){ok();return}const e=document.createElement('script');e.src=src;e.onload=ok;e.onerror=()=>no(new Error('load'));document.head.append(e)})}
 function cityBias(dest){if(!dest||!window.TM)return null;const c=TM.cityOf(dest)||dest;const ll=CITY_LL[c]||CITY_LL[dest];return ll?{lat:ll[0],lng:ll[1]}:null}
-function nearHits(hits,dest){const b=cityBias(dest);if(!b||!hits.length)return hits;const close=hits.filter(h=>TM.havKm(b,h)<120);return close.length?close:hits}
 
-async function geoSearch(q,dest){q=String(q||'').trim();if(q.length<2)return[];const query=(q+' '+(dest||'')).trim();const bias=cityBias(dest);
- try{const u=new URL('https://photon.komoot.io/api/');u.searchParams.set('q',query);u.searchParams.set('limit','6');if(bias){u.searchParams.set('lat',String(bias.lat));u.searchParams.set('lon',String(bias.lng))}
-  const r=await fetch(u,{signal:AbortSignal.timeout(8000)});if(r.ok){const j=await r.json();const hits=(j.features||[]).map(f=>{const p=f.properties||{},c=f.geometry&&f.geometry.coordinates;if(!c||c.length<2)return null;const name=p.name||p.street||q;const addr=[p.street,p.district,p.city,p.state,p.country].filter((v,i,a)=>v&&a.indexOf(v)===i).join(' · ');return{name:String(name),addr,lat:+c[1],lng:+c[0]}}).filter(x=>x&&Number.isFinite(x.lat)&&Number.isFinite(x.lng));if(hits.length)return nearHits(hits,dest)}}catch(e){}
- try{const u='https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&accept-language=zh-TW&q='+encodeURIComponent(query);const r=await fetch(u,{signal:AbortSignal.timeout(8000),headers:{'Accept-Language':'zh-TW'}});if(r.ok){const j=await r.json();const hits=(Array.isArray(j)?j:[]).map(x=>{const name=(x.namedetails&&(x.namedetails.name||x.namedetails['name:zh']))||x.name||String(x.display_name||q).split(',')[0];return{name:String(name).trim(),addr:String(x.display_name||''),lat:+x.lat,lng:+x.lon}}).filter(x=>x.name&&Number.isFinite(x.lat)&&Number.isFinite(x.lng));if(hits.length)return nearHits(hits,dest)}}catch(e){}
+async function geoSearch(q,dest){q=String(q||'').trim();if(q.length<2)return[];
+ if(typeof PlaceQ!=='undefined'&&PlaceQ.search){try{const hits=await PlaceQ.search(q,{bias:cityBias(dest),limit:8,few:3});if(hits&&hits.length)return hits}catch(e){}}
  try{if(typeof geoFind==='function'){const g=await geoFind(q);if(g&&g.latitude!=null)return[{name:g.name||q,addr:[g.admin1,g.country].filter(Boolean).join(' · '),lat:+g.latitude,lng:+g.longitude}]}}catch(e){}
  return[]}
 
