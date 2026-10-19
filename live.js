@@ -40,25 +40,6 @@ function agoText(at) {
   const d = new Date(at);
   return pad2(d.getHours()) + ':' + pad2(d.getMinutes());
 }
-function hmLocal(iso) {
-  const d = new Date(iso);
-  if (isNaN(d)) return '';
-  return d.toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
-}
-function summarizeItin(j) {
-  const it = j && j.itineraries && j.itineraries[0];
-  if (!it) return null;
-  const ride = (it.legs || []).find(lg => lg && lg.mode && lg.mode !== 'WALK');
-  if (!ride) return { text: '這段步行就可到', realtime: false };
-  const short = String(ride.routeShortName || '').trim();
-  const human = short && short.length <= 10 && !/^\d{5,}$/.test(short);
-  const modeL = { SUBWAY: '地鐵', BUS: '公車', TRAM: '路面電車', RAIL: '鐵路', REGIONAL_RAIL: '鐵路', HIGHSPEED_RAIL: '高鐵', METRO: '地鐵', FERRY: '渡輪', COACH: '客運' }[ride.mode] || '';
-  const name = human ? short : ([ride.agencyName, modeL].filter(Boolean).join(' ') || '大眾運輸');
-  const head = ride.headsign || (ride.to && ride.to.name) || '';
-  const when = hmLocal(ride.startTime || ride.scheduledStartTime);
-  const rt = ride.realTime ? '即時' : '時刻表';
-  return { text: [name, when ? when + ' 開' : '', head ? '往' + head : '', rt].filter(Boolean).join(' · '), realtime: !!ride.realTime };
-}
 async function askTransit(a, b, when) {
   const off = -when.getTimezoneOffset();
   const sign = off >= 0 ? '+' : '-';
@@ -67,7 +48,71 @@ async function askTransit(a, b, when) {
   const u = 'https://api.transitous.org/api/v1/plan?fromPlace=' + a.lat.toFixed(5) + ',' + a.lng.toFixed(5) + '&toPlace=' + b.lat.toFixed(5) + ',' + b.lng.toFixed(5) + '&time=' + encodeURIComponent(iso) + '&numItineraries=1';
   const r = await fetch(u, { signal: AbortSignal.timeout(12000) });
   if (!r.ok) throw 0;
-  return summarizeItin(await r.json());
+  return r.json();
+}
+function stepHtml(s) {
+  const esc = TM.esc;
+  if (s.kind === 'walk') {
+    if (s.to) return `<div class="legstep">步行到 <b>${esc(s.to)}</b>${s.min ? '（約 ' + s.min + ' 分）' : ''}</div>`;
+    if (s.from) return `<div class="legstep">在 <b>${esc(s.from)}</b> 下車後，步行約 ${s.min || 1} 分到目的地</div>`;
+    return `<div class="legstep">這段步行約 ${s.min || 1} 分</div>`;
+  }
+  const swatch = s.color ? `<i class="legswatch" style="background:${esc(s.color)}"></i>` : '';
+  const orig = s.lineOrig && s.lineOrig !== s.line ? '（' + esc(s.lineOrig) + '）' : '';
+  const line = `<span class="legline">${swatch}${esc(s.line || '大眾運輸')}${orig}</span>`;
+  const dir = s.direction ? ' 往 ' + esc(s.direction) : '';
+  const bits = [];
+  if (s.stops) bits.push(s.stops + ' 站');
+  if (s.min) bits.push('約 ' + s.min + ' 分');
+  const meta = bits.length ? '（' + bits.join('，') + '）' : '';
+  const alight = s.alight ? `<div class="legalight">在 ${esc(s.alight)} 下車${meta}</div>` : '';
+  return `<div class="legstep">搭 ${line}${dir}${alight}</div>`;
+}
+function planHtml(plan) {
+  if (!plan || !plan.steps) return '';
+  const esc = TM.esc;
+  const steps = plan.steps.map(stepHtml).join('');
+  const fare = plan.fare ? `<div class="legfare">車資${esc(plan.fare)}</div>` : '';
+  const note = plan.note ? `<div class="legfare">${esc(plan.note)}</div>` : '';
+  return steps + fare + note;
+}
+async function overpassStop(p) {
+  const q = '[out:json][timeout:12];node(around:1200,' + p.lat + ',' + p.lng + ')["railway"="station"];out tags 8;';
+  const hosts = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
+  for (const host of hosts) {
+    try {
+      const r = await fetch(host + '?data=' + encodeURIComponent(q), { signal: AbortSignal.timeout(9000) });
+      if (!r.ok) continue;
+      const j = await r.json();
+      const nodes = (j.elements || []).filter(e => e && e.tags && (e.tags['name:zh-Hant'] || e.tags['name:zh'] || e.tags.name) && e.lat != null);
+      if (!nodes.length) continue;
+      nodes.sort((a, b) => Legs.km(p, { lat: a.lat, lng: a.lon }) - Legs.km(p, { lat: b.lat, lng: b.lon }));
+      const n = nodes[0];
+      const name = n.tags['name:zh-Hant'] || n.tags['name:zh'] || n.tags.name;
+      return { name: Legs.stationZh(name) || name, lat: +n.lat, lng: +n.lon, km: Legs.km(p, { lat: +n.lat, lng: +n.lon }) };
+    } catch (e) {}
+  }
+  return null;
+}
+function withTableFare(plan, a, b) {
+  if (!plan || plan.fare || !window.Legs) return plan;
+  const known = Legs.knownRoute(a, b);
+  if (!known || !known.fare || known.alight !== plan.alight) return plan;
+  const ride = (plan.steps || []).find(s => s.kind === 'ride');
+  const kride = (known.steps || []).find(s => s.kind === 'ride');
+  if (!ride || !kride) return plan;
+  const blob = (ride.line || '') + (ride.lineOrig || '') + (ride.short || '');
+  const mark = (kride.lineOrig || kride.line || '').replace(/\s+/g, '');
+  if (mark && blob.includes(mark.slice(0, 4))) plan.fare = known.fare;
+  return plan;
+}
+async function fallbackPlan(a, b) {
+  if (!window.Legs) return null;
+  const known = Legs.knownRoute(a, b);
+  if (known) return known;
+  let from = null, to = null;
+  try { [from, to] = await Promise.all([overpassStop(a), overpassStop(b)]); } catch (e) {}
+  return Legs.nearbyPlan(a, b, from, to);
 }
 function paintLive(key, rec) {
   const box = document.querySelector('[data-live="' + key + '"]');
@@ -82,8 +127,9 @@ function paintLive(key, rec) {
   if (!t || !rec) { box.innerHTML = ''; return; }
   const g = `<a href="${TM.esc(rec.gmaps)}" target="_blank" rel="noopener">Google 路線</a>`;
   const off = rec.official ? `<a href="${TM.esc(rec.official.url)}" target="_blank" rel="noopener">${TM.esc(rec.official.label)}</a>` : '';
-  const tx = rec.text ? `<span>${TM.esc(rec.text)}</span>` : `<span>${rec.offline ? '目前離線，顯示上次查到的班次' : '正在查班次…'}</span>`;
-  box.innerHTML = tx + g + off;
+  const links = `<div class="leglinks">${g}${off}</div>`;
+  const body = rec.plan ? planHtml(rec.plan) : `<div class="legstep">${TM.esc(rec.text || (rec.offline ? '目前離線，顯示上次查到的走法' : '正在查這段怎麼搭…'))}</div>`;
+  box.innerHTML = body + links;
 }
 async function fillOne(key, a, b, when, fromName, toName, dest) {
   const ck = [a.lat.toFixed(3), a.lng.toFixed(3), b.lat.toFixed(3), b.lng.toFixed(3), when.toISOString().slice(0, 16)].join('|');
@@ -94,11 +140,21 @@ async function fillOne(key, a, b, when, fromName, toName, dest) {
   paintLive(key, { gmaps, official, text: '', at: hit && hit.at });
   if (navigator.onLine === false) {
     if (hit) paintLive(key, Object.assign({ gmaps, official, offline: true }, hit));
+    else {
+      const plan = window.Legs && (Legs.knownRoute(a, b) || Legs.nearbyPlan(a, b));
+      paintLive(key, { gmaps, official, plan, text: plan ? '' : '目前離線，這段還沒查過', offline: true, at: 0 });
+    }
     return;
   }
   try {
-    const sum = await askTransit(a, b, when);
-    const rec = { at: Date.now(), text: sum ? sum.text : '這段沒查到班次', gmaps, official };
+    let plan = null;
+    try {
+      const raw = await askTransit(a, b, when);
+      plan = window.Legs ? Legs.fromTransitous(raw) : null;
+    } catch (e) { plan = null; }
+    if (plan && !plan.fare) plan = withTableFare(plan, a, b);
+    if (!plan) plan = await fallbackPlan(a, b);
+    const rec = { at: Date.now(), plan, text: plan ? '' : '這段沒查到班次', gmaps, official };
     LIVE.set(ck, rec);
     paintLive(key, rec);
   } catch (e) {
