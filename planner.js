@@ -3,7 +3,7 @@
 const KEY={東京:'tokyo',大阪:'osaka',京都:'kyoto',福岡:'fukuoka',沖繩:'okinawa',首爾:'seoul',釜山:'busan',曼谷:'bangkok',NRT:'tokyo',HND:'tokyo',KIX:'osaka',ITM:'osaka',FUK:'fukuoka',OKA:'okinawa',ICN:'seoul',GMP:'seoul',PUS:'busan',BKK:'bangkok',DMK:'bangkok',香港:'hongkong',HKG:'hongkong',新加坡:'singapore',SIN:'singapore'};
 const cache={};
 const FX={JPY:.21,KRW:.023,THB:.95};
-async function load(k){if(cache[k])return cache[k];const r=await fetch('data/'+k+'.json');if(!r.ok)throw 0;return cache[k]=await r.json()}
+async function load(k){if(cache[k])return cache[k];const r=await fetch('data/'+k+'.json');if(!r.ok)throw 0;const d=await r.json();d.items=(d.items||[]).filter(i=>!i.closed);return cache[k]=d}
 const LA=x=>x.lat??x.alat,LN=x=>x.lng??x.alng;const dist=(a,b)=>a.area&&a.area===b.area?Math.min(1,LA(a)!=null&&LA(b)!=null?Math.hypot(LA(a)-LA(b),(LN(a)-LN(b))*Math.cos(LA(a)*Math.PI/180))*111:1):LA(a)!=null&&LA(b)!=null?Math.hypot(LA(a)-LA(b),(LN(a)-LN(b))*Math.cos(LA(a)*Math.PI/180))*111:8;
 const SLOT={早:0,午:1,下午:2,晚:3};
 const hm=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(Math.round(m%60/5)*5%60).padStart(2,'0');

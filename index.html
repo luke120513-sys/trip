@@ -286,7 +286,7 @@ let lastBack=0;addEventListener('popstate',e=>{if($('#sheet').classList.contains
 function toast(m){const d=document.createElement('div');d.className='toast';d.textContent=m;document.body.append(d);setTimeout(()=>d.remove(),1800)}
 const DCITY_N={tokyo:'東京',osaka:'大阪',kyoto:'京都',fukuoka:'福岡',okinawa:'沖繩',seoul:'首爾',busan:'釜山',bangkok:'曼谷',hongkong:'香港',singapore:'新加坡'},DCAT=['門票','交通','網卡','一日遊'],DCI={門票:'spot',交通:'suitcase',網卡:'share',一日遊:'time'};
 let DL={},DC=null,DK=null;try{localStorage.removeItem('trip_deals')}catch{}
-async function getDeals(k){if(DL[k])return DL[k];const r=await fetch('data/deals-'+k+'.json');if(!r.ok)throw 0;return DL[k]=await r.json()}
+async function getDeals(k){if(DL[k])return DL[k];const r=await fetch('data/deals-'+k+'.json');if(!r.ok)throw 0;const d=await r.json();d.items=(d.items||[]).filter(x=>!x.expired);return DL[k]=d}
 const dcard=x=>`<div class="card dcard"><div class="dhd">${ui(DCI[x.cat]||'spot')}<b>${esc(x.name)}</b><span class="chip sm">${esc(x.cat)}</span></div><div class="dpr">${esc(x.price)}</div>${x.desc?`<div class="mut">${esc(x.desc)}</div>`:''}<div class="dsrc">${srcLinks(x.src,'・')}</div></div>`;
 async function loadDeals(){const t=T();
  if(tab==='deals'){const k=DK||(t&&PKEY(t))||'tokyo';DK=k;const box=$('#dl');if(!box)return;
