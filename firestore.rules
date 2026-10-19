@@ -67,6 +67,63 @@ service cloud.firestore {
           && request.resource.data.joinedAt is number;
         allow update, delete: if false;
       }
+
+      match /activity/{actId} {
+        allow get, list: if member(tripId);
+        allow create: if member(tripId)
+          && request.resource.data.keys().hasOnly(['type', 'text', 'uid', 'at'])
+          && request.resource.data.uid == request.auth.uid
+          && request.resource.data.type in ['join', 'expense', 'edit']
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() < 200
+          && request.resource.data.at is number;
+        allow update, delete: if false;
+      }
+    }
+
+    match /reviews/{id} {
+      allow get, list: if true;
+      allow create: if signedIn()
+        && id == request.auth.uid + '_' + request.resource.data.placeKey + '_' + request.resource.data.date
+        && request.resource.data.keys().hasOnly(['uid', 'placeKey', 'placeName', 'date', 'stars', 'text', 'dishes', 'price', 'currency', 'photos', 'at'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.placeKey is string
+        && request.resource.data.placeKey.size() > 0
+        && request.resource.data.placeKey.size() < 40
+        && request.resource.data.placeName is string
+        && request.resource.data.placeName.size() < 90
+        && request.resource.data.date is string
+        && request.resource.data.date.matches('^\\d{4}-\\d{2}-\\d{2}$')
+        && request.resource.data.stars is number
+        && request.resource.data.stars >= 1
+        && request.resource.data.stars <= 5
+        && request.resource.data.text is string
+        && request.resource.data.text.size() <= 500
+        && request.resource.data.dishes is string
+        && request.resource.data.dishes.size() <= 200
+        && request.resource.data.price is number
+        && request.resource.data.currency is string
+        && request.resource.data.currency.size() < 12
+        && request.resource.data.photos is list
+        && request.resource.data.photos.size() <= 3
+        && request.resource.data.at is number
+        && !('email' in request.resource.data);
+      allow update: if false;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+    }
+
+    match /backups/{uid} {
+      allow get: if signedIn() && request.auth.uid == uid;
+      allow list: if false;
+      allow create, update: if signedIn()
+        && request.auth.uid == uid
+        && request.resource.data.keys().hasOnly(['v', 'at', 'trips'])
+        && request.resource.data.v == 1
+        && request.resource.data.at is number
+        && request.resource.data.trips is list
+        && request.resource.data.trips.size() <= 40;
+      allow delete: if signedIn() && request.auth.uid == uid;
     }
   }
 }
