@@ -225,7 +225,7 @@ async function ensureFoodPlace() {
   return null;
 }
 let foodUrlSpot = null;
-function foodType() { const q = $('#foodq') && $('#foodq').value.trim(); const tok = ++foodSugTok; clearTimeout(foodSugTimer); const box = $('#foodsug'); if (!q || q.length < 2) { if (box) box.innerHTML = ''; return; } if (window.PlaceUrl && PlaceUrl.isUrl(q)) { if (!PlaceUrl.ready(q)) { if (box) box.innerHTML = '<div class="mut">貼上完整的店家網址，會直接帶出這一間。</div>'; return; } if (box) box.innerHTML = '<div class="mut">正在讀這個網址…</div>'; foodSugTimer = setTimeout(() => runFoodUrl(q, tok), 280); return; } foodSugTimer = setTimeout(() => runFoodSug(q, tok), 280); }
+function foodType() { const q = $('#foodq') && $('#foodq').value.trim(); const tok = ++foodSugTok; clearTimeout(foodSugTimer); const box = $('#foodsug'); if (!q || q.length < 2) { if (box) box.innerHTML = ''; return; } if (window.PlaceUrl && PlaceUrl.isUrl(q)) { if (!PlaceUrl.ready(q)) { if (box) box.innerHTML = '<div class="mut">貼上完整的店家網址，會直接帶出這一間。</div>'; return; } if (box) box.innerHTML = '<div class="mut">正在讀這個網址…</div>'; foodSugTimer = setTimeout(() => runFoodUrl(q, tok), 300); return; } foodSugTimer = setTimeout(() => runFoodSug(q, tok), 300); }
 async function runFoodUrl(q, tok) {
   const box = $('#foodsug');
   let res;
@@ -278,9 +278,16 @@ function foodDiaryFromUrl() {
 async function foodGeo(q) {
   q = String(q || '').trim();
   if (q.length < 2) return [];
-  const dest = (typeof TM !== 'undefined' && TM.T && TM.T() && TM.T().dest) || '';
-  if (typeof geoSearch === 'function') return geoSearch(q, dest);
+  const here = foodPlace && Number.isFinite(+foodPlace.lat) ? { lat: +foodPlace.lat, lng: +foodPlace.lng } : null;
+  const named = foodPlace && foodPlace.name && foodPlace.name !== '我的位置' ? foodPlace.name : '';
+  const dest = named || (typeof TM !== 'undefined' && TM.T && TM.T() && TM.T().dest) || '';
+  if (typeof geoSearch === 'function') return geoSearch(q, dest, here);
   return [];
+}
+function placeSugHtml(hits, fn) {
+  const branched = hits.some((g, i) => hits.some((h, j) => j !== i && h.name === g.name));
+  const note = branched ? '<div class="mut">這家有多間分店，請選地址對的那一間。</div>' : '';
+  return note + hits.map((g, i) => `<button type="button" class="sg" onclick="${fn}(${i})"><span><b>${TM.esc(g.name)}</b>${g.hint && g.hint !== g.name ? ` <small class="mut">${TM.esc(g.hint)}</small>` : ''}<br><small class="mut">${TM.esc(g.addr || g.city || '')}</small></span></button>`).join('');
 }
 async function runFoodSug(q, tok) {
   const hits = await foodGeo(q);
@@ -288,7 +295,7 @@ async function runFoodSug(q, tok) {
   foodSug = hits.slice(0, 6);
   const box = $('#foodsug');
   if (!box) return;
-  box.innerHTML = foodSug.length ? foodSug.map((g, i) => `<button type="button" class="sg" onclick="foodPick(${i})"><span><b>${TM.esc(g.name)}</b>${g.hint && g.hint !== g.name ? ` <small class="mut">${TM.esc(g.hint)}</small>` : ''}<br><small class="mut">${TM.esc(g.addr || '')}</small></span></button>`).join('') : '<div class="mut">找不到這個地方，換個說法再試。</div>';
+  box.innerHTML = foodSug.length ? placeSugHtml(foodSug, 'foodPick') : '<div class="mut">找不到這個地方，換個說法再試。</div>';
 }
 function foodPick(i) { const g = foodSug[i]; if (!g) return; foodSugTok++; const box = $('#foodsug'); if (box) box.innerHTML = ''; setFoodPlace({ name: g.name, hint: g.hint || '', lat: g.lat, lng: g.lng, user: true }); }
 function foodChip(name) {
@@ -572,20 +579,31 @@ function openDiary(i) {
   diaryStars = 0;
   const ccys = typeof CCY_L === 'object' ? Object.keys(CCY_L) : ['TWD', 'JPY', 'USD'];
   const guess = TM.T() && typeof guessCcy === 'function' ? guessCcy(TM.T().dest) : 'TWD';
-  $('#sheetBody').innerHTML = `<h2>記下吃過的</h2><label class="fld">店名<input id="dname" maxlength="80" value="${TM.esc(diaryDraft.placeName)}" oninput="diaryName()"></label><div id="dsug"></div><button type="button" class="btn ghost sm" onclick="diarySearch()">搜尋店名</button><label class="fld">日期<input type="date" id="ddate" value="${diaryDraft.date}"></label><div class="fld">幾顆星</div><div class="row" id="dstars">${[1, 2, 3, 4, 5].map(n => `<button type="button" class="btn ghost sm" data-ds="${n}" onclick="diarySetStars(${n})">${n}</button>`).join('')}</div><label class="fld">點了什麼<input id="ddish" maxlength="200" placeholder="例如：醬油拉麵、煎餃"></label><label class="fld">心得<textarea id="dtext" maxlength="500" rows="3" placeholder="最多 500 字"></textarea></label><div class="row"><label class="fld">付了多少<input id="dprice" type="number" min="0" step="0.01"></label><label class="fld">幣別<select id="dccy">${ccys.map(c => `<option value="${c}"${c === guess ? ' selected' : ''}>${TM.esc((typeof CCY_L === 'object' && CCY_L[c]) || c)}</option>`).join('')}</select></label></div><label class="fld">照片（會壓到約 200KB，最多 3 張）<input id="dfiles" type="file" accept="image/*" multiple onchange="diaryFiles(this)"></label><div class="row" id="dprev"></div><p class="mut">同一家一天只能記一筆。未登入只留在這台裝置；登入後這則會公開成旅伴評分，不會附上 Email。</p><div class="row"><button type="button" class="btn ghost" onclick="closeSheet()">取消</button><button type="button" class="btn" onclick="diarySave()">儲存</button></div>`;
+  $('#sheetBody').innerHTML = `<h2>記下吃過的</h2><label class="fld">店名<input id="dname" maxlength="80" autocomplete="off" value="${TM.esc(diaryDraft.placeName)}" oninput="diaryName()"></label><div id="dsug"></div><button type="button" class="btn ghost sm" onclick="diarySearch()">搜尋店名</button><label class="fld">日期<input type="date" id="ddate" value="${diaryDraft.date}"></label><div class="fld">幾顆星</div><div class="row" id="dstars">${[1, 2, 3, 4, 5].map(n => `<button type="button" class="btn ghost sm" data-ds="${n}" onclick="diarySetStars(${n})">${n}</button>`).join('')}</div><label class="fld">點了什麼<input id="ddish" maxlength="200" placeholder="例如：醬油拉麵、煎餃"></label><label class="fld">心得<textarea id="dtext" maxlength="500" rows="3" placeholder="最多 500 字"></textarea></label><div class="row"><label class="fld">付了多少<input id="dprice" type="number" min="0" step="0.01"></label><label class="fld">幣別<select id="dccy">${ccys.map(c => `<option value="${c}"${c === guess ? ' selected' : ''}>${TM.esc((typeof CCY_L === 'object' && CCY_L[c]) || c)}</option>`).join('')}</select></label></div><label class="fld">照片（會壓到約 200KB，最多 3 張）<input id="dfiles" type="file" accept="image/*" multiple onchange="diaryFiles(this)"></label><div class="row" id="dprev"></div><p class="mut">同一家一天只能記一筆。未登入只留在這台裝置；登入後這則會公開成旅伴評分，不會附上 Email。</p><div class="row"><button type="button" class="btn ghost" onclick="closeSheet()">取消</button><button type="button" class="btn" onclick="diarySave()">儲存</button></div>`;
   TM.openSheet();
 }
-function diaryName() { if (diaryDraft) { diaryDraft.placeKey = ''; } }
-function diarySetStars(n) { diaryStars = n; document.querySelectorAll('[data-ds]').forEach(b => b.classList.toggle('on', +b.dataset.ds <= n)); }
-async function diarySearch() {
+let diarySugTimer = 0, diarySugTok = 0;
+function diaryName() {
+  if (diaryDraft) diaryDraft.placeKey = '';
   const q = $('#dname') && $('#dname').value.trim();
-  if (!q) { TM.toast('先寫店名'); return; }
+  const tok = ++diarySugTok;
+  clearTimeout(diarySugTimer);
+  const box = $('#dsug');
+  if (!q || q.length < 2) { if (box) box.innerHTML = ''; return; }
+  diarySugTimer = setTimeout(() => diarySearch(tok), 300);
+}
+function diarySetStars(n) { diaryStars = n; document.querySelectorAll('[data-ds]').forEach(b => b.classList.toggle('on', +b.dataset.ds <= n)); }
+async function diarySearch(tok) {
+  const q = $('#dname') && $('#dname').value.trim();
+  if (tok == null) { clearTimeout(diarySugTimer); tok = ++diarySugTok; }
+  if (!q || q.length < 2) { TM.toast('先寫店名'); return; }
   const box = $('#dsug');
   if (box) box.innerHTML = '<div class="mut">搜尋中…</div>';
-  const hits = await foodGeo(q + (foodPlace && foodPlace.name && foodPlace.name !== '我的位置' ? ' ' + foodPlace.name : ''));
-  diaryDraft.hits = hits.slice(0, 5);
+  const hits = await foodGeo(q);
+  if (tok !== diarySugTok || !diaryDraft) return;
+  diaryDraft.hits = hits.slice(0, 6);
   if (!box) return;
-  box.innerHTML = diaryDraft.hits.length ? diaryDraft.hits.map((g, i) => `<button type="button" class="sg" onclick="diaryPickHit(${i})"><span><b>${TM.esc(g.name)}</b>${g.hint && g.hint !== g.name ? ` <small class="mut">${TM.esc(g.hint)}</small>` : ''}<br><small class="mut">${TM.esc(g.addr || '')}</small></span></button>`).join('') : '<div class="mut">地圖上沒有這家。仍可用你打的店名儲存。</div>';
+  box.innerHTML = diaryDraft.hits.length ? placeSugHtml(diaryDraft.hits, 'diaryPickHit') : '<div class="mut">地圖上沒有這家。仍可用你打的店名儲存。</div>';
 }
 function diaryPickHit(i) {
   const g = diaryDraft && diaryDraft.hits && diaryDraft.hits[i];

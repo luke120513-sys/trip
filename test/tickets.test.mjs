@@ -130,7 +130,7 @@ assert.equal(Tickets.iconOf('餐廳'), 'icons/cat-food.svg');
 assert.equal(Tickets.guessType('迪士尼門票'), '門票');
 
 const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v36/);
+assert.match(sw, /tripmate-v37/);
 assert.match(sw, /tickets\.js/);
 const collab = readFileSync(new URL('../collab.js', import.meta.url), 'utf8');
 assert.match(collab, /const tickets = t\.tickets/);

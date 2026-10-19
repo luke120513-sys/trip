@@ -83,7 +83,7 @@ assert.ok(near.steps.some(s => s.kind === 'ride' && s.alight === '淺草'));
 
 const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v36/);
+assert.match(sw, /tripmate-v37/);
 assert.ok(sw.includes('legs.js'));
 assert.ok(html.includes('legs.js'));
 assert.ok(html.includes('legwarn'));

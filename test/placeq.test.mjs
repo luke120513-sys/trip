@@ -35,11 +35,14 @@ const importer = readFileSync(new URL('../importer.js', import.meta.url), 'utf8'
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 assert.match(extras, /PlaceQ\.search/);
-assert.match(food, /function foodGeo[\s\S]*geoSearch\(q, dest\)/);
+assert.match(food, /function foodGeo[\s\S]*geoSearch\(q, dest, here\)/);
+assert.match(food, /setTimeout\(\(\) => diarySearch\(tok\), 300\)/);
+assert.match(food, /搜尋店名/);
+assert.match(html, /setTimeout\(\(\)=>runSugg\(q,tok\),300\)/);
 assert.match(importer, /geoSearch\(q,dest\)/);
 assert.ok(html.includes('placeq.js'));
 assert.ok(html.includes('這家有多間分店'));
-assert.match(sw, /tripmate-v36/);
+assert.match(sw, /tripmate-v37/);
 assert.ok(sw.includes('placeq.js'));
 
 assert.equal(PlaceQ.hint('玄品ふぐ'), '玄品河豚');
@@ -76,6 +79,23 @@ assert.ok(seen.some(s => s.includes('lang=default')));
 assert.equal(mocked[0].name, '玄品ふぐ');
 assert.equal(mocked[0].hint, '玄品河豚');
 assert.equal(mocked[0].addr, '神楽坂通り · 新宿區 · 東京 · 日本');
+
+const origFetch = globalThis.fetch;
+let cacheCalls = 0;
+globalThis.fetch = async (u) => {
+  cacheCalls++;
+  if (String(u).includes('photon')) return { ok: true, status: 200, json: async () => ({ features: [{ properties: { name: '快取測試店', street: '神楽坂通り', district: '新宿区', city: '東京都', country: '日本' }, geometry: { coordinates: [139.74, 35.7] } }] }) };
+  return { ok: false, status: 500, json: async () => ({}) };
+};
+const cachedA = await PlaceQ.search('快取測試', { bias: tokyo, few: 1, limit: 3 });
+const afterFirst = cacheCalls;
+const cachedB = await PlaceQ.search('快取測試', { bias: tokyo, few: 1, limit: 3 });
+assert.equal(cachedB[0].name, cachedA[0].name);
+assert.equal(cacheCalls, afterFirst);
+const pacedAt = Date.now();
+await PlaceQ.search('快取測試乙', { bias: tokyo, few: 1, limit: 3 });
+assert.ok(Date.now() - pacedAt >= 300, 'photon lookups should be spaced');
+globalThis.fetch = origFetch;
 
 const hits = await PlaceQ.search('玄品河豚', { bias: tokyo, limit: 8, few: 3 });
 const branches = hits.filter(h => /玄品ふぐ/.test(h.name) && /東京/.test((h.city || '') + (h.addr || '')));

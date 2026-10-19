@@ -263,6 +263,31 @@
     return copy;
   }
   let photonLang = 'zh';
+  const slots = { photon: 0, nominatim: 0 };
+  const mem = new Map();
+  const pending = new Map();
+  function cloneHits(list) { return (list || []).map(h => Object.assign({}, h)); }
+  function cacheKey(q, bias, limit, few) {
+    const b = bias && Number.isFinite(+bias.lat) ? (+bias.lat).toFixed(2) + ',' + (+bias.lng).toFixed(2) : '';
+    return [String(q || '').trim().toLowerCase(), b, limit, few].join('|');
+  }
+  function remember(key, hits) {
+    if (!hits || !hits.length) return;
+    mem.set(key, { at: Date.now(), hits: cloneHits(hits) });
+    while (mem.size > 40) mem.delete(mem.keys().next().value);
+  }
+  function recall(key) {
+    const row = mem.get(key);
+    if (!row || Date.now() - row.at > 10 * 60 * 1000) { mem.delete(key); return null; }
+    return cloneHits(row.hits);
+  }
+  async function pace(which) {
+    const gap = which === 'nominatim' ? 1100 : 350;
+    const now = Date.now();
+    const start = Math.max(now, slots[which] || 0);
+    slots[which] = start + gap;
+    if (start > now) await new Promise(res => setTimeout(res, start - now));
+  }
   async function fetchPhoton(url, fetchFn) {
     const fetch = fetchFn || globalThis.fetch;
     const langs = photonLang === 'zh' ? ['zh', 'default'] : [photonLang];
@@ -278,7 +303,9 @@
     return last;
   }
   async function lookup(query, bias, limit, fetchFn) {
+    const paced = !fetchFn;
     try {
+      if (paced) await pace('photon');
       const u = new URL('https://photon.komoot.io/api/');
       u.searchParams.set('q', query);
       u.searchParams.set('limit', String(limit || 8));
@@ -293,6 +320,7 @@
       }
     } catch (e) {}
     try {
+      if (paced) await pace('nominatim');
       const fetch = fetchFn || globalThis.fetch;
       const u = 'https://nominatim.openstreetmap.org/search?format=jsonv2&limit=5&addressdetails=1&namedetails=1&accept-language=' + encodeURIComponent('zh-TW,zh,ja') + '&q=' + encodeURIComponent(query);
       const r = await fetch(u, { signal: AbortSignal.timeout(8000), headers: { 'Accept-Language': 'zh-TW,zh,ja' } });
@@ -310,6 +338,21 @@
     const limit = opt.limit || 8;
     const few = opt.few == null ? 3 : opt.few;
     const fetchFn = opt.fetch;
+    const key = cacheKey(q, bias, limit, few);
+    if (!fetchFn) {
+      const hit = recall(key);
+      if (hit) return hit;
+      if (pending.has(key)) return pending.get(key).then(cloneHits);
+    }
+    const job = runSearch(q, bias, limit, few, fetchFn).then(hits => {
+      if (!fetchFn) remember(key, hits);
+      return hits;
+    });
+    if (!fetchFn) pending.set(key, job);
+    try { return await job.then(cloneHits); }
+    finally { if (!fetchFn) pending.delete(key); }
+  }
+  async function runSearch(q, bias, limit, few, fetchFn) {
     const queries = plan(q);
     let all = [];
     let tried = 0;
