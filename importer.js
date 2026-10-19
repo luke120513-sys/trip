@@ -166,7 +166,8 @@ async function geocodePending(pending,dest){const out=[];const seen=new Set();
   if(typeof geoSearch!=='function')break;
   try{const hits=await geoSearch(q,dest);const h=hits&&hits[0];if(!h||!Number.isFinite(+h.lat))continue;
    if(h.name&&/^(日本|東京都|tokyo|japan)$/i.test(String(h.name).trim()))continue;
-   out.push({name:q,local:h.name&&h.name!==q?h.name:'',area:'',type:'',pid:'',city:dest||'',lat:+h.lat,lng:+h.lng,source:'geo',addr:h.addr||''})}catch{}}
+   const hint=h.hint||(typeof PlaceQ!=='undefined'&&PlaceQ.hint?PlaceQ.hint(h.name):'');
+   out.push({name:q,local:h.name&&h.name!==q?h.name:'',zh:hint&&hint!==q?hint:'',area:'',type:'',pid:'',city:dest||'',lat:+h.lat,lng:+h.lng,source:'geo',addr:h.addr||''})}catch{}}
  return out}
 async function buildPlaces(text,hint){const items=await itemsFor(text,hint);const ex=UrlImport.extractPlaces(text,items);
  const city=hint||UrlImport.guessCity(text)||(T()&&T().dest)||'';
@@ -176,7 +177,9 @@ async function buildPlaces(text,hint){const items=await itemsFor(text,hint);cons
 function urlPreview(){const t=T();const def=t?.dep||new Date(Date.now()+14*864e5).toISOString().slice(0,10);
  const rows=U.places.map((p,i)=>{const pos=Number.isFinite(+p.lat)?`${(+p.lat).toFixed(4)}, ${(+p.lng).toFixed(4)}`:'尚未定位';
   const how=p.source==='catalog'?'內建清單':'地圖搜尋';
-  const sub=[p.local&&p.local!==p.name?p.local:'',how,pos].filter(Boolean).join(' · ');
+  const addr=p.addr&&typeof PlaceQ!=='undefined'&&PlaceQ.zhText?PlaceQ.zhText(p.addr): (p.addr||'');
+  const hint=p.zh||(typeof PlaceQ!=='undefined'&&PlaceQ.hint?PlaceQ.hint(p.local||p.name):'');
+  const sub=[p.local&&p.local!==p.name?p.local:'',hint&&hint!==p.name&&hint!==p.local?hint:'',addr,how,pos].filter(Boolean).join(' · ');
   return `<label class="card" style="display:flex;gap:10px;align-items:flex-start;margin-bottom:8px"><input type="checkbox" data-up="${i}" checked style="width:22px;height:22px;margin-top:2px;flex:none"><span><b>${esc(p.name)}</b><div class="mut">${esc(sub)}</div><a href="${esc(mapLink(p,U.city))}" target="_blank" rel="noopener">在地圖上看位置</a></span></label>`}).join('');
  $('#sheetBody').innerHTML=`<h2>網址匯入預覽</h2><p class="mut">盡力辨識，不是完整清單。請勾掉不對的地點。來源：${esc(U.title||U.url||'貼上的文字')}</p>${U.places.length?`<div style="max-height:38vh;overflow:auto">${rows}</div>`:`<div class="card mut">沒有辨識出地點。可以返回，改貼更完整的說明文字。</div>`}
  <label class="fld">分成幾天<input id="imdays" type="number" min="1" max="14" value="${U.days}"></label>
@@ -203,7 +206,7 @@ window.impUrlApply=async function(mode){if(!U||!U.places.length)return;const des
  let n=Math.round(+$('#imdays').value);if(!n||n<1)n=1;if(n>14)n=14;n=Math.min(n,picked.length);
  const buckets=UrlImport.splitDays(picked,n);
  let P=null;try{P=await needPlanner()}catch{}
- const groups=buckets.map(list=>{const geo=[],rest=[];for(const p of list){const s={time:'',name:p.name,note:[p.local&&p.local!==p.name?p.local:'',p.source==='catalog'?'內建清單':'從網址擷取'].filter(Boolean).join(' · '),link:mapLink(p,dest),pid:p.pid||undefined,area:p.area||undefined,lat:Number.isFinite(+p.lat)?+p.lat:undefined,lng:Number.isFinite(+p.lng)?+p.lng:undefined};if(P&&P.coordOf(s))geo.push(s);else rest.push(s)}
+ const groups=buckets.map(list=>{const geo=[],rest=[];for(const p of list){const hint=p.zh||(typeof PlaceQ!=='undefined'&&PlaceQ.hint?PlaceQ.hint(p.local||p.name):'');const addr=p.addr&&typeof PlaceQ!=='undefined'&&PlaceQ.zhText?PlaceQ.zhText(p.addr):(p.addr||'');const s={time:'',name:p.name,zh:hint&&hint!==p.name?hint:undefined,note:[p.local&&p.local!==p.name?p.local:'',hint&&hint!==p.name&&hint!==p.local?hint:'',addr,p.source==='catalog'?'內建清單':'從網址擷取'].filter(Boolean).join(' · '),link:mapLink(p,dest),pid:p.pid||undefined,area:p.area||undefined,lat:Number.isFinite(+p.lat)?+p.lat:undefined,lng:Number.isFinite(+p.lng)?+p.lng:undefined};if(P&&P.coordOf(s))geo.push(s);else rest.push(s)}
   const ordered=P?P.optimizeDay(geo).concat(rest):geo.concat(rest);let m=9*60;for(const s of ordered){s.time=hm(m);m=Math.min(21*60,m+90)}return ordered});
  let t;if(mode==='merge'&&T()){t=T()}else{const r=new Date(dep);r.setDate(r.getDate()+groups.length-1);t={id:Date.now().toString(36),dest,dep,ret:iso(r),pax:2,orig:'TPE',days:[]};trips.unshift(t);cur=t.id}
  const off=mode==='merge'?Math.max(0,Math.round((new Date(dep)-new Date(t.dep))/864e5)):0;
