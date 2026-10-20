@@ -65,6 +65,103 @@ assert.equal(ride.alight, '京成上野');
 assert.equal(parsed.steps[0].to, '成田機場第1航廈');
 assert.equal(parsed.steps.at(-1).from, '京成上野');
 assert.equal(Legs.fromTransitous({ itineraries: [] }), null);
+assert.equal(Legs.lineZh('8298941'), '');
+assert.equal(Legs.lineZh('20001791'), '');
+
+const keikyu = Legs.fromTransitous({ itineraries: [{ duration: 1800, legs: [{ mode: 'REGIONAL_RAIL', duration: 1800, routeShortName: '8298941', routeLongName: '', agencyName: '京急', routeColor: '00AEEF', headsign: '三崎口', from: { name: '品川' }, to: { name: '三崎口' }, intermediateStops: [{}, {}] }] }] });
+const keikyuRide = keikyu.steps.find(s => s.kind === 'ride');
+assert.equal(keikyuRide.line, '京急電車');
+assert.equal(keikyuRide.direction, '三崎口');
+assert.equal(keikyuRide.short, '');
+assert.doesNotMatch(keikyuRide.line, /\d/);
+
+const tozai = Legs.fromTransitous({ itineraries: [{ duration: 900, legs: [{ mode: 'SUBWAY', duration: 900, routeShortName: '20001791', routeLongName: '東西線', agencyName: '東京メトロ', headsign: '西船橋', from: { name: '大手町' }, to: { name: '西船橋' }, intermediateStops: [] }] }] });
+assert.equal(tozai.steps[0].line, '東京地鐵東西線');
+assert.equal(tozai.steps[0].direction, '西船橋');
+assert.doesNotMatch(tozai.steps[0].line, /20001791/);
+
+const asakusa = Legs.fromTransitous({ itineraries: [{ duration: 600, legs: [{ mode: 'SUBWAY', duration: 600, routeShortName: '8298941', routeLongName: '都営浅草線', agencyName: '東京都交通局', headsign: '押上', from: { name: '浅草' }, to: { name: '押上' }, intermediateStops: [] }] }] });
+assert.equal(asakusa.steps[0].line, '都營淺草線');
+assert.doesNotMatch(asakusa.steps[0].line, /\d{4,}/);
+
+const busOnly = Legs.fromTransitous({ itineraries: [{ duration: 400, legs: [{ mode: 'BUS', duration: 400, routeShortName: '12345678', routeLongName: '12345678', agencyName: '', headsign: '池袋', from: { name: '上野' }, to: { name: '池袋' }, intermediateStops: [] }] }] });
+assert.equal(busOnly.steps[0].line, '公車');
+
+const jrId = Legs.fromTransitous({ itineraries: [{ duration: 500, legs: [{ mode: 'REGIONAL_RAIL', duration: 500, routeShortName: '4042941', displayName: '4042941', routeLongName: '', agencyName: 'JR', headsign: '逗子', from: { name: '品川' }, to: { name: '逗子' }, intermediateStops: [] }] }] });
+assert.equal(jrId.steps[0].line, 'JR 電車');
+assert.doesNotMatch(JSON.stringify(jrId.steps), /4042941/);
+
+assert.equal(Legs.stayMin({ icon: 'food' }), 75);
+assert.equal(Legs.stayMin({ ptype: '餐廳' }), 75);
+assert.equal(Legs.stayMin({ icon: 'food', stay: 40 }), 40);
+assert.equal(Legs.stayMin({ kind: 'hotel' }), 25);
+assert.equal(Legs.stayMin({ kind: 'hotel', note: '退房' }), 15);
+assert.equal(Legs.stayMin({ icon: 'sightseeing' }), 60);
+assert.equal(Legs.stayMin({ kind: 'flight' }), 0);
+assert.equal(Legs.stayMin({ icon: 'cafe' }), 45);
+assert.equal(Legs.stayMin({ icon: 'shopping' }), 45);
+
+const sug = Legs.suggestMove('15:00', '15:00', 25, 0, 5);
+assert.equal(sug.arriveText, '15:25');
+assert.equal(sug.slotText, '15:30');
+assert.equal(sug.conflict, true);
+assert.equal(Legs.suggestMove('15:00', '15:00', 22, 0, 5).slotText, '15:30');
+assert.equal(Legs.suggestMove('15:00', '15:22', 22, 0, 0).slotText, '15:25');
+assert.equal(Legs.suggestMove('15:00', '16:00', 25, 0, 5).conflict, false);
+assert.match(Legs.clash('15:00', '16:00', 20, 75), /待 75/);
+assert.match(Legs.clash('15:00', '15:00', 25, 75), /兩個時間都是 15:00/);
+assert.match(Legs.clash('15:00', '15:00', 25, 75), /撞/);
+
+const chain = [
+  { time: '15:00', name: '上野', stay: 0, icon: 'sightseeing' },
+  { time: '15:00', name: '淺草', stay: 0, icon: 'sightseeing' },
+  { time: '15:20', name: '晴空塔', stay: 0, icon: 'sightseeing' },
+  { time: '19:00', name: '晚餐', stay: 0, icon: 'food' }
+];
+const moved = Legs.shiftChain(chain, j => [0, 25, 10, 10][j], { start: 1, cats: chain.map(s => s.icon) });
+assert.deepEqual(moved.changed.map(c => c.to), ['15:30', '15:50']);
+assert.equal(moved.spots[3].time, '19:00');
+assert.equal(chain[1].time, '15:00');
+
+const foodChain = [
+  { time: '12:00', name: '午餐', icon: 'food' },
+  { time: '13:00', name: '寺', icon: 'sightseeing' }
+];
+const foodMoved = Legs.resolveDay(foodChain, j => (j === 1 ? 20 : 0), { cats: ['food', 'sightseeing'] });
+assert.equal(foodMoved.spots[0].time, '12:00');
+assert.equal(foodMoved.spots[1].time, '13:40');
+
+const fixed = [
+  { time: '15:00', name: '機場', stay: 0 },
+  { time: '15:00', name: 'BR198', kind: 'flight', stay: 0 },
+  { time: '15:10', name: '飯店', stay: 0, icon: 'hotel' }
+];
+const fixedMoved = Legs.shiftChain(fixed, j => [0, 25, 20][j], { start: 1, cascade: true });
+assert.equal(fixedMoved.changed.length, 1);
+assert.equal(fixedMoved.changed[0].name, '飯店');
+assert.equal(fixedMoved.changed[0].to, '15:25');
+assert.equal(fixedMoved.skipped[0].name, 'BR198');
+assert.equal(fixedMoved.spots[1].time, '15:00');
+
+const ticketSpots = [
+  { time: '15:00', name: '上野', stay: 0 },
+  { time: '15:00', name: '迪士尼', stay: 0 }
+];
+const ticketMoved = Legs.resolveDay(ticketSpots, j => (j === 1 ? 25 : 0), { day: 0, tickets: [{ spot: '迪士尼', day: 0, time: '15:00' }] });
+assert.equal(ticketMoved.changed.length, 0);
+assert.equal(ticketMoved.skipped[0].name, '迪士尼');
+assert.equal(Legs.isFixed(ticketSpots[1], [{ spot: '迪士尼', day: 1, time: '15:00' }], 0), false);
+
+const gap = [
+  { time: '10:00', name: 'A', stay: 0 },
+  { time: '10:00', name: 'B', stay: 0 },
+  { time: '15:00', name: 'C', stay: 0 },
+  { time: '15:00', name: 'D', stay: 0 }
+];
+const gapMoved = Legs.resolveDay(gap, j => [0, 30, 10, 40][j]);
+assert.equal(gapMoved.spots[1].time, '10:35');
+assert.equal(gapMoved.spots[2].time, '15:00');
+assert.equal(gapMoved.spots[3].time, '15:45');
 
 const haneda = Legs.knownRoute({ lat: 35.5494, lng: 139.7798 }, { lat: 35.6554, lng: 139.7571 });
 assert.equal(haneda.alight, '濱松町');
@@ -83,11 +180,17 @@ assert.ok(near.steps.some(s => s.kind === 'ride' && s.alight === '淺草'));
 
 const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v42/);
+assert.match(sw, /tripmate-v43/);
 assert.ok(sw.includes('legs.js'));
 assert.ok(html.includes('legs.js'));
 assert.ok(html.includes('legwarn'));
 assert.match(html, /Legs\.clash/);
 assert.match(html, /Legs\.knownRoute/);
+assert.match(html, /往後移到/);
+assert.match(html, /全部自動排開/);
+assert.match(html, /自動幫我往後移/);
+assert.match(html, /大約 /);
+assert.match(html, /paintShift/);
+assert.match(readFileSync(new URL('../live.js', import.meta.url), 'utf8'), /safeLine/);
 
 console.log('legs.test.mjs ok', walkKm.toFixed(2) + ' km', walk + ' min');

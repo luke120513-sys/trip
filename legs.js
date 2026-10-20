@@ -29,14 +29,128 @@
     if (h > 23 || min > 59) return null;
     return h * 60 + min;
   }
-  function clash(prev, next, min) {
+  function clash(prev, next, min, stay) {
     const a = minutes(prev), b = minutes(next);
-    if (a == null || b == null || !(min > 0)) return '';
+    const travel = +min || 0;
+    const hold = Math.max(0, +stay || 0);
+    if (a == null || b == null || !(travel > 0 || hold > 0)) return '';
     const gap = b - a;
-    if (gap === 0) return '兩個時間都是 ' + prev + '，這段大約要 ' + min + ' 分，時間會撞到';
-    if (gap < 0) return '下一站的時間比上一站早，這段大約要 ' + min + ' 分';
-    if (gap < min) return '兩個時間只隔 ' + gap + ' 分，這段大約要 ' + min + ' 分，可能趕不上';
+    const need = travel + hold;
+    const shown = travel > 0 ? travel : hold;
+    if (gap === 0) return '兩個時間都是 ' + prev + '，這段大約要 ' + shown + ' 分，時間會撞到';
+    if (gap < 0) return '下一站的時間比上一站早，這段大約要 ' + shown + ' 分';
+    if (gap < need) {
+      if (hold > 0 && travel > 0 && gap >= travel) return '上一站大約要待 ' + hold + ' 分，再加上交通 ' + travel + ' 分，可能趕不上';
+      if (hold > 0 && travel > 0) return '兩個時間只隔 ' + gap + ' 分，待 ' + hold + ' 分再搭 ' + travel + ' 分，可能趕不上';
+      return '兩個時間只隔 ' + gap + ' 分，這段大約要 ' + shown + ' 分，可能趕不上';
+    }
     return '';
+  }
+  function hm(total) {
+    if (total == null || !Number.isFinite(+total)) return '';
+    let m = Math.round(+total);
+    m = ((m % 1440) + 1440) % 1440;
+    return String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+  }
+  function slotOf(raw, buffer) {
+    const buf = buffer == null ? 5 : Math.max(0, +buffer || 0);
+    let t = raw + buf;
+    const rem = ((t % 5) + 5) % 5;
+    if (rem) t += 5 - rem;
+    return t;
+  }
+  function stayMin(spot, cat) {
+    spot = spot || {};
+    if (spot.stay != null && String(spot.stay) !== '' && Number.isFinite(+spot.stay) && +spot.stay >= 0) return Math.min(720, Math.round(+spot.stay));
+    if (spot.kind === 'flight') return 0;
+    let c = cat || '';
+    if (!c) {
+      if (spot.kind === 'hotel') c = 'hotel';
+      else if (spot.icon) c = spot.icon;
+      else if (spot.ptype === '餐廳' || spot.ptype === '美食') c = 'food';
+      else if (spot.ptype === '購物') c = 'shopping';
+      else if (spot.ptype === '夜景') c = 'nightlife';
+      else if (spot.ptype === '咖啡') c = 'cafe';
+      else c = 'sightseeing';
+    }
+    const note = String(spot.note || '');
+    if (c === 'hotel' || spot.kind === 'hotel') return /退房/.test(note) ? 15 : 25;
+    if (c === 'food') return 75;
+    if (c === 'cafe') return 45;
+    if (c === 'shopping') return 45;
+    if (c === 'transport') return 0;
+    return 60;
+  }
+  function isFixed(spot, tickets, day) {
+    if (!spot) return false;
+    if (spot.kind === 'flight') return true;
+    return (tickets || []).some(t => {
+      if (!t || !String(t.time || '').trim()) return false;
+      if (day != null && t.day != null && t.day !== '' && +t.day !== +day) return false;
+      return !!(t.spot && spot.name && t.spot === spot.name);
+    });
+  }
+  function suggestMove(prev, next, travel, stay, buffer) {
+    const a = minutes(prev);
+    if (a == null) return null;
+    const arrive = a + Math.max(0, +stay || 0) + Math.max(0, +travel || 0);
+    const slot = slotOf(arrive, buffer);
+    const b = minutes(next);
+    return {
+      arrive,
+      arriveText: hm(arrive),
+      slot,
+      slotText: hm(slot),
+      conflict: b != null && b < arrive,
+      short: b == null ? arrive : arrive - b
+    };
+  }
+  function shiftChain(spots, travelAt, opt) {
+    const list = (spots || []).map(s => Object.assign({}, s));
+    const buffer = opt && Object.prototype.hasOwnProperty.call(opt, 'buffer') ? opt.buffer : 5;
+    const cats = (opt && opt.cats) || [];
+    const tickets = (opt && opt.tickets) || [];
+    const day = opt && opt.day;
+    const start = opt && opt.start > 0 ? opt.start : 1;
+    const cascade = !opt || opt.cascade !== false;
+    const sameDelta = !opt || opt.sameDelta !== false;
+    const changed = [];
+    const skipped = [];
+    let locked = null;
+    for (let j = start; j < list.length; j++) {
+      const prev = list[j - 1], cur = list[j];
+      if (!prev || !cur) continue;
+      const stay = stayMin(prev, cats[j - 1]);
+      const rawTravel = typeof travelAt === 'function' ? travelAt(j, prev, cur) : (travelAt && travelAt[j]);
+      const travel = Math.max(0, +rawTravel || 0);
+      const sug = suggestMove(prev.time, cur.time, travel, stay, buffer);
+      if (!sug || !sug.conflict) {
+        if (sameDelta || !cascade) break;
+        continue;
+      }
+      if (isFixed(cur, tickets, day)) {
+        skipped.push({ index: j, name: cur.name || '', time: cur.time || '' });
+        locked = null;
+        continue;
+      }
+      const fromMin = minutes(cur.time);
+      if (fromMin == null) continue;
+      let target = sug.slot;
+      if (sameDelta && locked != null) {
+        const same = fromMin + locked;
+        if (same >= sug.slot) target = same;
+      }
+      const delta = target - fromMin;
+      if (!(delta > 0)) continue;
+      if (locked == null) locked = delta;
+      changed.push({ index: j, from: cur.time, to: hm(target), name: cur.name || '' });
+      list[j] = Object.assign({}, cur, { time: hm(target) });
+      if (!cascade) break;
+    }
+    return { spots: list, changed, skipped };
+  }
+  function resolveDay(spots, travelAt, opt) {
+    return shiftChain(spots, travelAt, Object.assign({}, opt, { start: 1, cascade: true, sameDelta: false }));
   }
   function pinWarn(dist, nameA, nameB) {
     if (dist == null || dist >= 0.35) return '';
@@ -77,7 +191,9 @@
     [/稲荷町|稻荷町|Inaricho/i, '稻荷町'],
     [/田原町|Tawaramachi/i, '田原町'],
     [/渋谷|澀谷|Shibuya/i, '澀谷'],
-    [/池袋|Ikebukuro/i, '池袋']
+    [/池袋|Ikebukuro/i, '池袋'],
+    [/西船橋|Nishi-?Funabashi/i, '西船橋'],
+    [/三崎口|Misakiguchi/i, '三崎口']
   ];
   const LINES = [
     ['京成スカイライナー', '京成 Skyliner'],
@@ -108,9 +224,12 @@
     if (/站$/.test(name) === false && /駅/.test(String(raw))) name += '站';
     return name;
   }
+  function numericId(s) {
+    return /^[\d\s._:\-\/]+$/.test(String(s || '').trim());
+  }
   function lineZh(raw) {
     let s = trad(String(raw || '')).trim();
-    if (!s) return '';
+    if (!s || numericId(s)) return '';
     const local = (s.match(/^([\u3040-\u30ff\u4e00-\u9fff々ー・]+)/) || [])[1] || s;
     let zh = local;
     for (const [from, to] of LINES) if (zh.includes(from)) zh = zh.split(from).join(to);
@@ -139,6 +258,72 @@
     if (!p || !p.name) return '';
     return stationZh(p.name);
   }
+  function modeWord(mode) {
+    const m = String(mode || '').toUpperCase();
+    if (/BUS|COACH/.test(m)) return '公車';
+    if (/SUBWAY|METRO/.test(m)) return '地鐵';
+    if (/FERRY|SHIP|BOAT/.test(m)) return '渡輪';
+    return '電車';
+  }
+  function agencyLabel(raw) {
+    const s = String(raw || '');
+    const t = trad(s);
+    if (/都営|都營|東京都交通局/.test(s) || /都營|東京都交通局/.test(t)) return /バス|巴士|Bus/i.test(s + t) ? '都營巴士' : '都營';
+    if (/東京メトロ|Tokyo\s*Metro/i.test(s)) return '東京地鐵';
+    if (/京急|京浜急行|京濱急行/.test(s) || /京急|京濱急行/.test(t)) return '京急';
+    if (/京成/.test(s) || /京成/.test(t)) return '京成';
+    if (/^JR$/.test(s.trim()) || /JR東日本|JR\s*East|東日本旅客/i.test(s)) return 'JR';
+    if (/東急/.test(t)) return '東急';
+    if (/小田急/.test(t)) return '小田急';
+    if (/西武/.test(t)) return '西武';
+    if (/東武/.test(t)) return '東武';
+    if (/南海/.test(t)) return '南海';
+    if (/阪急/.test(t)) return '阪急';
+    if (/阪神/.test(t)) return '阪神';
+    if (/近鉄|近鐵/.test(s) || /近鐵/.test(t)) return '近鐵';
+    if (/台北捷運|臺北捷運/.test(t)) return '台北捷運';
+    const z = lineZh(s);
+    if (z && !numericId(z) && z.length <= 16) return z;
+    return '';
+  }
+  function humanName(s) {
+    const t = String(s || '').trim();
+    return t && !numericId(t) ? t : '';
+  }
+  function isCode(s) {
+    return /^[A-Za-z]{1,3}\d{0,2}$/.test(String(s || ''));
+  }
+  function joinOp(op, zh) {
+    if (!op) return zh || '';
+    if (!zh) return op;
+    if (zh.includes(op)) return zh;
+    const gap = /[A-Za-z]$/.test(op) || /^[A-Za-z]/.test(zh) ? ' ' : '';
+    return op + gap + zh;
+  }
+  function routeLabel(lg) {
+    lg = lg || {};
+    const hs = humanName(lg.routeShortName);
+    const hl = humanName(lg.routeLongName);
+    const hd = humanName(lg.displayName);
+    let raw = '';
+    if (hl && hs) {
+      if (isCode(hs) || hl.toLowerCase().includes(hs.toLowerCase())) raw = hl;
+      else if (hs.length > hl.length) raw = hs;
+      else raw = hl;
+    } else if (hl) raw = hl;
+    else if (hs && !isCode(hs)) raw = hs;
+    else if (hd && !isCode(hd)) raw = hd;
+    let zh = raw ? lineZh(raw) : '';
+    if (numericId(zh)) zh = '';
+    const op = agencyLabel(lg.agencyName || lg.agency || '');
+    if (zh) zh = joinOp(op, zh);
+    else if (op) zh = op.length <= 3 ? joinOp(op, modeWord(lg.mode)) : op;
+    else if (hs && isCode(hs)) zh = hs;
+    else zh = modeWord(lg.mode);
+    if (numericId(zh)) zh = modeWord(lg.mode);
+    const orig = raw ? lineOrig(raw) : '';
+    return { line: zh, lineOrig: orig && orig !== zh ? orig : '', short: hs && !numericId(hs) ? hs : '' };
+  }
 
   function fromTransitous(j) {
     const it = j && j.itineraries && j.itineraries[0];
@@ -154,15 +339,16 @@
         steps.push({ kind: 'walk', min, to, from });
         continue;
       }
-      const long = lg.routeLongName || lg.routeShortName || lg.agencyName || '';
+      const label = routeLabel(lg);
       const alight = placeName(lg.to);
       const stops = Array.isArray(lg.intermediateStops) ? lg.intermediateStops.length + 1 : 0;
       steps.push({
         kind: 'ride',
         min,
-        line: lineZh(long) || '大眾運輸',
-        lineOrig: lineOrig(long),
-        short: String(lg.routeShortName || '').trim(),
+        mode: lg.mode || '',
+        line: label.line,
+        lineOrig: label.lineOrig,
+        short: label.short,
         color: colorOf(lg.routeColor),
         direction: directionOf(lg.headsign, alight),
         alight,
@@ -319,5 +505,5 @@
     };
   }
 
-  return { km, walkMin, clash, pinWarn, stationZh, lineZh, fromTransitous, knownRoute, nearestStop, nearbyPlan };
+  return { km, walkMin, clash, pinWarn, stationZh, lineZh, fromTransitous, knownRoute, nearestStop, nearbyPlan, hm, stayMin, suggestMove, shiftChain, resolveDay, isFixed, modeWord, routeLabel };
 });
