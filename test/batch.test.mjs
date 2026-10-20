@@ -51,6 +51,16 @@ assert.equal(bad.ok, false);
 const file = Share.validateTrips({ v: 1, trips: [trip] }, { backup: true });
 assert.equal(file.ok, true);
 assert.equal(file.trips[0].dest, '大阪');
+const stamped = Share.validateTrips({ v: 1, trips: [{ dest: '東京', dep: '2026-11-02', ret: '2026-11-03', pax: 1, orig: 'TPE', days: [[{ name: '淺草寺', time: '15:00', visited: true, visitedAt: 1760000000000 }]], expenses: [] }] }, { backup: true });
+assert.equal(stamped.trips[0].days[0][0].visited, true);
+assert.equal(stamped.trips[0].days[0][0].visitedAt, 1760000000000);
+const plain = Share.validateTrips({ v: 1, trips: [{ dest: '東京', dep: '2026-11-02', ret: '2026-11-03', pax: 1, orig: 'TPE', days: [[{ name: '上野', visited: false }]], expenses: [] }] }, { backup: true });
+assert.equal(plain.trips[0].days[0][0].visited, undefined);
+const pageHtml = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+assert.match(pageHtml, /到此一遊/);
+assert.match(pageHtml, /stamphit/);
+assert.match(pageHtml, /class="dayprog"/);
+assert.match(pageHtml, /prefers-reduced-motion:reduce[\s\S]*\.vstamp\.thump,\.dayprog i\{animation:none\}/);
 const flight = Share.unpackAdd(JSON.stringify({ type: 'flight', data: { flightNo: 'BR198', date: '2026-11-02' } }), LZ);
 assert.equal(flight.kind, 'flight');
 

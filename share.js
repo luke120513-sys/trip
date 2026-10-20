@@ -35,6 +35,11 @@
     if (+s.price > 0 && +s.price < 1e9) o.price = +s.price;
     if (keepIds && typeof s.sid === 'string' && s.sid) o.sid = str(s.sid, 40);
     if (keepIds && +s.rev > 0) o.rev = +s.rev;
+    if (s.visited === true) {
+      o.visited = true;
+      const at = +s.visitedAt;
+      if (at > 1e11 && at < 1e14) o.visitedAt = Math.round(at);
+    }
     return o;
   }
   function normExp(e, level, keepIds) {
