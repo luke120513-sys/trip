@@ -59,6 +59,8 @@ assert.equal(plain.trips[0].days[0][0].visited, undefined);
 const pageHtml = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 assert.match(pageHtml, /到此一遊/);
 assert.match(pageHtml, /stamphit/);
+assert.match(pageHtml, /\.vstamp\{[^}]*width:64px;height:64px[^}]*pointer-events:none/);
+assert.match(pageHtml, /\.xtop\.stamped/);
 assert.match(pageHtml, /class="dayprog"/);
 assert.match(pageHtml, /prefers-reduced-motion:reduce[\s\S]*\.vstamp\.thump,\.dayprog i\{animation:none\}/);
 const flight = Share.unpackAdd(JSON.stringify({ type: 'flight', data: { flightNo: 'BR198', date: '2026-11-02' } }), LZ);
