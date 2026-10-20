@@ -83,6 +83,7 @@
     if (notes) o.notes = notes;
     if (typeof raw.link === 'string' && /^https?:\/\//.test(raw.link)) o.link = raw.link.slice(0, 300);
     if (typeof raw.id === 'string' && raw.id) o.id = String(raw.id).slice(0, 40);
+    if (raw.used === true) o.used = true;
     const files = [];
     (Array.isArray(raw.files) ? raw.files : []).slice(0, 4).forEach(f => {
       if (!f || typeof f !== 'object' || !f.id) return;
@@ -101,6 +102,12 @@
       return 3;
     };
     return (list || []).slice().sort((a, b) => rank(a) - rank(b) || String(a.date || '').localeCompare(String(b.date || '')) || String(a.time || '').localeCompare(String(b.time || '')) || String(a.name).localeCompare(String(b.name)));
+  }
+  function partitionTickets(list) {
+    const active = [];
+    const used = [];
+    (list || []).forEach(t => { if (t && t.used === true) used.push(t); else if (t) active.push(t); });
+    return { active, used };
   }
   function isToday(ticket, trip, today) {
     if (!ticket || !today) return false;
@@ -129,7 +136,7 @@
     return row ? row[1] : 'icons/cat-custom.svg';
   }
 
-  return { TYPES, NOTE, todayYmd, dayYmd, guessType, parsePasted, normTicket, normType, sortTickets, isToday, decideFiles, iconOf };
+  return { TYPES, NOTE, todayYmd, dayYmd, guessType, parsePasted, normTicket, normType, sortTickets, partitionTickets, isToday, decideFiles, iconOf };
 });
 
 /* 以下只在瀏覽器跑：IndexedDB 存檔、表單與全螢幕檢視。 */
@@ -235,22 +242,38 @@ if (typeof Tickets !== 'undefined') {
 var tixDraft = null, tixOn = false, tixLock = null;
 function openTickets() { const t = TM.T(); if (!t) { TM.toast('請先選一份行程'); TM.go('list'); return; } if (typeof setExpPane === 'function') setExpPane('tix'); else TM.go('expense'); }
 function closeTickets() { tixOn = false; TM.go('edit'); }
+let tixUsedOpen = false;
 function ticketPage(t) {
   const today = Tickets.todayYmd();
-  const list = Tickets.sortTickets(t.tickets || [], today);
-  const cards = list.length ? list.map(x => ticketCard(x, today, t)).join('') : '<div class="card mut">還沒有票券。可以上傳登機證、飯店券、QR code 或 PDF，也可以貼上郵件裡的文字。</div>';
-  const head = list.some(x => Tickets.isToday(x, t, today)) ? '<h2 style="font-size:16px">今天的票券在最上面</h2>' : '';
-  return `<div class="caveat">票券存在這台裝置，離線也能打開。分享連結不會帶票券。檔案太大時，雲端與 JSON 只備份名稱、日期和訂位編號。</div><div class="row" style="margin:8px 0"><button type="button" class="btn ghost" onclick="closeTickets()">回到每日行程</button><button type="button" class="btn" onclick="ticketForm()">＋ 新增票券</button></div>${head}${cards}`;
+  const parts = Tickets.partitionTickets(t.tickets || []);
+  const active = Tickets.sortTickets(parts.active, today);
+  const used = Tickets.sortTickets(parts.used, today);
+  const empty = !active.length && !used.length ? '<div class="card mut">還沒有票券。可以上傳登機證、飯店券、QR code 或 PDF，也可以貼上郵件裡的文字。</div>' : (!active.length ? '<div class="card mut">還沒有未使用的票券。</div>' : '');
+  const cards = active.map(x => ticketCard(x, today, t)).join('');
+  const head = active.some(x => Tickets.isToday(x, t, today)) ? '<h2 style="font-size:16px">今天的票券在最上面</h2>' : '';
+  const usedBox = used.length ? `<details class="tixusedbox"${tixUsedOpen ? ' open' : ''} ontoggle="tixUsedOpen=this.open"><summary>已使用 (${used.length})</summary>${used.map(x => ticketCard(x, today, t)).join('')}</details>` : '';
+  return `<div class="caveat">票券存在這台裝置，離線也能打開。分享連結不會帶票券。檔案太大時，雲端與 JSON 只備份名稱、日期和訂位編號。</div><div class="row" style="margin:8px 0"><button type="button" class="btn ghost" onclick="closeTickets()">回到每日行程</button><button type="button" class="btn" onclick="ticketForm()">＋ 新增票券</button></div>${head}${empty}${cards}${usedBox}`;
 }
 function ticketCard(x, today, t) {
   const ico = Tickets.iconOf(x.type);
   const when = [x.date, x.time].filter(Boolean).join(' ');
-  const todayMark = Tickets.isToday(x, t, today) ? '<span class="chip sm" style="flex:0">今天</span>' : '';
-  return `<div class="card"><div class="row"><img src="${ico}" alt="" width="28" height="28"><b>${tixEsc(x.name)}</b> ${todayMark}<span class="mut" style="flex:0">${tixEsc(x.type)}</span></div><div class="mut">${tixEsc([when, x.booking && ('訂位 ' + x.booking), x.spot].filter(Boolean).join(' · '))}</div><div class="row" style="margin-top:8px"><button type="button" class="btn sm" onclick="ticketQuick('${tixEsc(x.id)}')">打開</button><button type="button" class="btn ghost sm" onclick="ticketForm('${tixEsc(x.id)}')">編輯</button><button type="button" class="btn ghost sm" onclick="ticketRm('${tixEsc(x.id)}')">刪除</button></div></div>`;
+  const todayMark = !x.used && Tickets.isToday(x, t, today) ? '<span class="chip sm" style="flex:0">今天</span>' : '';
+  const usedMark = x.used ? '<span class="chip sm tixbadge" style="flex:0">已使用</span>' : '';
+  const useBtn = x.used
+    ? `<button type="button" class="btn ghost blk tixuse" onclick="ticketMarkUsed('${tixEsc(x.id)}',false)">取消已使用</button>`
+    : `<button type="button" class="btn ghost blk tixuse" onclick="ticketMarkUsed('${tixEsc(x.id)}',true)">標記已使用</button>`;
+  return `<div class="card${x.used ? ' tixused' : ''}"><div class="row"><img src="${ico}" alt="" width="28" height="28"><b>${tixEsc(x.name)}</b> ${todayMark}${usedMark}<span class="mut" style="flex:0">${tixEsc(x.type)}</span></div><div class="mut">${tixEsc([when, x.booking && ('訂位 ' + x.booking), x.spot].filter(Boolean).join(' · '))}</div><div class="row" style="margin-top:8px"><button type="button" class="btn sm" onclick="ticketQuick('${tixEsc(x.id)}')">打開</button><button type="button" class="btn ghost sm" onclick="ticketForm('${tixEsc(x.id)}')">編輯</button><button type="button" class="btn ghost sm" onclick="ticketRm('${tixEsc(x.id)}')">刪除</button></div>${useBtn}</div>`;
+}
+function ticketMarkUsed(id, on) {
+  const t = TM.T(); if (!t) return;
+  const cur = (t.tickets || []).find(x => x.id === id); if (!cur) return;
+  if (on !== false && on !== 'false') { cur.used = true; tixUsedOpen = true; }
+  else delete cur.used;
+  TM.save(); TM.render(); TM.toast(cur.used ? '已標記為使用過' : '已改回未使用');
 }
 function ticketTodayHtml(t) {
   const today = Tickets.todayYmd();
-  const list = Tickets.sortTickets(t.tickets || [], today).filter(x => Tickets.isToday(x, t, today));
+  const list = Tickets.sortTickets(t.tickets || [], today).filter(x => !x.used && Tickets.isToday(x, t, today));
   if (!list.length) return '';
   return `<div class="card noprint" id="todaytix"><div class="row"><b>今天的票券</b><button type="button" class="chip" onclick="openTickets()">全部票券</button></div><div class="row" style="margin-top:8px">${list.map(x => `<button type="button" class="chip" onclick="ticketQuick('${tixEsc(x.id)}')">${tixEsc(x.type)} ${tixEsc(x.name)}</button>`).join('')}</div></div>`;
 }
@@ -258,7 +281,7 @@ function ticketChip(day, name) {
   const t = TM.T(); if (!t) return '';
   const hits = (t.tickets || []).filter(x => x.day === day && x.spot && x.spot === name);
   if (!hits.length) return '';
-  return hits.map(x => ` <button type="button" class="chip sm" onclick="ticketQuick('${tixEsc(x.id)}')">${tixEsc(x.type)}</button>`).join('');
+  return hits.map(x => ` <button type="button" class="chip sm${x.used ? ' tixused' : ''}" onclick="ticketQuick('${tixEsc(x.id)}')">${tixEsc(x.type)}${x.used ? ' 已使用' : ''}</button>`).join('');
 }
 function ticketDayChip(day) {
   const t = TM.T(); if (!t) return '';
@@ -384,6 +407,7 @@ async function ticketSave() {
   }
   if (!t.tickets) t.tickets = [];
   const i = t.tickets.findIndex(x => x.id === id);
+  if (i >= 0 && t.tickets[i] && t.tickets[i].used) item.used = true;
   if (i >= 0) t.tickets[i] = item; else t.tickets.push(item);
   t.tickets = t.tickets.slice(0, 40);
   tixOn = false;
@@ -410,7 +434,8 @@ async function ticketQuick(id) {
   const old = document.getElementById('tixview'); if (old) old.remove();
   const el = document.createElement('div');
   el.id = 'tixview'; el.className = 'tixview';
-  el.innerHTML = `<div class="tixbar"><button type="button" class="btn ghost sm" onclick="ticketCloseQuick()">關閉</button><b>${tixEsc(cur.name)}</b></div><p class="tixhint">請把螢幕亮度調到最亮，閘口才掃得到 QR code。</p><div class="tixstage">${view}<p class="tixmeta">${tixEsc([cur.type, cur.date, cur.time, cur.booking && ('訂位 ' + cur.booking)].filter(Boolean).join(' · '))}</p></div>`;
+  const useLabel = cur.used ? '取消已使用' : '標記已使用';
+  el.innerHTML = `<div class="tixbar"><button type="button" class="btn ghost sm" onclick="ticketCloseQuick()">關閉</button><b>${tixEsc(cur.name)}</b><button type="button" class="btn ghost sm" onclick="ticketCloseQuick();ticketMarkUsed('${tixEsc(cur.id)}',${cur.used ? 'false' : 'true'})">${useLabel}</button></div><p class="tixhint">請把螢幕亮度調到最亮，閘口才掃得到 QR code。</p><div class="tixstage">${view}<p class="tixmeta">${tixEsc([cur.type, cur.date, cur.time, cur.booking && ('訂位 ' + cur.booking)].filter(Boolean).join(' · '))}${cur.used ? ' · 已使用' : ''}</p></div>`;
   document.body.append(el);
   if (navigator.wakeLock && navigator.wakeLock.request) { try { tixLock = await navigator.wakeLock.request('screen'); } catch (e) { tixLock = null; } }
 }

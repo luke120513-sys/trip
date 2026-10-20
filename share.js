@@ -76,6 +76,7 @@
     if (notes) o.notes = notes;
     if (typeof raw.link === 'string' && /^https?:\/\//.test(raw.link) && raw.link.indexOf('data:') < 0) o.link = raw.link.slice(0, 300);
     if (typeof raw.id === 'string' && raw.id) o.id = str(raw.id, 40);
+    if (raw.used === true) o.used = true;
     const files = [];
     (Array.isArray(raw.files) ? raw.files : []).slice(0, 4).forEach(f => {
       if (!f || typeof f !== 'object' || !f.id) return;

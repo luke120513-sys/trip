@@ -129,8 +129,30 @@ assert.equal(Tickets.iconOf('機票'), 'icons/ui-fly.svg');
 assert.equal(Tickets.iconOf('餐廳'), 'icons/cat-food.svg');
 assert.equal(Tickets.guessType('迪士尼門票'), '門票');
 
+const usedTicket = Tickets.normTicket({ name: '用過的門票', type: '門票', used: true, date: '2026-11-02' });
+const freshTicket = Tickets.normTicket({ name: '還沒用', type: '門票', used: false, date: '2026-11-02' });
+assert.equal(usedTicket.used, true);
+assert.equal(freshTicket.used, undefined);
+const parts = Tickets.partitionTickets([
+  { name: '之後', date: '2026-12-01' },
+  usedTicket,
+  freshTicket
+]);
+assert.deepEqual(parts.active.map(x => x.name), ['之後', '還沒用']);
+assert.deepEqual(parts.used.map(x => x.name), ['用過的門票']);
+const usedTrip = {
+  dest: '東京', dep: '2026-11-02', ret: '2026-11-04', pax: 1, orig: 'TPE',
+  days: [[{ name: '淺草寺' }]], expenses: [],
+  tickets: [{ id: 'u1', name: '用過的門票', type: '門票', booking: 'USED1', used: true }]
+};
+const usedBak = Share.validateTrips({ v: 1, trips: [usedTrip] }, { backup: true });
+assert.equal(usedBak.trips[0].tickets[0].used, true);
+assert.equal(usedBak.trips[0].tickets[0].booking, 'USED1');
+const freshBak = Share.validateTrips({ v: 1, trips: [{ ...usedTrip, tickets: [{ id: 'u2', name: '還沒用', type: '門票', used: false }] }] }, { backup: true });
+assert.equal(freshBak.trips[0].tickets[0].used, undefined);
+
 const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v43/);
+assert.match(sw, /tripmate-v44/);
 assert.match(sw, /tickets\.js/);
 const collab = readFileSync(new URL('../collab.js', import.meta.url), 'utf8');
 assert.match(collab, /const tickets = t\.tickets/);
@@ -149,5 +171,10 @@ assert.match(html, /ticketTodayHtml/);
 assert.match(ticketsJs, /id="todaytix"/);
 assert.match(ticketsJs, /今天的票券/);
 assert.match(ticketsJs, /setExpPane\('tix'\)/);
+assert.match(ticketsJs, /標記已使用/);
+assert.match(ticketsJs, /取消已使用/);
+assert.match(ticketsJs, /已使用 \(\$\{used\.length\}\)/);
+assert.match(ticketsJs, /class="card\$\{x\.used \? ' tixused' : ''\}"/);
+assert.match(html, /!x\.used&&Tickets\.isToday/);
 
 console.log('tickets.test.mjs ok');
