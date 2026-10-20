@@ -130,13 +130,22 @@ assert.equal(Tickets.iconOf('餐廳'), 'icons/cat-food.svg');
 assert.equal(Tickets.guessType('迪士尼門票'), '門票');
 
 const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v38/);
+assert.match(sw, /tripmate-v39/);
 assert.match(sw, /tickets\.js/);
 const collab = readFileSync(new URL('../collab.js', import.meta.url), 'utf8');
 assert.match(collab, /const tickets = t\.tickets/);
 assert.match(collab, /if \(Array\.isArray\(tickets\)\) t\.tickets = tickets/);
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+const ticketsJs = readFileSync(new URL('../tickets.js', import.meta.url), 'utf8');
 assert.match(html, /分享連結預設不含票券/);
 assert.match(html, /票券照片與 PDF 只留在這台裝置/);
+assert.match(html, /\['list','行程'\],\['tickets','票券'\],\['expense','支出'\],\['food','美食'\],\['more','其他'\]/);
+assert.match(html, /function ticketTodayCount/);
+assert.match(html, /aria-label="票券，今天/);
+assert.match(html, /打開優惠/);
+assert.match(html, /ticketTodayHtml/);
+assert.match(ticketsJs, /id="todaytix"/);
+assert.match(ticketsJs, /今天的票券/);
+assert.match(ticketsJs, /go\('tickets'\)/);
 
 console.log('tickets.test.mjs ok');
