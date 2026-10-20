@@ -50,6 +50,12 @@ async function askTransit(a, b, when) {
   if (!r.ok) throw 0;
   return r.json();
 }
+function safeLine(s) {
+  const line = String(s && s.line || '').trim();
+  if (line && !/^[\d\s._:\-\/]+$/.test(line)) return line;
+  if (window.Legs && Legs.modeWord) return Legs.modeWord(s && s.mode);
+  return '電車';
+}
 function stepHtml(s) {
   const esc = TM.esc;
   if (s.kind === 'walk') {
@@ -58,8 +64,9 @@ function stepHtml(s) {
     return `<div class="legstep">這段步行約 ${s.min || 1} 分</div>`;
   }
   const swatch = s.color ? `<i class="legswatch" style="background:${esc(s.color)}"></i>` : '';
-  const orig = s.lineOrig && s.lineOrig !== s.line ? '（' + esc(s.lineOrig) + '）' : '';
-  const line = `<span class="legline">${swatch}${esc(s.line || '大眾運輸')}${orig}</span>`;
+  const shown = safeLine(s);
+  const orig = s.lineOrig && s.lineOrig !== shown ? '（' + esc(s.lineOrig) + '）' : '';
+  const line = `<span class="legline">${swatch}${esc(shown)}${orig}</span>`;
   const dir = s.direction ? ' 往 ' + esc(s.direction) : '';
   const bits = [];
   if (s.stops) bits.push(s.stops + ' 站');
@@ -130,6 +137,7 @@ function paintLive(key, rec) {
   const links = `<div class="leglinks">${g}${off}</div>`;
   const body = rec.plan ? planHtml(rec.plan) : `<div class="legstep">${TM.esc(rec.text || (rec.offline ? '目前離線，顯示上次查到的走法' : '正在查這段怎麼搭…'))}</div>`;
   box.innerHTML = body + links;
+  if (rec && rec.plan && rec.plan.min && typeof paintShift === 'function') paintShift(key, rec.plan.min);
 }
 async function fillOne(key, a, b, when, fromName, toName, dest) {
   const ck = [a.lat.toFixed(3), a.lng.toFixed(3), b.lat.toFixed(3), b.lng.toFixed(3), when.toISOString().slice(0, 16)].join('|');
