@@ -156,12 +156,39 @@
     L.ret = meta.ret;
     L.pax = meta.pax;
     L.orig = meta.orig;
+    if (Array.isArray(R.tasks)) {
+      const lv = +L.tasksRev || taskStamp(L.tasks);
+      const rv = +R.tasksRev || taskStamp(R.tasks);
+      if (rv > lv) L.tasks = R.tasks;
+      else if (lv > rv) { /* 這台比較新，留下 */ }
+      else L.tasks = mergeTasks(L.tasks, R.tasks);
+      L.tasksRev = Math.max(lv, rv);
+    }
     L.ownerUid = R.ownerUid || L.ownerUid;
     L.inviteCode = R.inviteCode || L.inviteCode;
     L.cloudId = L.cloudId || R.cloudId;
     if (L.members && L.members.length) { /* 成員以這台裝置剛同步到的為準 */ }
     else if (R.members) L.members = R.members;
     return L;
+  }
+  function taskStamp(list) {
+    return (Array.isArray(list) ? list : []).reduce((m, x) => Math.max(m, x && +x.rev || 0), 0);
+  }
+  function mergeTasks(a, b) {
+    const map = new Map();
+    const put = (x) => {
+      if (!x || typeof x !== 'object' || Array.isArray(x)) return;
+      const text = String(x.text || '').trim();
+      if (!text) return;
+      const id = typeof x.id === 'string' && x.id ? x.id : '';
+      const copy = Object.assign({}, x, { text: text.slice(0, 80) });
+      const key = id || ('anon:' + (copy.section || '') + ':' + copy.text + ':' + (copy.spot || '') + ':' + (copy.day == null ? '' : copy.day));
+      const prev = map.get(key);
+      if (!prev || (+copy.rev || 0) >= (+prev.rev || 0)) map.set(key, copy);
+    };
+    (Array.isArray(a) ? a : []).forEach(put);
+    (Array.isArray(b) ? b : []).forEach(put);
+    return [...map.values()].slice(0, 80);
   }
   function round2(n) { return Math.round(n); }
   /* 每人淨額 = 代付 − 分到的份。再把欠的人配給該收的人，筆數盡量少。 */

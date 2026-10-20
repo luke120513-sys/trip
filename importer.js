@@ -89,7 +89,7 @@ window.importSheet=function(){$('#sheetBody').innerHTML=`<h2>匯入行程</h2><p
 <div class="row"><button class="btn ghost" onclick="closeSheet()">取消</button><button class="btn" onclick="impPaste()">解析文字</button></div>
 <p class="mut" style="margin-top:10px">範本下載：<a href="data/import-template.csv" download>CSV</a>・<a href="data/import-template.xlsx" download>Excel</a>（欄位：第幾天／日期、時間、地點、備註；表頭名稱寫法不拘）</p>
 <h3 style="margin:16px 2px 6px">從網址匯入</h3>
-<p class="mut">貼上 YouTube 影片、Instagram 貼文或 Reels、或部落格／文章網址。旅伴會盡力從標題與內文找出景點和餐廳（中文、日文、英文），可能漏掉或認錯，請在預覽勾選。</p>
+<p class="mut">貼上 YouTube 影片、Instagram 貼文或 Reels、或部落格／文章網址。旅伴會盡力從標題、說明與字幕找出景點，也會整理必買、注意事項和出發前要做。可能漏掉或認錯，請在預覽勾選。不是完整清單。</p>
 <label class="fld">網址<input id="impurl" inputmode="url" placeholder="https://www.youtube.com/watch?v=…" autocomplete="off"></label>
 <div class="row"><button class="btn" type="button" onclick="impUrl()">讀取網址</button></div>`;openSheet()};
 window.impFile=async function(f){if(!f)return;try{R=await parseFile(f);preview()}catch(e){toast(e.message||'無法讀取這個檔案')}};
@@ -160,13 +160,16 @@ async function fetchSource(info){
  const title=(/^Title:\s*(.+)$/m.exec(page)||[])[1]||text.split('\n')[0].slice(0,80);
  return {ok:true,kind:'article',title,text,url:info.url}}
 function pastePrompt(kind,title){const why=kind==='instagram'?'讀不到這則 Instagram。這個平台常常擋住未登入的讀取。':kind==='youtube'?'讀不到這部影片的標題或說明。':'這篇網頁讀不到，網站可能擋住自動讀取。';
- $('#sheetBody').innerHTML=`<h2>改貼說明文字</h2><p class="mut">${why}請把貼文說明、影片描述或文章段落貼在下面。辨識是盡力而為，不是完整清單。</p>${title?`<p><b>${esc(title)}</b></p>`:''}<label class="fld">說明文字<textarea id="impcap" rows="8" placeholder="例如：第一天去淺草寺和東京晴空塔，第二天明治神宮、澀谷十字路口"></textarea></label><div class="row"><button class="btn ghost" type="button" onclick="importSheet()">返回</button><button class="btn" type="button" onclick="impCaption()">從文字辨識</button></div>`}
+ $('#sheetBody').innerHTML=`<h2>改貼說明文字</h2><p class="mut">${why}請把貼文說明、影片描述或字幕貼在下面。景點和任務表都是盡力擷取，不是完整清單。</p>${title?`<p><b>${esc(title)}</b></p>`:''}<label class="fld">說明文字<textarea id="impcap" rows="8" placeholder="例如：第一天去淺草寺，必買人形燒。記得買 Skyliner。淺草寺要排隊。"></textarea></label><div class="row"><button class="btn ghost" type="button" onclick="importSheet()">返回</button><button class="btn" type="button" onclick="impCaption()">從文字辨識</button></div>`}
 async function geocodePending(pending,dest){const out=[];const seen=new Set();
  for(const q of pending.slice(0,8)){const key=q.toLowerCase();if(seen.has(key))continue;seen.add(key);
+  if(!/[\u3040-\u30ff\u4e00-\u9fff]/.test(q)&&!/\s/.test(q))continue;
   const find=typeof placeSearch==='function'?placeSearch:(typeof geoSearch==='function'?geoSearch:null);
   if(!find)break;
   try{const hits=await find(q,dest);const h=hits&&hits[0];if(!h||!Number.isFinite(+h.lat))continue;
    if(h.name&&/^(日本|東京都|tokyo|japan)$/i.test(String(h.name).trim()))continue;
+   const blob=[h.addr,h.city,h.name].filter(Boolean).join(' ');
+   if(dest&&/東京|大阪|京都|福岡|沖繩|札幌|名古屋/.test(dest)&&h.addr&&!/東京|大阪|京都|福岡|沖繩|札幌|名古屋|日本|japan|tokyo|osaka|kyoto|fukuoka/i.test(blob))continue;
    const hint=h.hint||(typeof PlaceQ!=='undefined'&&PlaceQ.hint?PlaceQ.hint(h.name):'');
    out.push({name:q,local:h.name&&h.name!==q?h.name:'',zh:hint&&hint!==q?hint:'',area:'',type:'',pid:'',city:dest||'',lat:+h.lat,lng:+h.lng,source:'geo',addr:h.addr||''})}catch{}}
  return out}
@@ -174,19 +177,30 @@ async function buildPlaces(text,hint){const items=await itemsFor(text,hint);cons
  const city=hint||UrlImport.guessCity(text)||(T()&&T().dest)||'';
  const geo=await geocodePending(ex.pending,city);
  const places=UrlImport.dedupePlaces(ex.places.concat(geo));
- return {places,city,days:UrlImport.guessDays(text,places.length||1)}}
+ const tasks=(UrlImport.extractTasks(text,places)||[]).map(x=>({...x,on:true}));
+ return {places,city,days:UrlImport.guessDays(text,places.length||1),tasks}}
+const TASK_SEC=[['buy','必買'],['note','注意'],['prep','出發前要做']];
+function taskPreviewRow(x,i){const sec=x.section==='note'||x.section==='prep'?x.section:'buy';
+ return `<div class="card" data-tk="${i}" style="margin-bottom:8px"><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" data-tk-on ${x.on===false?'':'checked'} style="width:22px;height:22px"><b>帶進任務表</b></label><label class="fld">內容<input data-tk-text maxlength="80" value="${esc(x.text||'')}"></label><label class="fld">分類<select data-tk-sec>${TASK_SEC.map(([k,lab])=>`<option value="${k}"${sec===k?' selected':''}>${lab}</option>`).join('')}</select></label><label class="fld">相關景點（選填）<input data-tk-spot maxlength="80" value="${esc(x.spot||'')}" placeholder="例：淺草寺"></label><label class="fld">到期日（選填）<input type="date" data-tk-due value="${esc(x.due||'')}"></label>${x.day!=null?`<p class="mut">對應第 ${x.day+1} 天</p>`:''}</div>`}
+function syncTaskDraft(){if(!U)return;const prev=U.tasks||[];U.tasks=[...document.querySelectorAll('[data-tk]')].map(row=>{const i=+row.dataset.tk,old=prev[i]||{};return {section:row.querySelector('[data-tk-sec]').value,text:row.querySelector('[data-tk-text]').value,spot:row.querySelector('[data-tk-spot]').value.trim(),day:old.day,due:row.querySelector('[data-tk-due]').value,on:row.querySelector('[data-tk-on]').checked}})}
+function readUrlTasks(){syncTaskDraft();return (U.tasks||[]).filter(x=>x.on!==false&&String(x.text||'').trim()).map(x=>{const o={section:x.section==='note'||x.section==='prep'?x.section:'buy',text:String(x.text).trim().slice(0,80),done:false};if(x.spot)o.spot=x.spot;if(x.day!=null&&x.day!==''&&+x.day>=0)o.day=+x.day|0;if(/^\d{4}-\d{2}-\d{2}$/.test(x.due||''))o.due=x.due;return o})}
 function urlPreview(){const t=T();const def=t?.dep||new Date(Date.now()+14*864e5).toISOString().slice(0,10);
  const rows=U.places.map((p,i)=>{const pos=Number.isFinite(+p.lat)?`${(+p.lat).toFixed(4)}, ${(+p.lng).toFixed(4)}`:'尚未定位';
   const how=p.source==='catalog'?'內建清單':'地圖搜尋';
   const addr=p.addr&&typeof PlaceQ!=='undefined'&&PlaceQ.zhText?PlaceQ.zhText(p.addr): (p.addr||'');
   const hint=p.zh||(typeof PlaceQ!=='undefined'&&PlaceQ.hint?PlaceQ.hint(p.local||p.name):'');
   const sub=[p.local&&p.local!==p.name?p.local:'',hint&&hint!==p.name&&hint!==p.local?hint:'',addr,how,pos].filter(Boolean).join(' · ');
-  return `<label class="card" style="display:flex;gap:10px;align-items:flex-start;margin-bottom:8px"><input type="checkbox" data-up="${i}" checked style="width:22px;height:22px;margin-top:2px;flex:none"><span><b>${esc(p.name)}</b><div class="mut">${esc(sub)}</div><a href="${esc(mapLink(p,U.city))}" target="_blank" rel="noopener">在地圖上看位置</a></span></label>`}).join('');
- $('#sheetBody').innerHTML=`<h2>網址匯入預覽</h2><p class="mut">盡力辨識，不是完整清單。請勾掉不對的地點。來源：${esc(U.title||U.url||'貼上的文字')}</p>${U.places.length?`<div style="max-height:38vh;overflow:auto">${rows}</div>`:`<div class="card mut">沒有辨識出地點。可以返回，改貼更完整的說明文字。</div>`}
+  const on=!U.placeOn||U.placeOn[i]!==false;
+  return `<label class="card" style="display:flex;gap:10px;align-items:flex-start;margin-bottom:8px"><input type="checkbox" data-up="${i}" ${on?'checked':''} style="width:22px;height:22px;margin-top:2px;flex:none"><span><b>${esc(p.name)}</b><div class="mut">${esc(sub)}</div><a href="${esc(mapLink(p,U.city))}" target="_blank" rel="noopener">在地圖上看位置</a></span></label>`}).join('');
+ const taskRows=(U.tasks||[]).map(taskPreviewRow).join('');
+ const canSave=U.places.length||(U.tasks||[]).some(x=>String(x.text||'').trim());
+ $('#sheetBody').innerHTML=`<h2>網址匯入預覽</h2><p class="mut">盡力辨識，不是完整清單。請勾掉不對的地點與任務。來源：${esc(U.title||U.url||'貼上的文字')}</p>${U.places.length?`<div style="max-height:32vh;overflow:auto">${rows}</div>`:`<div class="card mut">沒有辨識出地點。</div>`}
+ <h3 style="margin:14px 2px 6px">任務表</h3><p class="mut">必買、注意、出發前要做。關鍵字盡力擷取，不是完整清單，可改字、改分類或自己加。</p><div id="taskrows">${taskRows||'<div class="card mut">這篇沒有擷取到任務，可以自己加一項。</div>'}</div><button class="btn ghost blk" type="button" onclick="impTaskAdd()">加一項任務</button>
  <label class="fld">分成幾天<input id="imdays" type="number" min="1" max="14" value="${U.days}"></label>
  <label class="fld">目的地<input id="imd" list="cities" autocomplete="off" value="${esc(U.city)}" placeholder="例：東京" oninput="impDest()"></label><div id="imdsug"></div><label class="fld">第一天日期<input type="date" id="imdep" value="${esc(def)}"></label>
- <div class="row"><button class="btn ghost" type="button" onclick="importSheet()">返回</button>${t?`<button class="btn ghost" type="button" onclick="impUrlApply('merge')">合併到目前行程</button>`:''}<button class="btn" type="button" onclick="impUrlApply('new')" ${U.places.length?'':'disabled'}>建立新行程</button></div>
- ${t?`<p class="mut">合併會依天數加到「${esc(t.dest)}」，不刪除原有景點。每天用最近鄰排序。</p>`:'<p class="mut">勾選的地點會依座標用最近鄰排進每一天。</p>'}`}
+ <div class="row"><button class="btn ghost" type="button" onclick="importSheet()">返回</button>${t?`<button class="btn ghost" type="button" onclick="impUrlApply('merge')">合併到目前行程</button>`:''}<button class="btn" type="button" onclick="impUrlApply('new')" ${canSave?'':'disabled'}>建立新行程</button></div>
+ ${t?`<p class="mut">合併會依天數加到「${esc(t.dest)}」，不刪除原有景點。任務會併進這份行程的任務表。</p>`:'<p class="mut">勾選的地點會依座標用最近鄰排進每一天，勾選的任務會存進任務表。</p>'}`}
+window.impTaskAdd=function(){if(!U)return;const on={};document.querySelectorAll('[data-up]').forEach(el=>{on[+el.dataset.up]=el.checked});U.placeOn=on;syncTaskDraft();U.tasks=U.tasks||[];U.tasks.push({section:'buy',text:'',spot:'',on:true});urlPreview()};
 let impDestTok=0,impDestTimer=0;
 window.impDest=function(){const q=$('#imd')&&$('#imd').value.trim();const tok=++impDestTok;clearTimeout(impDestTimer);const box=$('#imdsug');if(!q||q.length<2){if(box)box.innerHTML='';return}impDestTimer=setTimeout(async()=>{const hits=typeof placeSearch==='function'?await placeSearch(q,q):[];if(tok!==impDestTok||!box)return;paintSuggest(box,(hits||[]).slice(0,6),g=>{if($('#imd'))$('#imd').value=g.name;if(U)U.city=g.name;box.innerHTML=''},'<div class="mut">地圖上沒有這個地方。</div>')},300)};
 window.impUrl=async function(){if(urlBusy)return;const raw=($('#impurl')&&$('#impurl').value||'').trim();
@@ -196,24 +210,26 @@ window.impUrl=async function(){if(urlBusy)return;const raw=($('#impurl')&&$('#im
  try{const src=await fetchSource(info);if(!src.ok){pastePrompt(src.kind,src.title);return}
   $('#sheetBody').innerHTML=`<h2>正在辨識地點</h2><p class="mut">${esc(src.title||'已讀到內文')}。正在對照內建清單，並用免費地圖查座標。</p>`;
   const built=await buildPlaces(src.text,UrlImport.guessCity(src.title+' '+src.text));
-  U={...src,...built};if(!U.places.length){pastePrompt(src.kind,src.title);const box=$('#impcap');if(box)box.value=(src.text||'').slice(0,4000);toast('沒有辨識出地點，請改貼說明文字');return}
+  U={...src,...built};if(!U.places.length&&!(U.tasks&&U.tasks.length)){pastePrompt(src.kind,src.title);const box=$('#impcap');if(box)box.value=(src.text||'').slice(0,4000);toast('沒有辨識出地點或任務，請改貼說明文字');return}
   urlPreview()}catch(e){pastePrompt(info.kind,'')}finally{urlBusy=false}};
 window.impCaption=async function(){const t=($('#impcap')&&$('#impcap').value||'').trim();if(t.length<4)return toast('請先貼上說明文字');
  try{await needUrl()}catch{return toast('載入失敗，請稍後再試')}
- $('#sheetBody').innerHTML=`<h2>正在辨識地點</h2><p class="mut">盡力從你貼的文字對照清單與地圖。</p>`;
- try{const built=await buildPlaces(t,'');if(!built.places.length){toast('還是沒有辨識出地點');pastePrompt('article','');const box=$('#impcap');if(box)box.value=t;return}
+ $('#sheetBody').innerHTML=`<h2>正在辨識</h2><p class="mut">盡力從你貼的文字對照清單、地圖和任務關鍵字。</p>`;
+ try{const built=await buildPlaces(t,'');if(!built.places.length&&!(built.tasks&&built.tasks.length)){toast('還是沒有辨識出地點或任務');pastePrompt('article','');const box=$('#impcap');if(box)box.value=t;return}
   U={ok:true,kind:'text',title:'貼上的說明',text:t,url:'',...built};urlPreview()}catch{toast('辨識失敗，請稍後再試');pastePrompt('article','')}};
-window.impUrlApply=async function(mode){if(!U||!U.places.length)return;const dest=$('#imd').value.trim(),dep=$('#imdep').value;if(!dest||!dep)return toast('請填寫目的地與日期');
+window.impUrlApply=async function(mode){if(!U)return;const dest=$('#imd').value.trim(),dep=$('#imdep').value;if(!dest||!dep)return toast('請填寫目的地與日期');
  const picked=[...document.querySelectorAll('[data-up]')].filter(el=>el.checked).map(el=>U.places[+el.dataset.up]).filter(Boolean);
- if(!picked.length)return toast('請至少勾一個地點');
- let n=Math.round(+$('#imdays').value);if(!n||n<1)n=1;if(n>14)n=14;n=Math.min(n,picked.length);
+ const taskRows=readUrlTasks();
+ if(!picked.length&&!taskRows.length)return toast('請至少勾一個地點或一項任務');
+ let n=Math.round(+$('#imdays').value);if(!n||n<1)n=1;if(n>14)n=14;if(picked.length)n=Math.min(n,picked.length);
  const buckets=UrlImport.splitDays(picked,n);
  let P=null;try{P=await needPlanner()}catch{}
  const groups=buckets.map(list=>{const geo=[],rest=[];for(const p of list){const hint=p.zh||(typeof PlaceQ!=='undefined'&&PlaceQ.hint?PlaceQ.hint(p.local||p.name):'');const addr=p.addr&&typeof PlaceQ!=='undefined'&&PlaceQ.zhText?PlaceQ.zhText(p.addr):(p.addr||'');const s={time:'',name:p.name,zh:hint&&hint!==p.name?hint:undefined,note:[p.local&&p.local!==p.name?p.local:'',hint&&hint!==p.name&&hint!==p.local?hint:'',addr,p.source==='catalog'?'內建清單':'從網址擷取'].filter(Boolean).join(' · '),link:mapLink(p,dest),pid:p.pid||undefined,area:p.area||undefined,lat:Number.isFinite(+p.lat)?+p.lat:undefined,lng:Number.isFinite(+p.lng)?+p.lng:undefined};if(P&&P.coordOf(s))geo.push(s);else rest.push(s)}
   const ordered=P?P.optimizeDay(geo).concat(rest):geo.concat(rest);let m=9*60;for(const s of ordered){s.time=hm(m);m=Math.min(21*60,m+90)}return ordered});
- let t;if(mode==='merge'&&T()){t=T()}else{const r=new Date(dep);r.setDate(r.getDate()+groups.length-1);t={id:Date.now().toString(36),dest,dep,ret:iso(r),pax:2,orig:'TPE',days:[]};trips.unshift(t);cur=t.id}
+ let t;if(mode==='merge'&&T()){t=T()}else{const r=new Date(dep);r.setDate(r.getDate()+Math.max(groups.length,1)-1);t={id:Date.now().toString(36),dest,dep,ret:iso(r),pax:2,orig:'TPE',days:[]};trips.unshift(t);cur=t.id}
  const off=mode==='merge'?Math.max(0,Math.round((new Date(dep)-new Date(t.dep))/864e5)):0;
- if(mode==='merge'){const need=off+groups.length;const r=new Date(t.dep);r.setDate(r.getDate()+need-1);if(iso(r)>t.ret)t.ret=iso(r)}
+ if(mode==='merge'&&groups.length){const need=off+groups.length;const r=new Date(t.dep);r.setDate(r.getDate()+need-1);if(iso(r)>t.ret)t.ret=iso(r)}
  days(t);groups.forEach((d,i)=>{const td=t.days[off+i];if(td)td.push(...d)});
- save();toEdit();toast('已排入 '+picked.length+' 個地點')};
+ if(taskRows.length){if(!Array.isArray(t.tasks))t.tasks=[];const now=Date.now();for(const x of taskRows){const dup=t.tasks.some(o=>(o.section||'')===x.section&&o.text===x.text&&(o.spot||'')===(x.spot||'')&&(o.day==null?'':o.day)===(x.day==null?'':x.day)&&!o.done);if(dup)continue;t.tasks.push({...x,id:now.toString(36)+Math.random().toString(36).slice(2,6),rev:now})}t.tasksRev=now}
+ save();toEdit();toast([picked.length?`已排入 ${picked.length} 個地點`:'',taskRows.length?`任務表 ${taskRows.length} 項`:'', '盡力擷取，不是完整清單'].filter(Boolean).join('，'))};
 })();

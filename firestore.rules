@@ -39,7 +39,8 @@ service cloud.firestore {
         && request.resource.data.dest is string
         && request.resource.data.dest.size() < 80
         && request.resource.data.days is list
-        && request.resource.data.days.size() < 400;
+        && request.resource.data.days.size() < 400
+        && (!('tasks' in request.resource.data) || (request.resource.data.tasks is list && request.resource.data.tasks.size() < 100));
       allow update: if member(tripId)
         && request.resource.data.ownerUid == resource.data.ownerUid
         && request.resource.data.inviteCode == resource.data.inviteCode
@@ -47,7 +48,8 @@ service cloud.firestore {
         && request.resource.data.dest.size() < 80
         && request.resource.data.days is list
         && request.resource.data.days.size() < 400
-        && (!('expenses' in request.resource.data) || (request.resource.data.expenses is list && request.resource.data.expenses.size() < 400));
+        && (!('expenses' in request.resource.data) || (request.resource.data.expenses is list && request.resource.data.expenses.size() < 400))
+        && (!('tasks' in request.resource.data) || (request.resource.data.tasks is list && request.resource.data.tasks.size() < 100));
       allow delete: if signedIn() && request.auth.uid == resource.data.ownerUid;
 
       match /members/{uid} {

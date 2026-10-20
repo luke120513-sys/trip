@@ -87,6 +87,19 @@
     if (files.length) o.files = files;
     return o;
   }
+  function normTask(raw) {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
+    const text = str(cleanStr(raw.text), 80).trim();
+    if (!text) return null;
+    const section = raw.section === 'buy' || raw.section === 'prep' ? raw.section : 'note';
+    const o = { text, section, done: !!raw.done };
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw.due || '')) o.due = raw.due;
+    const spot = str(cleanStr(raw.spot), 80).trim();
+    if (spot) o.spot = spot;
+    if (raw.day != null && raw.day !== '' && Number.isFinite(+raw.day) && +raw.day >= 0 && +raw.day < 40) o.day = +raw.day | 0;
+    if (typeof raw.id === 'string' && raw.id) o.id = str(raw.id, 40);
+    return o;
+  }
   function normTrip(t, level, keepIds) {
     if (!t || typeof t !== 'object' || Array.isArray(t)) return null;
     const dest = str(cleanStr(t.dest), 80).trim();
@@ -100,6 +113,10 @@
     if (keepIds && Array.isArray(t.tickets)) {
       const tickets = t.tickets.slice(0, 40).map(normTicket).filter(Boolean);
       if (tickets.length) o.tickets = tickets;
+    }
+    if (level < 3 && Array.isArray(t.tasks)) {
+      const tasks = t.tasks.slice(0, 80).map(normTask).filter(Boolean);
+      if (tasks.length) o.tasks = tasks;
     }
     if (keepIds) {
       if (typeof t.id === 'string' && t.id) o.id = str(t.id, 40);
@@ -168,5 +185,5 @@
       return { kind: 'trip', trip: v.trips[0] };
     } catch (e) { return { error: 'bad' }; }
   }
-  return { SOFT, HARD, normTrip, normTicket, validateTrips, packTrip, unpackAdd, cleanStr };
+  return { SOFT, HARD, normTrip, normTicket, normTask, validateTrips, packTrip, unpackAdd, cleanStr };
 });

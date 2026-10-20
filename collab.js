@@ -91,6 +91,23 @@ function memberOf(user, code) {
     inviteCode: code
   };
 }
+function taskDoc(list) {
+  if (!Array.isArray(list)) return [];
+  return list.slice(0, 80).map(raw => {
+    if (!raw || typeof raw !== 'object') return null;
+    const text = String(raw.text || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+    if (!text) return null;
+    const section = raw.section === 'buy' || raw.section === 'prep' ? raw.section : 'note';
+    const o = { text, section, done: !!raw.done };
+    if (typeof raw.id === 'string' && raw.id) o.id = raw.id.slice(0, 40);
+    if (/^\d{4}-\d{2}-\d{2}$/.test(raw.due || '')) o.due = raw.due;
+    const spot = String(raw.spot || '').trim().slice(0, 80);
+    if (spot) o.spot = spot;
+    if (raw.day != null && raw.day !== '' && +raw.day >= 0 && +raw.day < 40) o.day = +raw.day | 0;
+    if (+raw.rev > 0) o.rev = +raw.rev;
+    return o;
+  }).filter(Boolean);
+}
 function tripDoc(t) {
   const o = {
     ownerUid: t.ownerUid,
@@ -102,6 +119,8 @@ function tripDoc(t) {
     orig: t.orig || 'TPE',
     days: encodeDays(t.days || []),
     expenses: t.expenses || [],
+    tasks: taskDoc(t.tasks),
+    tasksRev: +t.tasksRev || 0,
     expSeen: t.expSeen || [],
     orderRev: t.orderRev || 0,
     metaRev: t.metaRev || 0,
