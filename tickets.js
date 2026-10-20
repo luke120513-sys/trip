@@ -233,8 +233,8 @@ if (typeof Tickets !== 'undefined') {
   Tickets.dropTrip = tixDropTrip;
 }
 var tixDraft = null, tixOn = false, tixLock = null;
-function openTickets() { const t = TM.T(); if (!t) { TM.toast('請先選一份行程'); return; } tixOn = true; if (TM.getTab && TM.getTab() === 'edit') TM.render(); else TM.go('edit'); }
-function closeTickets() { tixOn = false; if (TM.getTab && TM.getTab() === 'edit') TM.render(); else TM.go('edit'); }
+function openTickets() { const t = TM.T(); if (!t) { TM.toast('請先選一份行程'); TM.go('list'); return; } if (typeof setExpPane === 'function') setExpPane('tix'); else TM.go('expense'); }
+function closeTickets() { tixOn = false; TM.go('edit'); }
 function ticketPage(t) {
   const today = Tickets.todayYmd();
   const list = Tickets.sortTickets(t.tickets || [], today);
@@ -251,9 +251,8 @@ function ticketCard(x, today, t) {
 function ticketTodayHtml(t) {
   const today = Tickets.todayYmd();
   const list = Tickets.sortTickets(t.tickets || [], today).filter(x => Tickets.isToday(x, t, today));
-  const mine = `<button type="button" class="chip${tixOn ? ' on' : ''}" onclick="${tixOn ? 'closeTickets()' : 'openTickets()'}">票券${(t.tickets || []).length ? ' ' + (t.tickets || []).length : ''}</button>`;
-  if (!list.length) return `<div class="row noprint" style="margin-top:8px">${mine}</div>`;
-  return `<div class="card noprint"><div class="row"><b>今天的票券</b>${mine}</div><div class="row" style="margin-top:8px">${list.map(x => `<button type="button" class="chip" onclick="ticketQuick('${tixEsc(x.id)}')">${tixEsc(x.type)} ${tixEsc(x.name)}</button>`).join('')}</div></div>`;
+  if (!list.length) return '';
+  return `<div class="card noprint" id="todaytix"><div class="row"><b>今天的票券</b><button type="button" class="chip" onclick="openTickets()">全部票券</button></div><div class="row" style="margin-top:8px">${list.map(x => `<button type="button" class="chip" onclick="ticketQuick('${tixEsc(x.id)}')">${tixEsc(x.type)} ${tixEsc(x.name)}</button>`).join('')}</div></div>`;
 }
 function ticketChip(day, name) {
   const t = TM.T(); if (!t) return '';
@@ -387,7 +386,7 @@ async function ticketSave() {
   const i = t.tickets.findIndex(x => x.id === id);
   if (i >= 0) t.tickets[i] = item; else t.tickets.push(item);
   t.tickets = t.tickets.slice(0, 40);
-  tixOn = true;
+  tixOn = false;
   TM.save(); TM.closeSheet(); TM.render(); TM.toast('已存進這份行程的票券');
 }
 async function ticketRm(id) {

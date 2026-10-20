@@ -163,8 +163,9 @@ function pastePrompt(kind,title){const why=kind==='instagram'?'讀不到這則 I
  $('#sheetBody').innerHTML=`<h2>改貼說明文字</h2><p class="mut">${why}請把貼文說明、影片描述或文章段落貼在下面。辨識是盡力而為，不是完整清單。</p>${title?`<p><b>${esc(title)}</b></p>`:''}<label class="fld">說明文字<textarea id="impcap" rows="8" placeholder="例如：第一天去淺草寺和東京晴空塔，第二天明治神宮、澀谷十字路口"></textarea></label><div class="row"><button class="btn ghost" type="button" onclick="importSheet()">返回</button><button class="btn" type="button" onclick="impCaption()">從文字辨識</button></div>`}
 async function geocodePending(pending,dest){const out=[];const seen=new Set();
  for(const q of pending.slice(0,8)){const key=q.toLowerCase();if(seen.has(key))continue;seen.add(key);
-  if(typeof geoSearch!=='function')break;
-  try{const hits=await geoSearch(q,dest);const h=hits&&hits[0];if(!h||!Number.isFinite(+h.lat))continue;
+  const find=typeof placeSearch==='function'?placeSearch:(typeof geoSearch==='function'?geoSearch:null);
+  if(!find)break;
+  try{const hits=await find(q,dest);const h=hits&&hits[0];if(!h||!Number.isFinite(+h.lat))continue;
    if(h.name&&/^(日本|東京都|tokyo|japan)$/i.test(String(h.name).trim()))continue;
    const hint=h.hint||(typeof PlaceQ!=='undefined'&&PlaceQ.hint?PlaceQ.hint(h.name):'');
    out.push({name:q,local:h.name&&h.name!==q?h.name:'',zh:hint&&hint!==q?hint:'',area:'',type:'',pid:'',city:dest||'',lat:+h.lat,lng:+h.lng,source:'geo',addr:h.addr||''})}catch{}}
@@ -183,9 +184,11 @@ function urlPreview(){const t=T();const def=t?.dep||new Date(Date.now()+14*864e5
   return `<label class="card" style="display:flex;gap:10px;align-items:flex-start;margin-bottom:8px"><input type="checkbox" data-up="${i}" checked style="width:22px;height:22px;margin-top:2px;flex:none"><span><b>${esc(p.name)}</b><div class="mut">${esc(sub)}</div><a href="${esc(mapLink(p,U.city))}" target="_blank" rel="noopener">在地圖上看位置</a></span></label>`}).join('');
  $('#sheetBody').innerHTML=`<h2>網址匯入預覽</h2><p class="mut">盡力辨識，不是完整清單。請勾掉不對的地點。來源：${esc(U.title||U.url||'貼上的文字')}</p>${U.places.length?`<div style="max-height:38vh;overflow:auto">${rows}</div>`:`<div class="card mut">沒有辨識出地點。可以返回，改貼更完整的說明文字。</div>`}
  <label class="fld">分成幾天<input id="imdays" type="number" min="1" max="14" value="${U.days}"></label>
- <label class="fld">目的地<input id="imd" list="cities" value="${esc(U.city)}" placeholder="例：東京"></label><label class="fld">第一天日期<input type="date" id="imdep" value="${esc(def)}"></label>
+ <label class="fld">目的地<input id="imd" list="cities" autocomplete="off" value="${esc(U.city)}" placeholder="例：東京" oninput="impDest()"></label><div id="imdsug"></div><label class="fld">第一天日期<input type="date" id="imdep" value="${esc(def)}"></label>
  <div class="row"><button class="btn ghost" type="button" onclick="importSheet()">返回</button>${t?`<button class="btn ghost" type="button" onclick="impUrlApply('merge')">合併到目前行程</button>`:''}<button class="btn" type="button" onclick="impUrlApply('new')" ${U.places.length?'':'disabled'}>建立新行程</button></div>
  ${t?`<p class="mut">合併會依天數加到「${esc(t.dest)}」，不刪除原有景點。每天用最近鄰排序。</p>`:'<p class="mut">勾選的地點會依座標用最近鄰排進每一天。</p>'}`}
+let impDestTok=0,impDestTimer=0;
+window.impDest=function(){const q=$('#imd')&&$('#imd').value.trim();const tok=++impDestTok;clearTimeout(impDestTimer);const box=$('#imdsug');if(!q||q.length<2){if(box)box.innerHTML='';return}impDestTimer=setTimeout(async()=>{const hits=typeof placeSearch==='function'?await placeSearch(q,q):[];if(tok!==impDestTok||!box)return;paintSuggest(box,(hits||[]).slice(0,6),g=>{if($('#imd'))$('#imd').value=g.name;if(U)U.city=g.name;box.innerHTML=''},'<div class="mut">地圖上沒有這個地方。</div>')},300)};
 window.impUrl=async function(){if(urlBusy)return;const raw=($('#impurl')&&$('#impurl').value||'').trim();
  let UI;try{UI=await needUrl()}catch{return toast('載入失敗，請稍後再試')}
  const info=UI.classifyUrl(raw);if(!info)return toast('請貼上 http 開頭的網址');

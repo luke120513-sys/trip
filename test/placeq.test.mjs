@@ -35,11 +35,19 @@ const importer = readFileSync(new URL('../importer.js', import.meta.url), 'utf8'
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 assert.match(extras, /PlaceQ\.search/);
-assert.match(food, /function foodGeo[\s\S]*geoSearch\(q, dest\)/);
-assert.match(importer, /geoSearch\(q,dest\)/);
+assert.match(food, /function foodGeo[\s\S]*placeSearch\(q, dest, here\)/);
+assert.match(food, /PlaceQ\.search\(q/);
+assert.match(food, /diarySearch\(tok\)/);
+assert.doesNotMatch(food, /foodGeo\(q \+/);
+assert.match(food, /setTimeout\(\(\) => diarySearch\(tok\), 300\)/);
+assert.match(food, /搜尋店名/);
+assert.match(html, /setTimeout\(\(\)=>runSugg\(q,tok\),300\)/);
+assert.match(html, /placeSearch\(q,t&&t\.dest\)/);
+assert.match(importer, /placeSearch\(q, dest\)|placeSearch\(q,dest\)|find\(q,dest\)/);
+assert.match(readFileSync(new URL('../placeurl.js', import.meta.url), 'utf8'), /PlaceQ\.search/);
 assert.ok(html.includes('placeq.js'));
-assert.ok(html.includes('這家有多間分店'));
-assert.match(sw, /tripmate-v35/);
+assert.ok(extras.includes('這家有多間分店'));
+assert.match(sw, /tripmate-v41/);
 assert.ok(sw.includes('placeq.js'));
 
 assert.equal(PlaceQ.hint('玄品ふぐ'), '玄品河豚');
@@ -76,6 +84,48 @@ assert.ok(seen.some(s => s.includes('lang=default')));
 assert.equal(mocked[0].name, '玄品ふぐ');
 assert.equal(mocked[0].hint, '玄品河豚');
 assert.equal(mocked[0].addr, '神楽坂通り · 新宿區 · 東京 · 日本');
+
+const origFetch = globalThis.fetch;
+let cacheCalls = 0;
+globalThis.fetch = async (u) => {
+  cacheCalls++;
+  if (String(u).includes('photon')) return { ok: true, status: 200, json: async () => ({ features: [{ properties: { name: '快取測試店', street: '神楽坂通り', district: '新宿区', city: '東京都', country: '日本' }, geometry: { coordinates: [139.74, 35.7] } }] }) };
+  return { ok: false, status: 500, json: async () => ({}) };
+};
+const cachedA = await PlaceQ.search('快取測試', { bias: tokyo, few: 1, limit: 3 });
+const afterFirst = cacheCalls;
+const cachedB = await PlaceQ.search('快取測試', { bias: tokyo, few: 1, limit: 3 });
+assert.equal(cachedB[0].name, cachedA[0].name);
+assert.equal(cacheCalls, afterFirst);
+const pacedAt = Date.now();
+await PlaceQ.search('快取測試乙', { bias: tokyo, few: 1, limit: 3 });
+assert.ok(Date.now() - pacedAt >= 300, 'photon lookups should be spaced');
+globalThis.fetch = origFetch;
+
+const diarySeen = [];
+const diaryHits = await PlaceQ.search('玄品河豚', {
+  bias: tokyo,
+  few: 3,
+  limit: 6,
+  fetch: async (u) => {
+    const s = String(u);
+    diarySeen.push(s);
+    const q = decodeURIComponent(s);
+    if (s.includes('lang=zh')) return { ok: false, status: 400, json: async () => ({}) };
+    if (q.includes('玄品河豚') && !q.includes('ふぐ')) {
+      return { ok: true, status: 200, json: async () => ({ features: [1, 2, 3].map(i => ({ properties: { name: '別的店' + i, city: 'Tokyo', country: 'Japan' }, geometry: { coordinates: [139.76, 35.68] } })) }) };
+    }
+    if (q.includes('ふぐ')) {
+      return { ok: true, status: 200, json: async () => ({ features: [
+        { properties: { name: '玄品ふぐ', street: '神楽坂通り', district: '新宿区', city: '東京都', country: '日本' }, geometry: { coordinates: [139.739, 35.702] } },
+        { properties: { name: '玄品ふぐ', street: '広小路', district: '台東区', city: '東京都', country: '日本' }, geometry: { coordinates: [139.774, 35.711] } }
+      ] }) };
+    }
+    return { ok: true, status: 200, json: async () => ({ features: [] }) };
+  }
+});
+assert.ok(diarySeen.some(s => decodeURIComponent(s).includes('ふぐ')), 'diary search should try ふぐ');
+assert.ok(diaryHits.filter(h => h.name.includes('玄品ふぐ')).length >= 2, 'diary 玄品河豚 branches ' + JSON.stringify(diaryHits));
 
 const hits = await PlaceQ.search('玄品河豚', { bias: tokyo, limit: 8, few: 3 });
 const branches = hits.filter(h => /玄品ふぐ/.test(h.name) && /東京/.test((h.city || '') + (h.addr || '')));
