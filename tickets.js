@@ -233,7 +233,7 @@ if (typeof Tickets !== 'undefined') {
   Tickets.dropTrip = tixDropTrip;
 }
 var tixDraft = null, tixOn = false, tixLock = null;
-function openTickets() { const t = TM.T(); if (!t) { TM.toast('請先選一份行程'); TM.go('list'); return; } TM.go('tickets'); }
+function openTickets() { const t = TM.T(); if (!t) { TM.toast('請先選一份行程'); TM.go('list'); return; } if (typeof setExpPane === 'function') setExpPane('tix'); else TM.go('expense'); }
 function closeTickets() { tixOn = false; TM.go('edit'); }
 function ticketPage(t) {
   const today = Tickets.todayYmd();
@@ -252,7 +252,7 @@ function ticketTodayHtml(t) {
   const today = Tickets.todayYmd();
   const list = Tickets.sortTickets(t.tickets || [], today).filter(x => Tickets.isToday(x, t, today));
   if (!list.length) return '';
-  return `<div class="card noprint" id="todaytix"><div class="row"><b>今天的票券</b><button type="button" class="chip" onclick="go('tickets')">全部票券</button></div><div class="row" style="margin-top:8px">${list.map(x => `<button type="button" class="chip" onclick="ticketQuick('${tixEsc(x.id)}')">${tixEsc(x.type)} ${tixEsc(x.name)}</button>`).join('')}</div></div>`;
+  return `<div class="card noprint" id="todaytix"><div class="row"><b>今天的票券</b><button type="button" class="chip" onclick="openTickets()">全部票券</button></div><div class="row" style="margin-top:8px">${list.map(x => `<button type="button" class="chip" onclick="ticketQuick('${tixEsc(x.id)}')">${tixEsc(x.type)} ${tixEsc(x.name)}</button>`).join('')}</div></div>`;
 }
 function ticketChip(day, name) {
   const t = TM.T(); if (!t) return '';
