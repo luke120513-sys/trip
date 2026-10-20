@@ -352,21 +352,39 @@
     try { return await job.then(cloneHits); }
     finally { if (!fetchFn) pending.delete(key); }
   }
+  function fold(s) { return String(s || '').replace(/\s+/g, '').toLowerCase(); }
+  function matchesQuery(h, keys) {
+    const n = fold(h && h.name);
+    if (n.length < 2) return false;
+    return keys.some(k => {
+      const t = fold(k);
+      if (t.length < 2) return false;
+      return n.includes(t) || (t.includes(n) && t.length - n.length <= 4);
+    });
+  }
   async function runSearch(q, bias, limit, few, fetchFn) {
     const queries = plan(q);
+    const keys = uniq([].concat(queries.primary, queries.fallback));
+    const base = String(q || '').trim();
+    const rewrites = queries.primary.filter(s => s && s !== base);
     let all = [];
     let tried = 0;
-    const run = async list => {
+    let sawRewrite = !rewrites.length;
+    const pull = async list => {
       for (const query of list) {
         if (tried >= 6) return;
         tried++;
+        if (rewrites.indexOf(query) >= 0) sawRewrite = true;
         all = dedupe(all.concat(await lookup(query, bias, limit, fetchFn)));
-        if (near(all, bias).length >= few) return;
+        const rel = near(all, bias).filter(h => matchesQuery(h, keys));
+        if (sawRewrite && rel.length >= few) return;
       }
     };
-    await run(queries.primary);
-    if (near(all, bias).length < few) await run(queries.fallback);
-    return rank(near(all, bias), bias).slice(0, limit).map(h => decorate(h, q));
+    await pull(queries.primary);
+    if (near(all, bias).filter(h => matchesQuery(h, keys)).length < few) await pull(queries.fallback);
+    const ranked = rank(near(all, bias), bias);
+    const rel = ranked.filter(h => matchesQuery(h, keys));
+    return (rel.length ? rel : ranked).slice(0, limit).map(h => decorate(h, q));
   }
 
   return { plan, kanji, dedupe, search, km, hint: foodHint, zhText, fetchPhoton };

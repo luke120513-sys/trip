@@ -329,7 +329,11 @@
     return { name: p.name || '', addr: parts.join(' · ') };
   }
   async function defaultSearch(q, dest) {
+    if (typeof placeSearch === 'function') return placeSearch(q, dest);
     if (typeof geoSearch === 'function') return geoSearch(q, dest);
+    if (typeof PlaceQ !== 'undefined' && PlaceQ.search) {
+      try { return await PlaceQ.search(q, { limit: 8, few: 3 }); } catch (e) { return []; }
+    }
     return [];
   }
   async function resolve(input, opt) {

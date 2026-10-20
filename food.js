@@ -278,26 +278,20 @@ function foodDiaryFromUrl() {
 async function foodGeo(q) {
   q = String(q || '').trim();
   if (q.length < 2) return [];
-  const here = foodPlace && Number.isFinite(+foodPlace.lat) ? { lat: +foodPlace.lat, lng: +foodPlace.lng } : null;
+  const here = foodPlace && Number.isFinite(+foodPlace.lat) && Math.abs(+foodPlace.lat) + Math.abs(+foodPlace.lng) > 0.01 ? { lat: +foodPlace.lat, lng: +foodPlace.lng } : null;
   const named = foodPlace && foodPlace.name && foodPlace.name !== '我的位置' ? foodPlace.name : '';
   const dest = named || (typeof TM !== 'undefined' && TM.T && TM.T() && TM.T().dest) || '';
-  if (typeof geoSearch === 'function') return geoSearch(q, dest, here);
+  if (typeof placeSearch === 'function') return placeSearch(q, dest, here);
+  if (window.PlaceQ && PlaceQ.search) return PlaceQ.search(q, { bias: here, limit: 8, few: 3 });
   return [];
-}
-function placeSugHtml(hits, fn) {
-  const branched = hits.some((g, i) => hits.some((h, j) => j !== i && h.name === g.name));
-  const note = branched ? '<div class="mut">這家有多間分店，請選地址對的那一間。</div>' : '';
-  return note + hits.map((g, i) => `<button type="button" class="sg" onclick="${fn}(${i})"><span><b>${TM.esc(g.name)}</b>${g.hint && g.hint !== g.name ? ` <small class="mut">${TM.esc(g.hint)}</small>` : ''}<br><small class="mut">${TM.esc(g.addr || g.city || '')}</small></span></button>`).join('');
 }
 async function runFoodSug(q, tok) {
   const hits = await foodGeo(q);
   if (tok !== foodSugTok) return;
   foodSug = hits.slice(0, 6);
-  const box = $('#foodsug');
-  if (!box) return;
-  box.innerHTML = foodSug.length ? placeSugHtml(foodSug, 'foodPick') : '<div class="mut">找不到這個地方，換個說法再試。</div>';
+  paintSuggest($('#foodsug'), foodSug, foodPickHit, '<div class="mut">找不到這個地方，換個說法再試。</div>');
 }
-function foodPick(i) { const g = foodSug[i]; if (!g) return; foodSugTok++; const box = $('#foodsug'); if (box) box.innerHTML = ''; setFoodPlace({ name: g.name, hint: g.hint || '', lat: g.lat, lng: g.lng, user: true }); }
+function foodPickHit(g) { if (!g) return; foodSugTok++; const box = $('#foodsug'); if (box) box.innerHTML = ''; setFoodPlace({ name: g.name, hint: g.hint || '', lat: g.lat, lng: g.lng, user: true }); }
 function foodChip(name) {
   name = String(name || '');
   const b = typeof cityBias === 'function' ? cityBias(name) : null;
@@ -601,13 +595,11 @@ async function diarySearch(tok) {
   if (box) box.innerHTML = '<div class="mut">搜尋中…</div>';
   const hits = await foodGeo(q);
   if (tok !== diarySugTok || !diaryDraft) return;
-  diaryDraft.hits = hits.slice(0, 6);
-  if (!box) return;
-  box.innerHTML = diaryDraft.hits.length ? placeSugHtml(diaryDraft.hits, 'diaryPickHit') : '<div class="mut">地圖上沒有這家。仍可用你打的店名儲存。</div>';
+  diaryDraft.hits = (hits || []).slice(0, 6);
+  paintSuggest(box, diaryDraft.hits, diaryPickHit, '<div class="mut">地圖上沒有這家。仍可用你打的店名儲存。</div>');
 }
-function diaryPickHit(i) {
-  const g = diaryDraft && diaryDraft.hits && diaryDraft.hits[i];
-  if (!g) return;
+function diaryPickHit(g) {
+  if (!g || !diaryDraft) return;
   diaryDraft.placeName = g.name;
   diaryDraft.lat = g.lat;
   diaryDraft.lng = g.lng;

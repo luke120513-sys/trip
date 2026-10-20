@@ -9,11 +9,13 @@ let FXR=null,expTok=0,FOODDB=null,pendingAdd=null,expCat='餐飲',ocrTok=0,rateK
 function loadScript(src){return new Promise((ok,no)=>{if([...document.scripts].some(s=>s.src===src)){ok();return}const e=document.createElement('script');e.src=src;e.onload=ok;e.onerror=()=>no(new Error('load'));document.head.append(e)})}
 function cityBias(dest){if(!dest||!window.TM)return null;const c=TM.cityOf(dest)||dest;const ll=CITY_LL[c]||CITY_LL[dest];return ll?{lat:ll[0],lng:ll[1]}:null}
 
-async function geoSearch(q,dest,bias){q=String(q||'').trim();if(q.length<2)return[];
- const b=bias&&Number.isFinite(+bias.lat)&&Number.isFinite(+bias.lng)?{lat:+bias.lat,lng:+bias.lng}:cityBias(dest);
+async function placeSearch(q,dest,bias){q=String(q||'').trim();if(q.length<2)return[];
+ const b=bias&&Number.isFinite(+bias.lat)&&Number.isFinite(+bias.lng)&&Math.abs(+bias.lat)+Math.abs(+bias.lng)>0.01?{lat:+bias.lat,lng:+bias.lng}:cityBias(dest);
  if(typeof PlaceQ!=='undefined'&&PlaceQ.search){try{const hits=await PlaceQ.search(q,{bias:b,limit:8,few:3});if(hits&&hits.length)return hits}catch(e){}}
  try{if(typeof geoFind==='function'){const g=await geoFind(q);if(g&&g.latitude!=null)return[{name:g.name||q,addr:[g.admin1,g.country].filter(Boolean).join(' · '),lat:+g.latitude,lng:+g.longitude}]}}catch(e){}
  return[]}
+async function geoSearch(q,dest,bias){return placeSearch(q,dest,bias)}
+function paintSuggest(box,hits,onPick,empty){if(!box)return;const esc=TM.esc;if(!hits||!hits.length){box.innerHTML=empty||'<div class="mut">地圖上沒有這家。仍可用你打的店名儲存。</div>';return}const branched=hits.some((g,i)=>hits.some((h,j)=>j!==i&&h.name===g.name));box.innerHTML=(branched?'<div class="mut">這家有多間分店，請選地址對的那一間。</div>':'')+hits.map((g,i)=>`<button type="button" class="sg" data-i="${i}"><span><b>${esc(g.name)}</b>${g.hint&&g.hint!==g.name?` <small class="mut">${esc(g.hint)}</small>`:''}<br><small class="mut">${esc(g.addr||g.city||'')}</small></span></button>`).join('');box.querySelectorAll('.sg').forEach(btn=>btn.addEventListener('click',()=>{const g=hits[+btn.dataset.i];if(g&&onPick)onPick(g)}))}
 
 function fmtMin(m){m=Math.round(m)||0;if(m<=0)return '0 分';return m>=60?(Math.floor(m/60)+' 小時'+(m%60?m%60+' 分':'')):m+' 分'}
 function sameOrder(a,b){return a.length===b.length&&a.every((s,i)=>s===b[i])}
