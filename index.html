@@ -86,6 +86,10 @@ html.dark .xsw{--xsw-bg:#232B35;--xsw-tx:#A3AFBC;--xsw-on:#2E3A48}html.dark .xsw
 .tixstage{flex:1;overflow:auto;display:flex;flex-direction:column;align-items:center;gap:8px;padding:8px}
 .tixstage img,.tixstage iframe{width:100%;max-width:520px;height:70vh;object-fit:contain;background:#000;border:0}
 .tixmeta{font-size:18px;font-weight:800;text-align:center}
+.tixused{opacity:.58;filter:grayscale(1)}
+.tixusedbox{margin:4px 0 12px}
+.tixusedbox summary{cursor:pointer;font-weight:800;min-height:44px;display:flex;align-items:center}
+.tixuse{margin-top:8px}
 .spot .chip{font-size:12px;padding:2px 8px;margin-left:6px;vertical-align:1px}
 .caveat{background:var(--tint);color:var(--tintfg);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.55}
 .extotal{font-size:28px;font-weight:800;color:var(--acc)}
@@ -374,7 +378,7 @@ function views(){let inc=0;try{if(!sessionStorage.getItem('trip_viewed')){inc=1;
 fetch(VAPI+'?action=views&site=trip'+(inc?'&inc=1':'')).then(r=>r.json()).then(d=>{if(d&&d.ok&&d.total>0){VW=d.total;const e=$('#vw');if(e){e.textContent='👀 累計瀏覽 '+VW.toLocaleString();e.hidden=false}}}).catch(()=>{})}
 addEventListener('load',()=>(window.requestIdleCallback||setTimeout)(()=>setTimeout(views,1200)));
 let impP=null;function openImport(){return (impP||(impP=new Promise((ok,no)=>{const e=document.createElement('script');e.src='importer.js';e.onload=ok;e.onerror=()=>{impP=null;no()};document.head.append(e)}))).then(()=>importSheet()).catch(()=>toast('載入失敗，請稍後再試'))}
-function ticketTodayCount(t){if(!t||typeof Tickets==='undefined'||!Tickets.isToday)return 0;const today=Tickets.todayYmd();return (t.tickets||[]).filter(x=>Tickets.isToday(x,t,today)).length}
+function ticketTodayCount(t){if(!t||typeof Tickets==='undefined'||!Tickets.isToday)return 0;const today=Tickets.todayYmd();return (t.tickets||[]).filter(x=>!x.used&&Tickets.isToday(x,t,today)).length}
 function render(){const on=k=>k===tab||(k==='list'&&(tab==='edit'||tab==='new'));const nToday=ticketTodayCount(T());$('#nav').innerHTML=TABS.map(([k,n])=>{const badge=k==='expense'&&nToday?`<b class="nb">${nToday>99?'99+':nToday}</b>`:'';const label=k==='expense'&&nToday?` aria-label="支出與票券，今天 ${nToday} 張"`:'';const wide=n.length>2?' wide':'';return `<button class="${on(k)?'on':''}${wide}" onclick="go('${k}')"${label}><span class="nic">${badge}<svg viewBox="0 0 24 24">${TI[k]}</svg></span>${n}</button>`}).join('');$('#app').innerHTML=V[tab]()+foot();if(tab==='edit'){bindDays();bindSort();const tt=T();if(tt)wxLoad(tt);if(typeof fillLive==='function')fillLive();maybeAutoShift()}if(tab==='deals'||tab==='edit')loadDeals();if(tab==='expense'&&expPane!=='tix'&&typeof paintExp==='function')paintExp();if(tab==='food'&&typeof paintFood==='function')paintFood();if(tab==='more'&&typeof paintAccount==='function')paintAccount();if(tab==='more'&&typeof paintBackupHint==='function')paintBackupHint()}
 const foot=()=>`<footer><div class="fb"><a class="cb" href="${SPONSOR_URL}" target="_blank" rel="noopener"><img src="icons/coffee-trip.svg" alt="" width="40" height="40">贊助</a><a class="cb" href="#" onclick="shareSite();return false"><img src="icons/share-trip.svg" alt="" width="40" height="40">分享</a></div><div class="fl"><a href="#" onclick="info('about');return false">關於我們</a><i>|</i><a href="#" onclick="info('privacy');return false">隱私權政策</a><i>|</i><a href="#" onclick="info('terms');return false">服務條款</a></div><div class="fs"><a class="sfly" href="${BASE}flysave/?from=trip"><img src="icons/fly-fly.svg" alt="" width="24" height="24">飛省 查機票</a><a class="sfan" href="${BASE}fansave/?from=trip"><img src="icons/hotel-fan.svg" alt="" width="24" height="24">飯省 找飯店</a></div><div class="vw" id="vw"${VW?``:` hidden`}>${VW?`👀 累計瀏覽 ${VW.toLocaleString()}`:``}</div><div class="copy">© 2026 旅伴 TripMate・推薦景點資料截至 2026-10-19・v2.9.3</div></footer>`;
 const V={
