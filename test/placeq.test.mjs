@@ -39,7 +39,7 @@ assert.match(food, /function foodGeo[\s\S]*geoSearch\(q, dest\)/);
 assert.match(importer, /geoSearch\(q,dest\)/);
 assert.ok(html.includes('placeq.js'));
 assert.ok(html.includes('這家有多間分店'));
-assert.match(sw, /tripmate-v35/);
+assert.match(sw, /tripmate-v36/);
 assert.ok(sw.includes('placeq.js'));
 
 assert.equal(PlaceQ.hint('玄品ふぐ'), '玄品河豚');

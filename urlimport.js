@@ -375,7 +375,7 @@ function captionsText(xml){
     const t = m[1].replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&#39;|&apos;/g, "'").replace(/&quot;/g, '"').replace(/\s+/g, ' ').trim();
     if (t) parts.push(t);
   }
-  const text = parts.join(' ').trim();
+  const text = parts.join('\n').trim();
   return text.length >= 40 ? text : '';
 }
 function clipYoutube(md, id){
@@ -404,7 +404,8 @@ function clipYoutube(md, id){
     t = t.replace(/(?:…|\.{2,})\s*more\b/ig, ' ').replace(/\bshow less\b/ig, ' ').replace(/\s+/g, ' ').trim();
     if (skipShort && t.length < 160) continue;
     skipShort = false;
-    if (/skip navigation|tap to unmute|you'?re signed out|show transcript|follow along using the transcript|this helps protect our community|target url returned error|playback doesn'?t begin|videos you watch|sign in to confirm|include playlist|error occurred while retrieving|^subscribers?$|^\d[\d,.]*k? views|wake up with |^show less$|^chapters$|^view all$|^watch full video$/i.test(t)) continue;
+    if (/skip navigation|tap to unmute|you'?re signed out|show transcript|follow along using the transcript|this helps protect our community|target url returned error|playback doesn'?t begin|videos you watch|sign in to confirm|include playlist|error occurred while retrieving|^subscribers?$|^\d[\d,.]*k? views|wake up with |^show less$|^chapters$|^view all$|^watch full video$|蝦皮|shopee\.|ultimate guide|complete mastery|travel guide:|comprehensive guide|instant installation|wingstar|nippon sim/i.test(t)) continue;
+    if (/[A-Za-z0-9+/_-]{48,}/.test(t)) continue;
     if (chrome.test(t)) continue;
     if (/^(?:image|video) \d+$/i.test(t)) continue;
     if (kept[kept.length - 1] === t) continue;
@@ -431,5 +432,166 @@ function readerFailed(text){
   return false;
 }
 
-return { classifyUrl, youtubeId, guessCity, cityHits, guessDays, extractPlaces, dedupePlaces, splitDays, captionsText, clipYoutube, clipArticle, readerFailed, normKey, km };
+function tidyBuy(s){
+  let t = String(s || '').replace(/^[「『"“'（(【\[]+|[」』"”'）)】\]]+$/g, '').replace(/\s+/g, ' ').trim();
+  t = t.split(/[\u{1F000}-\u{1FAFF}\u2600-\u27BF]/u)[0];
+  t = t.replace(/^(?:了|的|是|有|個|一些|一點)/, '').trim();
+  t = t.replace(/(?:很有名|很好吃|超好吃|很好買|比較推薦|的話|的時候|必吃|必買|推薦)$/g, '').trim();
+  t = t.replace(/[的了喔哦啊呀吧呢嘛！!？?。．.、,，+＋|｜]+$/g, '').trim();
+  if (t.length < 2 || t.length > 18) return '';
+  if (/^(?:東西|物品|這個|那個|一些|商品|名產|很多|一堆|什麼|甚麼|伴手禮|伴手礼|紀念品|美食|小吃|點心|限定|天堂|清單|攻略)$/.test(t)) return '';
+  if (/[🔥✨❤️❤📌✅⚠⚠]/.test(t)) return '';
+  return t;
+}
+function splitBuyList(s){
+  return String(s || '').split(/[、,，/／|｜]|以及|還有|跟/).flatMap(part => part.split(/和(?!服|牛|果|平|風|歌)/)).map(x => tidyBuy(x)).filter(Boolean);
+}
+function namedPlace(p){
+  if (!p) return '';
+  if (typeof p === 'string') return p.trim();
+  return String(p.name || '').trim();
+}
+function spotIn(clause, places){
+  const folded = fold(clause);
+  let best = '', bestLen = 0;
+  for (const p of places || []) {
+    const name = namedPlace(p);
+    if (name.length < 2) continue;
+    const shorts = [name];
+    const head = name.split(/[・·]/)[0];
+    if (head && head !== name && head.length >= 2) shorts.push(head);
+    if (p && typeof p === 'object' && p.local) shorts.push(String(p.local));
+    for (const v of shorts) {
+      const fv = fold(String(v || '').trim());
+      if (fv.length >= 2 && folded.includes(fv) && fv.length > bestLen) { best = name; bestLen = fv.length; }
+    }
+  }
+  if (best) return best;
+  const m = /[\u4e00-\u9fff]{2,8}(?:寺|神社|神宮|塔|市場|樂園|公園|美術館|博物館)/.exec(clause);
+  if (m && !CITY_ZH.includes(m[0])) return m[0];
+  return '';
+}
+function dayMark(clause){
+  const mz = /第\s*([一二兩三四五六七八九十]|\d{1,2})\s*天/.exec(clause);
+  if (mz) {
+    const n = ZH_DAY[mz[1]] || +mz[1] || 0;
+    if (n >= 1 && n <= 40) return n - 1;
+  }
+  const me = /\bday\s*(\d{1,2})\b/i.exec(clause);
+  if (me) {
+    const n = +me[1];
+    if (n >= 1 && n <= 40) return n - 1;
+  }
+  return null;
+}
+function taskClauses(text){
+  const raw = String(text || '').normalize('NFKC').replace(/\r/g, '');
+  const bits = raw.split(/(?=(?:第\s*(?:[一二兩三四五六七八九十]|\d{1,2})\s*天|\bday\s*\d{1,2}\b))/i);
+  const out = [];
+  for (const bit of bits) {
+    for (const piece of bit.split(/[。！？；;\n!?]+/)) {
+      const s = piece.replace(/^[\s,，、]+|[\s,，、]+$/g, '').trim();
+      if (s) out.push(s);
+    }
+  }
+  return out;
+}
+const TRIP_BUY = new Set(['Skyliner', '成田特快', 'JR Pass', '周遊券', 'Suica', 'SIM／eSIM', '迪士尼門票', '藥妝']);
+function buyFromClause(clause){
+  const out = [];
+  const push = s => { if (s && !out.includes(s)) out.push(s); };
+  if (/skyliner|スカイライナー/i.test(clause)) push('Skyliner');
+  if (/成田特快|n'?ex\b/i.test(clause)) push('成田特快');
+  const jr = /jr\s*pass|japan\s*rail\s*pass|jr.{0,8}周遊券|全國周遊券/i.test(clause);
+  if (jr) push('JR Pass');
+  else if (/周遊券/.test(clause)) push('周遊券');
+  if (/suica|スイカ|西瓜卡|pasmo|icoca/i.test(clause)) push('Suica');
+  if (/迪士尼(?:樂園|海洋)?的?(?:門票|票)|disney(?:land|sea)?\s*tickets?/i.test(clause)) push('迪士尼門票');
+  if (/\be-?sim\b|sim\s*卡|上網卡|網卡/i.test(clause)) push('SIM／eSIM');
+  if (/藥妝|药妆|松本清|マツキヨ|唐吉訶德|唐吉诃德|ドンキ|驚安の殿堂/.test(clause)) push('藥妝');
+  const keep = part => {
+    if (/skyliner|スカイライナー/i.test(part)) push('Skyliner');
+    else if (/jr\s*pass|周遊券/i.test(part)) push(jr || /jr/i.test(part) ? 'JR Pass' : '周遊券');
+    else if (/suica|西瓜卡|pasmo|icoca/i.test(part)) push('Suica');
+    else if (/迪士尼/.test(part) && /票/.test(part)) push('迪士尼門票');
+    else if (/\be-?sim\b|sim\s*卡|上網卡|網卡/i.test(part)) push('SIM／eSIM');
+    else if (/藥妝|松本清|唐吉訶德/.test(part)) push('藥妝');
+    else if (/(?:寺|神社|神宮|公園|市場|車站|商店街)$/.test(part)) return;
+    else if (!/[\u4e00-\u9fff]/.test(part)) return;
+    else push(part);
+  };
+  const lead = /(?:必買|要買|記得買|推薦買|別忘了買|一定要買|必吃|必食|must[\s-]?buy|souvenirs?)(?:的|是|有)?[:：\s-]*([^。！？；;\n]{1,40})|(?:伴手禮|紀念品)[:：是]\s*([^。！？；;\n]{1,40})/gi;
+  let m;
+  while ((m = lead.exec(clause))) {
+    for (const part of splitBuyList(m[1] || m[2] || '')) keep(part);
+  }
+  const kw = /必(?:買|吃|食)/g;
+  while ((m = kw.exec(clause))) {
+    let window = clause.slice(Math.max(0, m.index - 18), m.index);
+    window = window.replace(/(?:[\u4e00-\u9fff]{2,6}(?:寺|神社|神宮|公園|市場|車站|商店街))[，,、\s]*$/g, '');
+    window = window.replace(/[^\u4e00-\u9fff]+$/g, '');
+    const tail = /([\u4e00-\u9fff]{2,8})$/.exec(window);
+    if (!tail) continue;
+    let name = tail[1];
+    const shop = /[屋店家舖]([\u4e00-\u9fff]{2,6})$/.exec(name);
+    if (shop) name = shop[1];
+    for (const part of splitBuyList(name)) keep(part);
+  }
+  return out;
+}
+function noteFromClause(clause){
+  const out = [];
+  const push = s => { if (!out.includes(s)) out.push(s); };
+  if (/需預約|要預約|必須預約|記得預約|預約制|要先預約|需事先預約|只能預約|予約必須|要予約|予約制|事前予約|reservation\s+required/i.test(clause) && !/予約番号|預約編號|訂位編號/.test(clause)) push('需預約');
+  if (/要排隊|大排長龍|需要排隊|會排隊|排隊很久|很多人排|超多人排|行列ができる|大行列/.test(clause)) push('要排隊');
+  if (/只收現金|只接受現金|不收信用卡|不能刷卡|不接受信用卡|現金のみ|cash\s*only/i.test(clause)) push('只收現金');
+  if (/公休|定休|休息日|每週[一二三四五六日天]休|週[一二三四五六日]公休/.test(clause)) push('注意公休日');
+  if (/營業時間|開放時間|營業到|幾點開|幾點關|打烊|關門時間|営業時間/.test(clause)) push('確認營業時間');
+  if (/服裝規定|著裝規定|dress\s*code|不能穿短褲|需著正裝/i.test(clause)) push('注意服裝規定');
+  if (/注意天氣|看天氣|帶傘|防曬|天氣不穩|可能下雨|會下雨/.test(clause)) push('注意天氣');
+  return out;
+}
+function prepFromClause(clause){
+  const out = [];
+  const push = s => { if (!out.includes(s)) out.push(s); };
+  if (/vjw|visit\s*japan|簽證|入境卡/i.test(clause)) push('辦簽證／VJW');
+  if (/換匯|換錢|換日圓|換日幣|換日元|両替/.test(clause)) push('換匯');
+  const skipNo = /訂位編號|預約編號|確認編號|訂單編號|予約番号/.test(clause);
+  if (/訂房|訂票|預訂|事先訂|提前訂|記得訂|要先訂/.test(clause) || (/訂位/.test(clause) && !skipNo)) push('預訂');
+  return out;
+}
+function extractTasks(text, places){
+  let day = null, recent = '';
+  const out = [];
+  const seen = new Set();
+  const push = (section, label, spot, d) => {
+    label = String(label || '').trim().slice(0, 40);
+    if (!label) return;
+    const key = section + '|' + label + '|' + (spot || '') + '|' + (d == null ? '' : d);
+    if (seen.has(key)) return;
+    seen.add(key);
+    const o = { section, text: label };
+    if (spot) o.spot = spot;
+    if (d != null && d >= 0 && d < 40) o.day = d;
+    out.push(o);
+  };
+  for (const clause of taskClauses(text)) {
+    const marked = dayMark(clause);
+    if (marked != null && marked !== day) { day = marked; recent = ''; }
+    const here = spotIn(clause, places);
+    if (here) recent = here;
+    const prep = prepFromClause(clause);
+    const notes = noteFromClause(clause).filter(n => !(n === '需預約' && prep.includes('預訂')));
+    for (const item of buyFromClause(clause)) {
+      const spot = here || (TRIP_BUY.has(item) ? '' : recent);
+      push('buy', item, spot, day);
+    }
+    for (const item of notes) push('note', item, here || recent, day);
+    for (const item of prep) push('prep', item, here, day);
+    if (out.length >= 24) break;
+  }
+  return out.slice(0, 24);
+}
+
+return { classifyUrl, youtubeId, guessCity, cityHits, guessDays, extractPlaces, extractTasks, dedupePlaces, splitDays, captionsText, clipYoutube, clipArticle, readerFailed, normKey, km };
 });

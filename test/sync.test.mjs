@@ -29,6 +29,17 @@ const spot = (sid, rev, name, extra = {}) => Object.assign({ sid, rev, name }, e
 }
 
 {
+  const local = { days: [[]], orderRev: 1, metaRev: 1, dest: '東京', tomb: {}, expTomb: {}, expenses: [], tasksRev: 10, tasks: [{ id: 't1', section: 'buy', text: '人形燒', rev: 10, done: false }] };
+  const remote = { days: [[]], orderRev: 1, metaRev: 1, dest: '東京', tomb: {}, expTomb: {}, expenses: [], tasksRev: 4, tasks: [{ id: 't1', section: 'buy', text: '舊的', rev: 4, done: true }] };
+  const m = mergeTrip(local, remote);
+  assert.equal(m.tasks[0].text, '人形燒');
+  const newer = mergeTrip(local, { days: [[]], tasksRev: 20, tasks: [{ id: 't2', section: 'prep', text: '換匯', rev: 20 }], tomb: {}, expTomb: {}, expenses: [] });
+  assert.equal(newer.tasks[0].text, '換匯');
+  const kept = mergeTrip(local, { days: [[]], dest: '東京', tomb: {}, expTomb: {}, expenses: [] });
+  assert.equal(kept.tasks[0].text, '人形燒');
+}
+
+{
   const prev = { days: [[spot('a', 1, '甲')]], expenses: [{ id: 'e', rev: 1, title: '飯', amount: 10 }], orderRev: 1, metaRev: 1, dest: '東京', dep: '2026-11-02', ret: '2026-11-06', pax: 2, orig: 'TPE', tomb: {}, expTomb: {} };
   const cur = JSON.parse(JSON.stringify(prev));
   cur.days[0][0].name = '甲改';

@@ -70,12 +70,64 @@ assert.ok(importer.includes('盡力辨識'));
 assert.ok(importer.includes('urlimport.js'));
 assert.ok(importer.includes('impCaption'));
 assert.ok(sw.includes('urlimport.js'));
-assert.match(sw, /tripmate-v35/);
+assert.match(sw, /tripmate-v36/);
 {
   const ig = "Title: Post isn't available • Instagram\n\nLog in\n\nPost isn't available\n\nThe link may be broken.\n\nSign up for Instagram";
   assert.equal(U.readerFailed(ig), true);
 }
 assert.ok(html.includes('r.jina.ai'));
 assert.ok(html.includes('noembed.com'));
+
+{
+  const text = '第一天去淺草寺，必買人形燒。Skyliner 要先買。記得辦 JR Pass、Suica。迪士尼門票要先買。SIM 卡或 eSIM。藥妝去松本清。淺草寺需預約，只收現金，要排隊。注意公休日和營業時間，有服裝規定，記得帶傘。出發前要換匯、辦 VJW，飯店要預訂。';
+  const tasks = U.extractTasks(text, [{ name: '淺草寺・雷門' }]);
+  const buy = tasks.filter(x => x.section === 'buy').map(x => x.text);
+  for (const n of ['人形燒', 'Skyliner', 'JR Pass', 'Suica', '迪士尼門票', 'SIM／eSIM', '藥妝']) assert.ok(buy.includes(n), n);
+  const ningyo = tasks.find(x => x.text === '人形燒');
+  assert.equal(ningyo.section, 'buy');
+  assert.equal(ningyo.spot, '淺草寺・雷門');
+  assert.equal(ningyo.day, 0);
+  assert.equal(tasks.find(x => x.text === '藥妝').spot, undefined);
+  const notes = tasks.filter(x => x.section === 'note').map(x => x.text);
+  for (const n of ['需預約', '要排隊', '只收現金', '注意公休日', '確認營業時間', '注意服裝規定', '注意天氣']) assert.ok(notes.includes(n), n);
+  assert.equal(tasks.find(x => x.text === '需預約').spot, '淺草寺・雷門');
+  const prep = tasks.filter(x => x.section === 'prep').map(x => x.text);
+  for (const n of ['換匯', '辦簽證／VJW', '預訂']) assert.ok(prep.includes(n), n);
+  assert.equal(tasks.find(x => x.text === '換匯').spot, undefined);
+}
+
+{
+  const queued = U.extractTasks('Day 2 明治神宮要排隊', [{ name: '明治神宮' }]);
+  assert.equal(queued.length, 1);
+  assert.equal(queued[0].text, '要排隊');
+  assert.equal(queued[0].spot, '明治神宮');
+  assert.equal(queued[0].day, 1);
+  assert.deepEqual(U.extractTasks('今天天氣很好，我們去散步', []), []);
+  assert.deepEqual(U.extractTasks('訂位編號 ABC123', []), []);
+}
+
+assert.ok(importer.includes('任務表'));
+assert.ok(importer.includes('盡力擷取'));
+assert.ok(html.includes('taskSheet'));
+assert.ok(html.includes('taskChip'));
+assert.ok(html.includes("['buy','必買','必買']"));
+
+const Share = createRequire(import.meta.url)('../share.js');
+const LZ = createRequire(import.meta.url)('../vendor/lz-string.min.js');
+const trip = {
+  dest: '東京', dep: '2026-11-02', ret: '2026-11-04', pax: 2, orig: 'TPE',
+  days: [[{ name: '淺草寺・雷門', time: '10:00' }]],
+  expenses: [],
+  tasks: [{ id: 'a1', section: 'buy', text: '人形燒', spot: '淺草寺・雷門', day: 0, done: false, due: '2026-11-02' }]
+};
+const packed = Share.packTrip(trip, LZ);
+const unpacked = Share.unpackAdd(packed.param, LZ);
+assert.equal(unpacked.trip.tasks[0].text, '人形燒');
+assert.equal(unpacked.trip.tasks[0].section, 'buy');
+assert.equal(unpacked.trip.tasks[0].spot, '淺草寺・雷門');
+assert.equal(unpacked.trip.tasks[0].due, '2026-11-02');
+const backup = Share.validateTrips({ v: 1, trips: [trip] }, { backup: true });
+assert.equal(backup.trips[0].tasks[0].text, '人形燒');
+assert.equal(backup.trips[0].tasks[0].id, 'a1');
 
 console.log('url import tests ok');
