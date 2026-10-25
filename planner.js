@@ -9,7 +9,7 @@ const SLOT={早:0,午:1,下午:2,晚:3};
 const hm=m=>String(Math.floor(m/60)).padStart(2,'0')+':'+String(Math.round(m%60/5)*5%60).padStart(2,'0');
 const toMin=s=>{const m=/^(\d\d?):(\d\d)/.exec(s||'');return m?+m[1]*60+ +m[2]:null};
 const gmap=it=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(it.lat!=null?it.lat+','+it.lng:it.local+' '+(it.area||''));
-function toSpot(it,time,d){return{time:hm(time),name:it.name,note:[it.area,it.note].filter(Boolean).join(' · '),kind:'auto',ptype:it.type,pid:it.id,meal:it.meal,link:gmap(it),rating:it.rating,priceInfo:it.price,summary:it.summary,src:it.src,count:it.count,checked:d.checked,lat:it.lat,lng:it.lng,alat:it.alat,alng:it.alng,area:it.area}}
+function toSpot(it,time,d){return{time:hm(time),name:it.name,note:[it.area,it.note].filter(Boolean).join(' · '),kind:'auto',ptype:it.type,pid:it.id,meal:it.meal,link:gmap(it),rating:it.rating,priceInfo:it.price,summary:it.summary,src:it.src,count:it.count,checked:it.checked||d.checked,lat:it.lat,lng:it.lng,alat:it.alat,alng:it.alng,area:it.area}}
 function windowOf(day,isFirst,isLast){let s=9*60,e=21*60+30;const fl=day.filter(x=>x.kind==='flight'&&toMin(x.time)!=null);
  const out=fl.filter(x=>x.leg!=='return'),ret=fl.filter(x=>x.leg==='return');if(isFirst){const f=out[0];if(f){const arr=toMin(f.arr)??toMin((f.note||'').match(/抵達 (\d\d?:\d\d)/)?.[1])??toMin(f.time)+180;s=Math.max(s,arr+90)}else if(!ret.length)s=13*60}
  if(isLast){const f=ret[ret.length-1]||(!isFirst&&fl[fl.length-1]);if(f)e=Math.min(e,toMin(f.time)-180);else if(!fl.length)e=15*60}
