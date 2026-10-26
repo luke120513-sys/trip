@@ -164,7 +164,7 @@ function routeChipsHtml(key, options, selectedId) {
   return `<div class="ropts" role="listbox" aria-label="其他走法">` + list.map(o => {
     const on = picked && o.id === picked;
     const suggest = !picked && shown && o.id === shown;
-    return `<button type="button" role="option" aria-selected="${on ? 'true' : 'false'}" class="ropt${on ? ' on' : ''}${suggest ? ' suggest' : ''}" data-rid="${esc(o.id)}" onclick="pickRoute(${day},${j},this.dataset.rid)"><b>${esc(o.label)}</b><span>約 ${+o.min || 0} 分</span><small>${esc(sourceTag(o.source))}</small></button>`;
+    return `<button type="button" role="option" aria-selected="${on ? 'true' : 'false'}" class="ropt${on ? ' on' : ''}${suggest ? ' suggest' : ''}" data-rid="${esc(o.id)}" onclick="pickRoute(${day},${j},this.dataset.rid,event)"><b>${esc(o.label)}</b><span>約 ${+o.min || 0} 分</span><small>${esc(sourceTag(o.source))}</small></button>`;
   }).join('') + `</div>`;
 }
 function routeCardsHtml(key, options, selectedId) {
@@ -177,7 +177,7 @@ function routeCardsHtml(key, options, selectedId) {
     const open = on || (!picked && i === 0);
     const steps = open ? planHtml(o) : '';
     const brief = routeBrief(o);
-    return `<div class="ropt-wrap"><button type="button" class="ropt ropt-rich${on ? ' on' : ''}" data-rid="${esc(o.id)}" onclick="pickRoute(${day},${j},this.dataset.rid)" aria-pressed="${on ? 'true' : 'false'}"><span class="ropt-h"><b>${esc(o.label)}</b><span>約 ${+o.min || 0} 分</span></span>${brief ? `<small class="ropt-brief">${esc(brief)}</small>` : ''}<small>${esc(sourceTag(o.source))}${on ? ' · 使用中' : ''}</small></button>${steps ? `<div class="ropt-detail">${steps}</div>` : ''}</div>`;
+    return `<div class="ropt-wrap"><button type="button" class="ropt ropt-rich${on ? ' on' : ''}" data-rid="${esc(o.id)}" onclick="pickRoute(${day},${j},this.dataset.rid,event)" aria-pressed="${on ? 'true' : 'false'}"><span class="ropt-h"><b>${esc(o.label)}</b><span>約 ${+o.min || 0} 分</span></span>${brief ? `<small class="ropt-brief">${esc(brief)}</small>` : ''}<small>${esc(sourceTag(o.source))}${on ? ' · 使用中' : ''}</small></button>${steps ? `<div class="ropt-detail">${steps}</div>` : ''}</div>`;
   }).join('');
 }
 function withMode(url, mode) {
@@ -248,8 +248,8 @@ function paintLive(key, rec) {
   const t = window.TM && TM.T ? TM.T() : null;
   if (!t || !rec) { box.innerHTML = ''; return; }
   const mode = selected && selected.mode;
-  const g = rec.gmaps ? `<a href="${TM.esc(withMode(rec.gmaps, mode))}" target="_blank" rel="noopener">在 Google 地圖看即時路線</a>` : '';
-  const off = rec.official ? `<a href="${TM.esc(rec.official.url)}" target="_blank" rel="noopener">${TM.esc(rec.official.label)}</a>` : '';
+  const g = rec.gmaps ? `<a href="${TM.esc(withMode(rec.gmaps, mode))}" target="_blank" rel="noopener" onclick="event.stopPropagation()">在 Google 地圖看即時路線</a>` : '';
+  const off = rec.official ? `<a href="${TM.esc(rec.official.url)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${TM.esc(rec.official.label)}</a>` : '';
   const links = `<div class="leglinks">${g}${off}</div>`;
   const picked = spotOf(key) && spotOf(key).travel && spotOf(key).travel.src === 'pick' ? spotOf(key).travel.opt : '';
   const body = selected && selected.steps ? planBriefHtml(selected) : `<div class="legstep">${TM.esc(rec.text || (rec.offline ? '目前離線，先顯示估計走法' : '正在查這段怎麼搭…'))}</div>`;
