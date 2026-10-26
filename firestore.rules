@@ -4,6 +4,9 @@ service cloud.firestore {
     function signedIn() {
       return request.auth != null;
     }
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
     function member(tripId) {
       return signedIn() && exists(/databases/$(database)/documents/trips/$(tripId)/members/$(request.auth.uid));
     }
@@ -12,6 +15,24 @@ service cloud.firestore {
         && request.resource.data.inviteCode.size() == 6
         && exists(/databases/$(database)/documents/invites/$(request.resource.data.inviteCode))
         && get(/databases/$(database)/documents/invites/$(request.resource.data.inviteCode)).data.tripId == tripId;
+    }
+    /* 飛省雲端備份（users/{uid}）。與旅伴共用同一 Firebase 專案，部署規則時兩邊都要留。 */
+    function flyBackup() {
+      return request.resource.data.app == 'flysave'
+        && request.resource.data.v is int
+        && request.resource.data.v >= 1
+        && request.resource.data.v <= 10
+        && (!('queries' in request.resource.data) || request.resource.data.queries is list)
+        && (!('flights' in request.resource.data) || request.resource.data.flights is list)
+        && (!('cities' in request.resource.data) || request.resource.data.cities is map)
+        && (!('tomb' in request.resource.data) || request.resource.data.tomb is map);
+    }
+
+    match /users/{uid} {
+      allow get: if isOwner(uid);
+      allow list: if false;
+      allow create, update: if isOwner(uid) && flyBackup();
+      allow delete: if isOwner(uid);
     }
 
     match /invites/{code} {

@@ -26,7 +26,7 @@ async function routeSheet(i){const t=TM.T();if(!t)return;const day=t.days[i]||[]
  const after=P.dayTravel(next);window._route={i,next};const diff=before.sum-after.sum;
  const list=next.map(s=>{const tag=P.isAnchor(s)?'<span class="nd">時間固定</span>':(!P.coordOf(s)?'<span class="nd">沒有座標</span>':'');return `<div class="spot"><span class="tm">${TM.esc(s.time)||'—'}</span><div class="x"><b>${TM.esc(s.name)}</b>${tag}</div></div>`}).join('');
  const miss=before.miss||after.miss?`<div class="mut">有地點沒有座標，那段沒有算進時間。</div>`:'';
- $('#sheetBody').innerHTML=`<h2>AI 整理最佳路徑</h2><p class="mut">依照座標，先用最近鄰排一條較短路，再用 2-opt 微調。航班、住宿、餐廳，以及備註寫了早餐、午餐、晚餐的項目會留在原來的位置。</p>
+ $('#sheetBody').innerHTML=`<h2>依距離重排</h2><p class="mut">依地圖位置排出較近的走法。航班、住宿，以及備註有早餐、午餐、晚餐的站會留在原位。</p>
  <div class="card" style="box-shadow:none;border:1px solid var(--bd)"><div>整理前，交通大約 <b>${fmtMin(before.sum)}</b></div><div>整理後，大約 <b>${fmtMin(after.sum)}</b>${diff>0?`，少了 ${fmtMin(diff)}`:diff<0?`，多了 ${fmtMin(-diff)}`:'，差不多'}</div>${miss}</div>
  ${same?'<p>目前的順序已經比較順，沒有再縮短。</p>':`<div style="max-height:34vh;overflow:auto;margin-top:8px">${list}</div>`}
  <div class="row" style="margin-top:10px"><button type="button" class="btn ghost" onclick="closeSheet()">取消</button><button type="button" class="btn" onclick="acceptRoute()" ${same?'disabled':''}>採用這個順序</button></div>`;
