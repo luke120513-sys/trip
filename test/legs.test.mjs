@@ -178,17 +178,65 @@ assert.equal(near.alight, '淺草');
 assert.match(near.note, /淺草/);
 assert.ok(near.steps.some(s => s.kind === 'ride' && s.alight === '淺草'));
 
+const multi = Legs.fromTransitousAll({
+  itineraries: [
+    { duration: 1200, legs: [
+      { mode: 'WALK', duration: 240, distance: 170, from: { name: 'START' }, to: { name: '西葛西' } },
+      { mode: 'SUBWAY', duration: 900, distance: 4000, routeLongName: '東西線', routeColor: '00A0E4', agencyName: '東京メトロ', headsign: '中野', from: { name: '西葛西', platformCode: '1' }, to: { name: '大手町（東京）', platformCode: 'South Exit' }, intermediateStops: [{}, {}, {}, {}, {}, {}] }
+    ] },
+    { duration: 1600, legs: [
+      { mode: 'BUS', duration: 1500, routeLongName: '都営バス', agencyName: '東京都交通局', headsign: '門前仲町', from: { name: '西葛西' }, to: { name: '門前仲町' }, intermediateStops: [{}, {}] }
+    ] }
+  ]
+});
+assert.equal(multi.length, 2);
+assert.equal(Legs.fromTransitous({ itineraries: [{ duration: 1200, legs: [] }] }), null);
+assert.equal(multi[0].steps[0].kind, 'walk');
+assert.equal(multi[0].steps[0].meters, 170);
+assert.equal(multi[0].steps[1].board, '西葛西');
+assert.equal(multi[0].steps[1].boardPlatform, '月台 1');
+assert.equal(multi[0].steps[1].alightPlatform, '出口 South');
+assert.equal(multi[0].steps[1].stops, 7);
+assert.match(multi[0].steps[1].line, /東西線/);
+assert.equal(multi[1].steps[0].line.includes('都營') || multi[1].steps[0].line.includes('巴士'), true);
+const messy = [{ source: 'transitous', min: 74, steps: [
+  { kind: 'ride', line: '東成田線', alight: '京成成田', min: 10 },
+  { kind: 'ride', line: '京成本線', alight: '京成高砂', min: 30 },
+  { kind: 'ride', line: '京成 Skyliner', alight: '京成上野', min: 34 }
+] }];
+const ranked = Legs.choices(narita, uenoShop, messy);
+assert.equal(ranked[0].source, 'table', 'simpler airport route should lead');
+assert.match(ranked[0].label, /Skyliner/);
+assert.ok(ranked.filter(o => o.mode === 'transit').length >= 2);
+const opts = Legs.choices(narita, uenoShop, multi);
+assert.ok(opts.length >= 2, 'choices ' + opts.length);
+assert.ok(opts.some(o => o.mode === 'walk'));
+assert.ok(opts.some(o => o.mode === 'drive'));
+assert.ok(opts.filter(o => o.mode === 'transit').length >= 1);
+assert.ok(opts.every(o => o.note && /估計|估算|常見|非即時|當天/.test(o.note)));
+const plain = Legs.choices({ lat: 35.69, lng: 139.7 }, { lat: 35.70, lng: 139.71 }, []);
+assert.ok(plain.some(o => o.mode === 'walk' && o.id === 'est:walk'));
+assert.ok(plain.some(o => o.mode === 'drive'));
+assert.ok(plain.some(o => o.mode === 'transit'));
+assert.equal(Legs.fromTransitousAll({ itineraries: [] }).length, 0);
+
 const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v46/);
+assert.match(sw, /tripmate-v51/);
 assert.ok(sw.includes('legs.js'));
 assert.ok(html.includes('legs.js'));
+assert.ok(html.includes('daysum'));
+assert.ok(html.includes('pickRoute'));
+assert.ok(html.includes('openSpot'));
+assert.match(readFileSync(new URL('../live.js', import.meta.url), 'utf8'), /numItineraries=4/);
+assert.match(readFileSync(new URL('../live.js', import.meta.url), 'utf8'), /routeChipsHtml/);
 assert.ok(html.includes('legwarn'));
 assert.match(html, /Legs\.clash/);
 assert.match(html, /Legs\.knownRoute/);
 assert.match(html, /往後移到/);
-assert.match(html, /全部自動排開/);
-assert.match(html, /自動幫我往後移/);
+assert.match(html, /時間排開/);
+assert.match(html, /依距離重排/);
+assert.match(html, /setAutoShift|autoShift/);
 assert.match(html, /大約 /);
 assert.match(html, /paintShift/);
 assert.match(readFileSync(new URL('../live.js', import.meta.url), 'utf8'), /safeLine/);
