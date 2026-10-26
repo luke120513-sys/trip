@@ -70,13 +70,13 @@ assert.ok(importer.includes('盡力辨識'));
 assert.ok(importer.includes('urlimport.js'));
 assert.ok(importer.includes('impCaption'));
 assert.ok(sw.includes('urlimport.js'));
-assert.match(sw, /tripmate-v46/);
+assert.match(sw, /tripmate-v51/);
 {
   const ig = "Title: Post isn't available • Instagram\n\nLog in\n\nPost isn't available\n\nThe link may be broken.\n\nSign up for Instagram";
   assert.equal(U.readerFailed(ig), true);
 }
-assert.ok(html.includes('r.jina.ai'));
-assert.ok(html.includes('noembed.com'));
+assert.ok(importer.includes('r.jina.ai'));
+assert.ok(importer.includes('noembed.com'));
 
 {
   const text = '第一天去淺草寺，必買人形燒。Skyliner 要先買。記得辦 JR Pass、Suica。迪士尼門票要先買。SIM 卡或 eSIM。藥妝去松本清。淺草寺需預約，只收現金，要排隊。注意公休日和營業時間，有服裝規定，記得帶傘。出發前要換匯、辦 VJW，飯店要預訂。';

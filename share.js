@@ -40,6 +40,43 @@
       const at = +s.visitedAt;
       if (at > 1e11 && at < 1e14) o.visitedAt = Math.round(at);
     }
+    if (keepIds && s.travel && typeof s.travel === 'object') {
+      const src = s.travel.src === 'pick' || s.travel.src === 'manual' ? s.travel.src : '';
+      const mode = str(s.travel.mode, 12);
+      const min = Math.round(+s.travel.min || 0);
+      if (src && /^(walk|transit|drive)$/.test(mode) && min > 0 && min <= 1440) {
+        const tr = { mode, min, src };
+        if (src === 'pick' && s.travel.opt) tr.opt = str(s.travel.opt, 80);
+        const p = s.travel.plan;
+        if (src === 'pick' && p && typeof p === 'object' && Array.isArray(p.steps)) {
+          tr.plan = {
+            id: str(p.id || '', 80),
+            mode,
+            source: str(p.source || '', 16),
+            min,
+            label: str(cleanStr(p.label || ''), 40),
+            note: str(cleanStr(p.note || ''), 120),
+            fare: str(cleanStr(p.fare || ''), 24),
+            alight: str(cleanStr(p.alight || ''), 40),
+            steps: p.steps.slice(0, 6).map(step => {
+              if (!step || typeof step !== 'object') return null;
+              const one = { kind: step.kind === 'walk' ? 'walk' : 'ride' };
+              if (+step.min > 0) one.min = Math.min(1440, Math.round(+step.min));
+              ['to', 'from', 'line', 'direction', 'alight', 'board', 'boardPlatform', 'alightPlatform'].forEach(k => {
+                const v = str(cleanStr(step[k] || ''), 40);
+                if (v) one[k] = v;
+              });
+              if (+step.meters > 0 && +step.meters < 1e6) one.meters = Math.round(+step.meters);
+              if (+step.stops > 0 && +step.stops < 80) one.stops = Math.round(+step.stops);
+              const c = str(step.color || '', 7);
+              if (/^#[0-9a-fA-F]{6}$/.test(c)) one.color = c;
+              return one;
+            }).filter(Boolean)
+          };
+        }
+        o.travel = tr;
+      }
+    }
     return o;
   }
   function normExp(e, level, keepIds) {

@@ -325,8 +325,18 @@
     return { line: zh, lineOrig: orig && orig !== zh ? orig : '', short: hs && !numericId(hs) ? hs : '' };
   }
 
-  function fromTransitous(j) {
-    const it = j && j.itineraries && j.itineraries[0];
+  function platformOf(place) {
+    if (!place || typeof place !== 'object') return '';
+    const raw = place.platformCode || place.platformName || '';
+    let s = String(raw).trim();
+    if (!s || s.length > 24) return '';
+    if (/exit|出口|出入口/i.test(s)) {
+      const rest = s.replace(/exit/ig, '').replace(/出入口|出口/g, '').replace(/\s+/g, ' ').trim();
+      return rest ? '出口 ' + rest : '出口';
+    }
+    return '月台 ' + s;
+  }
+  function planFromItinerary(it) {
     if (!it || !Array.isArray(it.legs) || !it.legs.length) return null;
     const steps = [];
     for (const lg of it.legs) {
@@ -335,14 +345,18 @@
       if (lg.mode === 'WALK' || lg.mode === 'TRANSFER') {
         const to = placeName(lg.to);
         const from = placeName(lg.from);
-        if (!to && !from && min < 2) continue;
-        steps.push({ kind: 'walk', min, to, from });
+        const meters = Math.round(+lg.distance || 0);
+        if (!to && !from && min < 2 && meters < 40) continue;
+        const step = { kind: 'walk', min, to, from };
+        if (meters >= 40) step.meters = meters;
+        steps.push(step);
         continue;
       }
       const label = routeLabel(lg);
       const alight = placeName(lg.to);
+      const board = placeName(lg.from);
       const stops = Array.isArray(lg.intermediateStops) ? lg.intermediateStops.length + 1 : 0;
-      steps.push({
+      const ride = {
         kind: 'ride',
         min,
         mode: lg.mode || '',
@@ -353,7 +367,13 @@
         direction: directionOf(lg.headsign, alight),
         alight,
         stops
-      });
+      };
+      if (board) ride.board = board;
+      const bp = platformOf(lg.from);
+      const ap = platformOf(lg.to);
+      if (bp) ride.boardPlatform = bp;
+      if (ap) ride.alightPlatform = ap;
+      steps.push(ride);
     }
     if (!steps.some(s => s.kind === 'ride' || s.kind === 'walk')) return null;
     const ride = [...steps].reverse().find(s => s.kind === 'ride' && s.alight);
@@ -367,6 +387,20 @@
       min: Math.max(1, Math.round((+it.duration || 0) / 60) || 1),
       fare
     };
+  }
+  function fromTransitousAll(j) {
+    const arr = j && Array.isArray(j.itineraries) ? j.itineraries : [];
+    const out = [];
+    for (const it of arr) {
+      const plan = planFromItinerary(it);
+      if (plan) out.push(plan);
+      if (out.length >= 4) break;
+    }
+    return out;
+  }
+  function fromTransitous(j) {
+    const list = fromTransitousAll(j);
+    return list.length ? list[0] : null;
   }
 
   const AIR = [
@@ -501,9 +535,110 @@
       alight: to.name,
       min: steps.reduce((n, s) => n + (s.min || 0), 0),
       fare: '',
-      note: '沒查到班次。先在 ' + to.name + ' 下車，再步行約 ' + walkMin(to.km) + ' 分到目的地。'
+      note: '沒查到班次。先在 ' + to.name + ' 下車，再步行約 ' + walkMin(to.km) + ' 分到目的地。這是估計，不是即時班次。'
     };
   }
 
-  return { km, walkMin, clash, pinWarn, stationZh, lineZh, fromTransitous, knownRoute, nearestStop, nearbyPlan, hm, stayMin, suggestMove, shiftChain, resolveDay, isFixed, modeWord, routeLabel };
+  function labelOf(plan, mode) {
+    if (plan && plan.label) return String(plan.label).slice(0, 40);
+    const rides = ((plan && plan.steps) || []).filter(s => s.kind === 'ride' && s.line && s.line !== '大眾運輸' && s.line !== '開車');
+    if (rides.length) return rides.map(s => s.line).slice(0, 2).join(' → ').slice(0, 40);
+    if (mode === 'walk') return '全程步行';
+    if (mode === 'drive') return '開車';
+    return '大眾運輸';
+  }
+  function honesty(source) {
+    if (source === 'transitous') return '時刻表估計，非即時到站。實際班次請開地圖確認。';
+    if (source === 'table') return '這是常見的機場路線，班次與票價以當天為準。';
+    if (source === 'nearby') return '依最近車站估算，不是即時班次。';
+    return '依直線距離估算，不是即時路況或班次。';
+  }
+  function choices(a, b, livePlans) {
+    const opts = [];
+    const seen = new Set();
+    function push(plan, mode) {
+      if (!plan) return;
+      const steps = plan.steps || [];
+      if (!steps.length) return;
+      if (!mode) mode = plan.mode;
+      if (!mode) {
+        const ride = steps.some(s => s.kind === 'ride' && s.line !== '開車' && s.mode !== 'CAR');
+        mode = ride ? 'transit' : (steps.every(s => s.kind === 'walk') ? 'walk' : 'transit');
+      }
+      const source = plan.source || 'estimate';
+      const min = Math.max(1, Math.round(+plan.min || steps.reduce((n, s) => n + (+s.min || 0), 0) || 1));
+      const id = String(plan.id || [mode, source, steps.map(s => s.kind === 'ride' ? (s.line || '') + '@' + (s.alight || '') : 'w').join('/')].join(':')).slice(0, 96);
+      const sig = mode + '|' + steps.filter(s => s.kind === 'ride').map(s => (s.line || '') + '@' + (s.alight || '')).join('/');
+      if (seen.has(id) || seen.has(sig)) return;
+      seen.add(id);
+      seen.add(sig);
+      opts.push({
+        id,
+        mode,
+        source,
+        min,
+        label: labelOf(plan, mode),
+        steps,
+        fare: plan.fare || '',
+        note: plan.note || honesty(source),
+        alight: plan.alight || ''
+      });
+    }
+    (livePlans || []).forEach(p => { if (p) push(Object.assign({}, p, { source: p.source || 'transitous', mode: 'transit' })); });
+    if (a && b) {
+      const known = knownRoute(a, b);
+      if (known) push(Object.assign({ mode: 'transit' }, known));
+      const dist = km(a, b);
+      if (dist != null) {
+        const walkM = walkMin(dist);
+        const driveM = Math.max(2, Math.round(3 + dist / 28 * 60));
+        push({
+          id: 'est:walk',
+          mode: 'walk',
+          source: 'estimate',
+          min: walkM,
+          label: '全程步行',
+          steps: [{ kind: 'walk', min: walkM, meters: Math.round(dist * 1000) }],
+          note: '依直線距離、時速約 4.8 公里估算，不是實測步道，也不是即時路況。'
+        });
+        if (!opts.some(o => o.mode === 'transit')) {
+          const near = nearbyPlan(a, b);
+          if (near) push(Object.assign({ mode: 'transit' }, near));
+          else {
+            const transitM = Math.max(3, Math.round(5 + dist / 22 * 60));
+            push({
+              id: 'est:transit',
+              mode: 'transit',
+              source: 'estimate',
+              min: transitM,
+              label: '大眾運輸（直線估算）',
+              steps: [{ kind: 'ride', min: transitM, line: '大眾運輸', mode: 'TRANSIT' }],
+              note: '還沒有班次明細。時間依直線距離估算，不是即時列車。'
+            });
+          }
+        }
+        push({
+          id: 'est:drive',
+          mode: 'drive',
+          source: 'estimate',
+          min: driveM,
+          label: '開車',
+          steps: [{ kind: 'ride', min: driveM, line: '開車', mode: 'CAR' }],
+          note: '依直線距離、市區時速估算，不含即時路況。'
+        });
+      }
+    }
+    const ridesOf = o => (o.steps || []).filter(s => s.kind === 'ride' && s.line !== '開車' && s.mode !== 'CAR').length;
+    const penalty = { transitous: 0, table: 8, nearby: 18, estimate: 28 };
+    const score = o => o.min + ridesOf(o) * 14 + (penalty[o.source] == null ? 40 : penalty[o.source]);
+    let rides = opts.filter(o => o.mode === 'transit').sort((x, y) => score(x) - score(y) || x.min - y.min);
+    const known = rides.find(o => o.source === 'table');
+    rides = rides.slice(0, 3);
+    if (known && rides.indexOf(known) < 0) rides = rides.slice(0, 2).concat(known);
+    const walk = opts.find(o => o.mode === 'walk');
+    const drive = opts.find(o => o.mode === 'drive');
+    return rides.concat(walk || []).concat(drive || []);
+  }
+
+  return { km, walkMin, clash, pinWarn, stationZh, lineZh, fromTransitous, fromTransitousAll, choices, knownRoute, nearestStop, nearbyPlan, hm, stayMin, suggestMove, shiftChain, resolveDay, isFixed, modeWord, routeLabel };
 });

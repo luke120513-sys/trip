@@ -9,7 +9,7 @@
     else document.addEventListener('DOMContentLoaded', start);
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
-  const APP_VER = '2.9';
+  const APP_VER = '2.10';
   function pad(n) { return String(n).padStart(2, '0'); }
   function hm(v) {
     const m = /^(\d{1,2}):(\d{2})/.exec(String(v || '').trim());

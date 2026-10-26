@@ -152,15 +152,15 @@ const freshBak = Share.validateTrips({ v: 1, trips: [{ ...usedTrip, tickets: [{ 
 assert.equal(freshBak.trips[0].tickets[0].used, undefined);
 
 const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v46/);
+assert.match(sw, /tripmate-v51/);
 assert.match(sw, /tickets\.js/);
 const collab = readFileSync(new URL('../collab.js', import.meta.url), 'utf8');
 assert.match(collab, /const tickets = t\.tickets/);
 assert.match(collab, /if \(Array\.isArray\(tickets\)\) t\.tickets = tickets/);
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
 const ticketsJs = readFileSync(new URL('../tickets.js', import.meta.url), 'utf8');
-assert.match(html, /分享連結預設不含票券/);
-assert.match(html, /票券照片與 PDF 只留在這台裝置/);
+assert.match(html, /分享連結不會帶票券/);
+assert.match(html, /票券照片，預設都只存在這台裝置/);
 assert.match(html, /\['list','行程'\],\['deals','優惠'\],\['expense','支出與票券'\],\['food','美食'\],\['more','其他'\]/);
 assert.doesNotMatch(html, /\['tickets','票券'\]/);
 assert.match(html, /function ticketTodayCount/);
