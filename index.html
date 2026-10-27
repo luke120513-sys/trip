@@ -19,7 +19,7 @@ nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#FFFDF9f2;-we
 nav button{flex:1 1 0;min-width:0;min-height:50px;border:0;background:none;padding:3px 1px 1px;font-size:10px;line-height:1.15;color:#8a949e;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer;font-family:inherit}
 nav button.wide{font-size:9px}
 .seg{display:flex;background:var(--tint);border-radius:12px;padding:3px;margin:0 0 12px;gap:3px}
-.seg button{flex:1;min-height:40px;border:0;border-radius:10px;background:transparent;color:var(--tintfg);font:inherit;font-size:15px;font-weight:700;cursor:pointer}
+.seg button{flex:1;min-height:40px;border:0;border-radius:10px;background:transparent;color:var(--tintfg);font:inherit;font-size:15px;font-weight:700;cursor:pointer;white-space:nowrap}
 .seg button.on{background:var(--card);color:var(--g);box-shadow:0 1px 2px rgba(0,0,0,.08)}
 nav button svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;transition:transform .25s cubic-bezier(.3,1.6,.5,1)}
 nav button.on{color:var(--g);font-weight:700}nav button.on svg{transform:translateY(-1px) scale(1.08)}
@@ -321,6 +321,37 @@ body.trip-ro .ops,body.trip-ro .dhacts,body.trip-ro .autoswitch,body.trip-ro .le
 @keyframes shelfslide{to{transform:translateY(110%) scale(.84);opacity:0}}
 .jlayer{position:fixed;inset:0;z-index:75;background:var(--bg);color:var(--tx);overflow:auto;padding:16px 16px 40px}
 .jlayer[hidden]{display:none}
+.setpage{padding:4px 0 12px}
+.accthead{display:flex;align-items:center;gap:12px;width:100%;background:var(--card);border:0;border-radius:16px;padding:12px 14px;margin:0 0 18px;box-shadow:0 1px 3px rgba(0,0,0,.06);color:var(--tx);font:inherit;text-align:left;cursor:pointer}
+html.dark .accthead{box-shadow:none;border:1px solid var(--line)}
+.accthead .ava{width:44px;height:44px;border-radius:50%;background:var(--tint);color:var(--g);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:18px;flex:none;object-fit:cover}
+.acctname{flex:1;min-width:0;font-weight:800;font-size:16px}
+.acctname small{display:block;font-weight:600;color:var(--mut);font-size:12px;margin-top:2px}
+.textbtn{border:0;background:none;color:var(--acc);font:inherit;font-weight:700;font-size:14px;padding:8px;cursor:pointer;flex:none}
+.sethead{margin:16px 4px 6px;font-size:13px;color:var(--mut);font-weight:700}
+.setgroup{background:var(--card);border-radius:14px;overflow:hidden;margin:0 0 4px}
+html.dark .setgroup{border:1px solid var(--line)}
+.setrow{display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:8px 12px;border:0;border-bottom:1px solid var(--line);background:transparent;color:var(--tx);font:inherit;font-size:16px;text-align:left;cursor:pointer}
+.setgroup .setrow:last-child{border-bottom:0}
+.setico{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex:none;font-size:16px;background:var(--tint)}
+.setlab{flex:1;min-width:0;font-weight:650}
+.setval{color:var(--mut);font-size:14px;font-weight:650;max-width:42%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chev{width:8px;height:8px;border-right:2px solid var(--mut);border-top:2px solid var(--mut);transform:rotate(45deg);flex:none;margin-right:4px}
+.setcheck{display:flex;align-items:center;gap:10px;font-weight:700;min-height:48px}
+.setcheck input{width:22px;height:22px}
+.achtabs{position:sticky;top:0;z-index:2;background:var(--bg);padding-top:4px}
+.cityhead{display:flex;align-items:baseline;justify-content:space-between;margin:18px 2px 8px}
+.cityhead h3{margin:0;font-size:16px}
+.cityhead span{color:var(--mut);font-weight:800;font-size:14px}
+.ach.city-tyo{box-shadow:inset 0 3px 0 #1E3A5F}
+.ach.city-osa{box-shadow:inset 0 3px 0 #C45A3A}
+.ach.city-kyo{box-shadow:inset 0 3px 0 #6B4C7A}
+.ach.city-spk{box-shadow:inset 0 3px 0 #2F6F8F}
+.ach.city-oka{box-shadow:inset 0 3px 0 #1F8A9A}
+.ach.city-fuk{box-shadow:inset 0 3px 0 #C45B73}
+.ach.city-sel{box-shadow:inset 0 3px 0 #0F6B56}
+.ach.city-pus{box-shadow:inset 0 3px 0 #2A6F9A}
+.ach.city-cju{box-shadow:inset 0 3px 0 #C47B2B}
 .achpage h3{margin:16px 2px 8px;font-size:16px}
 .achgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .ach{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;border:1px solid var(--bd);background:var(--card);border-radius:16px;padding:12px;color:var(--tx);font:inherit;min-height:128px;cursor:pointer}
@@ -538,7 +569,23 @@ edit:()=>{const t=T();if(!t)return `<h2>行程</h2><div class="card"><p class="m
 deals:()=>`<h2>旅遊優惠</h2><div class="row" style="margin-bottom:8px"><label class="mut" for="dsel">城市</label><select id="dsel" onchange="DK=this.value;loadDeals()" style="flex:1"></select></div><div class="row" id="dcat" style="margin-bottom:10px"></div><div id="dl" class="mut">載入中…</div><div id="dfly" style="margin:8px 2px"></div>`,
 expense:()=>{const seg=expSeg();if(expPane==='tix'){const t=T();if(!t)return seg+'<div class="card"><p class="mut">票券存在某一份行程裡。請先選一份行程。</p><button class="btn" onclick="go(\'list\')">選一份行程</button></div>';return seg+(typeof ticketPage==='function'?ticketPage(t):'<div class="card mut">票券載入失敗，請重新整理。</div>')}return seg+(typeof extraExpense==='function'?extraExpense():'<div class="card mut">支出功能載入失敗，請重新整理。</div>')},
 food:()=>typeof extraFood==='function'?extraFood():'<h2>美食</h2><div class="card mut">美食功能載入失敗，請重新整理。</div>',
-more:()=>`<h2>其他</h2><div id="acct"></div><div id="themebox"></div><div id="achievebox"></div><div class="card"><b>任務表</b><p class="mut">必買、注意事項、出發前要做。從影片或文章匯入時會盡力帶出，不是完整清單。${T()&&(T().tasks||[]).length?`目前 ${T().tasks.filter(x=>!x.done).length} 項未完成。`:''}</p><button class="btn ghost" onclick="taskSheet()">打開任務表</button></div><div class="card"><b>和朋友一起排</b><p class="mut">有邀請碼就能加入對方的行程，一起改同一份。不登入也可以自己排，資料留在這台裝置。</p><button class="btn ghost" onclick="openJoin()">輸入邀請碼</button></div><div class="card"><b>備份</b><p class="mut">匯出、匯入 JSON 不需要登入。票券檔案不大時會一起放進 JSON；太大就只留名稱、日期和訂位編號，圖片仍在這台裝置。分享連結不會帶票券。任務表會跟著備份與分享連結。登入之後才會另外存一份雲端備份；雲端也一樣，檔案太大就不上傳。沒登入就沒有雲端備份，這台裝置上的行程仍可完整使用。</p><div class="row"><button class="btn ghost" onclick="exp()">匯出行程 JSON</button><button class="btn ghost" onclick="pickBackup()">匯入行程 JSON</button></div><div id="bakhint"></div></div><div class="card"><b>關於旅伴</b><p class="mut">旅伴幫你排每日行程，可整理走路順序、匯出行程單、記支出、看在地美食，並一鍵到飛省查機票、飯省找住宿。沒分享時，資料只存在你的裝置。</p></div>`};
+more:()=>settingsPage()};
+function setRow(ico,label,value,onclick,brief){const val=value?`<span class="setval"${brief?` data-brief="${brief}"`:''}>${esc(value)}</span>`:'';return `<button type="button" class="setrow" onclick="${onclick}"><span class="setico" aria-hidden="true">${ico}</span><span class="setlab">${label}</span>${val}<i class="chev" aria-hidden="true"></i></button>`}
+function taskBrief(){const t=T();if(!t)return '尚未選行程';const list=t.tasks||[];if(!list.length)return '尚未建立';const n=list.filter(x=>!x.done).length;return n?n+' 項未完成':'都完成了'}
+function colorLabel(){const m=ls.get('theme','auto');return m==='light'?'淺色':m==='dark'?'深色':'跟隨系統'}
+function noteBrief(){const n=(ls.get('notes',[])||[]).filter(x=>x&&!x.read).length;return n?n+' 則未讀':''}
+function settingsPage(){const ach=window.Journey?Journey.progressBrief():'尚未收集';const theme=window.Journey?Journey.shortStyle(Journey.globalStyle()):'自動';const arch=trips.filter(t=>t.archived).length;const foodN=(ls.get('fooddiary',[])||[]).length;const shift=ls.get('autoShift',false)===true?'開':'關';return `<div class="setpage"><h2>其他</h2><div id="acct"></div><div class="sethead">我的旅程</div><div class="setgroup">${setRow('🏅','成就收藏',ach,'Journey.openAchieve()','ach')}${setRow('📚','封存書架',arch?arch+' 本':'尚無','openShelf()')}${setRow('✅','任務表',taskBrief(),'taskSheet()')}${setRow('🍜','美食日記',foodN?foodN+' 則':'尚無',"go('food')")}</div><div class="sethead">外觀</div><div class="setgroup">${setRow('🎨','主題風格',theme,'openThemeSet()','theme')}${setRow('🌓','深淺色',colorLabel(),'openColorSet()')}</div><div class="sethead">行程設定</div><div class="setgroup">${setRow('⏩','自動幫我往後移',shift,'openShiftSet()')}${setRow('🔔','通知',noteBrief(),'openNotesRow()')}</div><div class="sethead">資料</div><div class="setgroup">${setRow('💾','備份與匯入','','openBackupSet()')}${setRow('👥','一起改與邀請碼','','openShareSet()')}${setRow('📤','分享旅伴','','shareSite()')}</div><div class="sethead">關於</div><div class="setgroup">${setRow('ℹ️','關於旅伴','','openAboutSet()')}</div></div>`}
+function sheetOpen(){if(!$('#sheet').classList.contains('on'))openSheet()}
+function openThemeSet(){if(!window.Journey)return;const cur=Journey.globalStyle();$('#sheetBody').innerHTML=`<h2>主題風格</h2><p class="mut">自動會看目前這份行程的目的地。系統預設回到旅伴原來的顏色。每份行程也可以在 ⋯ 裡單獨改。</p><div class="seg">${Journey.STYLES.map(([k])=>`<button type="button" class="${k===cur?'on':''}" onclick="Journey.setGlobalStyle('${k}');openThemeSet()">${Journey.shortStyle(k)}</button>`).join('')}</div>`;sheetOpen()}
+function openColorSet(){const cur=ls.get('theme','auto');const opts=[['auto','跟隨系統'],['light','淺色'],['dark','深色']];$('#sheetBody').innerHTML=`<h2>深淺色</h2><p class="mut">也可以用右上角的圖示切換淺色和深色。</p><div class="seg">${opts.map(([k,lab])=>`<button type="button" class="${k===cur?'on':''}" onclick="ls.set('theme','${k}');applyTheme();render();openColorSet()">${lab}</button>`).join('')}</div>`;sheetOpen()}
+function openShiftSet(){const on=ls.get('autoShift',false)===true;$('#sheetBody').innerHTML=`<h2>自動幫我往後移</h2><p class="mut">交通時間來不及時，自動把後面的景點往後排。預設是關的，你可以自己按「往後移到」。</p><label class="setcheck"><input type="checkbox" ${on?'checked':''} onchange="setAutoShift(this.checked);render();openShiftSet()"> ${on?'已開啟':'已關閉'}</label>`;sheetOpen()}
+function openNotesRow(){if(typeof openNotes==='function')openNotes();else{const b=$('#nfybell');if(b)b.click()}}
+function openBackupSet(){$('#sheetBody').innerHTML=`<h2>備份與匯入</h2><p class="mut">匯出、匯入 JSON 不需要登入。票券檔案不大時會一起放進 JSON；太大就只留名稱、日期和訂位編號，圖片仍在這台裝置。分享連結不會帶票券。任務表會跟著備份與分享連結。登入之後才會另外存一份雲端備份。</p><div class="row"><button class="btn ghost" type="button" onclick="exp()">匯出行程 JSON</button><button class="btn ghost" type="button" onclick="pickBackup()">匯入行程 JSON</button></div><div id="bakhint"></div>`;sheetOpen();if(typeof paintBackupHint==='function')paintBackupHint()}
+function openCloudShare(){shareCloud()}
+function openShareSet(){$('#sheetBody').innerHTML=`<h2>一起改與邀請碼</h2><p class="mut">有邀請碼就能加入對方的行程，一起改同一份。不登入也可以自己排，資料留在這台裝置。</p><button class="btn blk" type="button" onclick="openJoin()">輸入邀請碼</button><button class="btn ghost blk" type="button" style="margin-top:8px" onclick="if(!T())toast('請先選一個行程');else shareSheet()">分享這份行程</button><button class="btn ghost blk" type="button" style="margin-top:8px" onclick="openCloudShare()">一起改（需登入）</button>`;sheetOpen()}
+function openAboutSet(){$('#sheetBody').innerHTML=`<h2>關於旅伴</h2><p class="mut">旅伴幫你排每日行程，可整理走路順序、匯出行程單、記支出、看在地美食，並一鍵到飛省查機票、飯省找住宿。沒分享時，資料只存在你的裝置。</p><div class="row"><button class="btn ghost" type="button" onclick="info('about')">關於</button><button class="btn ghost" type="button" onclick="info('privacy')">隱私權</button><button class="btn ghost" type="button" onclick="info('terms')">條款</button></div>`;sheetOpen()}
+function openShelf(){const arch=trips.filter(t=>t.archived);const rows=arch.length?arch.map(t=>`<button type="button" class="setrow" onclick="openArchived('${t.id}')"><span class="setlab">${esc(t.dest)}</span><span class="setval">${esc(t.dep)}</span><i class="chev" aria-hidden="true"></i></button>`).join(''):'<p class="mut">還沒有封存的行程。走完之後，或在行程的 ⋯ 裡選封存。</p>';$('#sheetBody').innerHTML=`<h2>封存書架</h2>${rows}`;sheetOpen()}
+function openArchived(id){menuLeave(()=>{cur=id;dayIx=0;save();go('edit')})}
 function addTrip(){const dest=$('#nd').value.trim(),dep=$('#ndep').value,ret=$('#nret').value;if(!dest||!dep||!ret||ret<dep)return alert('請填寫目的地與正確日期');const t={id:Date.now().toString(36),dest,dep,ret,pax:+$('#npax').value||2,orig:$('#norig').value,days:[]};days(t);trips.unshift(t);cur=t.id;PF=null;save();go('edit');consumeInbox();if(PKEY(t))setTimeout(planSheet,250)}
 function mdShort(s){const m=/^\d{4}-(\d{2})-(\d{2})$/.exec(s||'');return m?`${+m[1]}/${+m[2]}`:(s||'')}
 function headAvas(t){const ms=(t.members||[]).filter(m=>m&&(m.name||m.photo)).slice(0,3);if(!ms.length)return '<span class="ava" aria-hidden="true">＋</span>';const extra=(t.members||[]).length-ms.length;return ms.map(m=>{const name=m.name||'成員';const photo=/^https:\/\//.test(m.photo||'')?m.photo:'';return photo?`<img class="ava" src="${esc(photo)}" alt="">`:`<span class="ava">${esc(name.slice(0,1))}</span>`}).join('')+(extra>0?`<span class="ava">+${extra}</span>`:'')}
