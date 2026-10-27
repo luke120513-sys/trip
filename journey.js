@@ -606,47 +606,160 @@
     const strands = [-14, -7, 0, 7, 14].map(dx => '<path d="M70 ' + (top + 9) + ' L' + (70 + dx) + ' ' + (top + 40 - Math.abs(dx) * 0.25) + '" stroke="' + color + '" stroke-width="1.35" stroke-linecap="round"/>').join('');
     return '<path d="M63 ' + top + ' h14 v9 h-14 z" fill="' + color + '"/>' + strands;
   }
+  const CHARM_DYE = {
+    tyo: { cloth: '#c43737', trim: '#e6c98a', cord: '#b4332a', ink: '#f6e6c0', paper: '#f7f1e6', accent: '#1e3a5f' },
+    osa: { cloth: '#d3542c', trim: '#f0d090', cord: '#8c3030', ink: '#fff6e8', paper: '#fbf3e6', accent: '#c4473c' },
+    kyo: { cloth: '#6e3a62', trim: '#e6c98a', cord: '#4a2444', ink: '#f6e6c0', paper: '#f6efe6', accent: '#b4332a' },
+    spk: { cloth: '#f4f7fb', trim: '#2f5d8a', cord: '#1e3a5f', ink: '#1e3a5f', paper: '#f7fafc', accent: '#6e8698', light: true },
+    oka: { cloth: '#c43737', trim: '#1a8a8a', cord: '#0e5c5c', ink: '#f6e6c0', paper: '#f3faf8', accent: '#e6c98a' },
+    fuk: { cloth: '#c45a6a', trim: '#e6c98a', cord: '#8c3030', ink: '#fff6e8', paper: '#fbf4f4', accent: '#e7a0b0' },
+    sel: { cloth: '#8e2438', trim: '#e6c98a', cord: '#5c1424', ink: '#f6e6c0', paper: '#f8f4f2', accent: '#2a2118' },
+    pus: { cloth: '#1e4d7a', trim: '#e6c98a', cord: '#163a5c', ink: '#f6e6c0', paper: '#f4f7fb', accent: '#3d86b0' },
+    cju: { cloth: '#e07a20', trim: '#2f6b4a', cord: '#8c4a12', ink: '#fff6e8', paper: '#fbf6ee', accent: '#f0a020' },
+    tpe: { cloth: '#a63b34', trim: '#2f5d8a', cord: '#8d312c', ink: '#f6e6c0', paper: '#f7f4ee', accent: '#1e3a5f' },
+    txg: { cloth: '#0f6e6a', trim: '#e6c98a', cord: '#0a4a48', ink: '#f6e6c0', paper: '#f4faf8', accent: '#d5c49a' },
+    tnn: { cloth: '#a33b32', trim: '#e6c98a', cord: '#6b241e', ink: '#f6e6c0', paper: '#f8f3ea', accent: '#6b4630' },
+    khh: { cloth: '#1e4d7a', trim: '#e0b15a', cord: '#163a5c', ink: '#f6e6c0', paper: '#f6f3ea', accent: '#e6c98a' },
+    hul: { cloth: '#2f6b4a', trim: '#e6c98a', cord: '#1e4a32', ink: '#f6e6c0', paper: '#f4f8f2', accent: '#6e8a58' },
+    ttt: { cloth: '#1a6a8a', trim: '#e6c98a', cord: '#12485e', ink: '#f6e6c0', paper: '#f4f8fb', accent: '#cbb892' },
+    cyi: { cloth: '#3e6b4a', trim: '#c4473c', cord: '#2a4a32', ink: '#f6e6c0', paper: '#f6f4ee', accent: '#b8453a' },
+    ktn: { cloth: '#c4893a', trim: '#1e4d7a', cord: '#8a5a20', ink: '#2a2118', paper: '#fbf6ee', accent: '#3d86b0', light: true },
+    yil: { cloth: '#3e6b4a', trim: '#e6c98a', cord: '#2a4a32', ink: '#f6e6c0', paper: '#f6f8f2', accent: '#6a9a45' },
+    nto: { cloth: '#2a6a8a', trim: '#e6c98a', cord: '#1a4a64', ink: '#f6e6c0', paper: '#f4f8fb', accent: '#3d86b0' },
+    kmn: { cloth: '#8c3030', trim: '#e6c98a', cord: '#5c1e1e', ink: '#f6e6c0', paper: '#f8f3ea', accent: '#a33b32' },
+    mzu: { cloth: '#3d5a6a', trim: '#e6c98a', cord: '#2a3e4a', ink: '#f6e6c0', paper: '#f4f6f8', accent: '#8a7564' },
+    lud: { cloth: '#2f6b4a', trim: '#f7f4ee', cord: '#1e4a32', ink: '#f6e6c0', paper: '#f4f8f4', accent: '#3e6b4a' },
+    lny: { cloth: '#1a6a8a', trim: '#e07a5f', cord: '#12485e', ink: '#f6e6c0', paper: '#f4f8fb', accent: '#5c8eb5' }
+  };
+  const CHARM_FALLBACK = {
+    jp: { cloth: '#c43737', trim: '#e6c98a', cord: '#b4332a', ink: '#f6e6c0', paper: '#f7f1e6', accent: '#8c3030' },
+    tw: { cloth: '#a63b34', trim: '#e6c98a', cord: '#8d312c', ink: '#f6e6c0', paper: '#f7f1e6', accent: '#e7a0b0' },
+    kr: { cloth: '#8e2438', trim: '#e6c98a', cord: '#5c1424', ink: '#f6e6c0', paper: '#f8f4f2', accent: '#2a2118' },
+    plain: { cloth: '#e4d2b4', trim: '#b0893e', cord: '#8a7564', ink: '#6e5344', paper: '#f6f1e7', accent: '#d7c4a4', light: true }
+  };
+  function charmDye(mem) {
+    const m = mem && mem.motif || {};
+    if (m.id && CHARM_DYE[m.id]) return CHARM_DYE[m.id];
+    return CHARM_FALLBACK[m.country] || CHARM_FALLBACK.plain;
+  }
+  function tasselInk(dye) { return dye.light ? dye.cord : '#f7f4ee'; }
+  function plateInk(dye) { return dye.light ? dye.cord : dye.trim; }
+  function clipChars(s, n) { return Array.from(String(s || '')).slice(0, n).join(''); }
   function charmSvg(mem) {
     const country = (mem.motif && mem.motif.country) || '';
     const voice = mem.voice || VOICE.plain;
     const city = mem.dest || '';
-    const gold = '#e6c98a';
+    const dye = charmDye(mem);
+    const edge = plateInk(dye);
+    const tail = tasselInk(dye);
     let body = '';
     if (country === 'jp') {
-      body = cordLoop('#b4332a') +
-        '<circle cx="70" cy="48" r="5" fill="#e6c56a"/><circle cx="70" cy="54" r="1.5" fill="#e6c56a"/>' +
-        '<path d="M34 68 L70 50 L106 68 V162 H34 Z" fill="#c43737" stroke="' + gold + '" stroke-width="2"/>' +
-        '<path d="M40 78 q6 -6 12 0 q6 -6 12 0" fill="none" stroke="' + gold + '" stroke-width="1.4"/>' +
-        '<path d="M86 74 q5 -5 10 0 q5 -5 10 0" fill="none" stroke="' + gold + '" stroke-width="1.3"/>' +
-        '<g fill="none" stroke="' + gold + '" stroke-width="2" stroke-linecap="round"><path d="M50 84 h40"/><path d="M54 80 h32"/><path d="M54 92 h32"/><path d="M60 92 v26 M80 92 v26"/></g>' +
-        vertWord(voice.word, 70, 108, '#f6e6c0', 13) +
-        cityPlate(city, gold, 'none') +
-        tassel('#f7f4ee', 158);
+      body = cordLoop(dye.cord) +
+        '<circle cx="70" cy="48" r="5" fill="' + dye.trim + '"/><circle cx="70" cy="54" r="1.5" fill="' + dye.trim + '"/>' +
+        '<path d="M34 68 L70 50 L106 68 V162 H34 Z" fill="' + dye.cloth + '" stroke="' + dye.trim + '" stroke-width="2"/>' +
+        '<path d="M40 78 q6 -6 12 0 q6 -6 12 0" fill="none" stroke="' + dye.trim + '" stroke-width="1.4"/>' +
+        '<path d="M86 74 q5 -5 10 0 q5 -5 10 0" fill="none" stroke="' + dye.trim + '" stroke-width="1.3"/>' +
+        '<g fill="none" stroke="' + dye.trim + '" stroke-width="2" stroke-linecap="round"><path d="M50 84 h40"/><path d="M54 80 h32"/><path d="M54 92 h32"/><path d="M60 92 v26 M80 92 v26"/></g>' +
+        vertWord(voice.word, 70, 108, dye.ink, 13) +
+        cityPlate(city, edge, 'none') +
+        tassel(tail, 158);
     } else if (country === 'tw') {
-      body = cordLoop('#a63b34') +
-        '<path d="M34 82 h72 v80 H34 Z" fill="#a63b34" stroke="' + gold + '" stroke-width="2"/>' +
-        '<path d="M34 82 L70 64 L106 82" fill="#8d312c" stroke="' + gold + '" stroke-width="2"/>' +
-        '<g fill="#e7a0b0"><circle cx="96" cy="78" r="2.3"/><circle cx="100.2" cy="81.2" r="2.3"/><circle cx="98" cy="85.2" r="2.3"/><circle cx="93.8" cy="85.2" r="2.3"/><circle cx="91.6" cy="81.2" r="2.3"/><circle cx="96" cy="82" r="1.3" fill="#e6c56a"/></g>' +
-        vertWord(voice.word, 70, 112, '#f6e6c0', 16) +
-        cityPlate(city, gold, 'none') +
-        tassel('#f3ead8', 158);
+      body = cordLoop(dye.cord) +
+        '<path d="M34 82 h72 v80 H34 Z" fill="' + dye.cloth + '" stroke="' + dye.trim + '" stroke-width="2"/>' +
+        '<path d="M34 82 L70 64 L106 82" fill="' + dye.cord + '" stroke="' + dye.trim + '" stroke-width="2"/>' +
+        '<g fill="#e7a0b0"><circle cx="96" cy="78" r="2.3"/><circle cx="100.2" cy="81.2" r="2.3"/><circle cx="98" cy="85.2" r="2.3"/><circle cx="93.8" cy="85.2" r="2.3"/><circle cx="91.6" cy="81.2" r="2.3"/><circle cx="96" cy="82" r="1.3" fill="' + dye.trim + '"/></g>' +
+        vertWord(voice.word, 70, 112, dye.ink, 16) +
+        cityPlate(city, edge, 'none') +
+        tassel(tail, 158);
     } else if (country === 'kr') {
-      body = '<path d="M70 10 C62 10 54 18 56 26 C58 34 64 38 70 38 C76 38 82 34 84 26 C86 18 78 10 70 10 Z" fill="none" stroke="#8e2438" stroke-width="3.2" stroke-linecap="round"/>' +
-        '<circle cx="70" cy="36" r="6" fill="none" stroke="' + gold + '" stroke-width="2"/>' +
-        '<circle cx="70" cy="36" r="2.2" fill="' + gold + '"/>' +
-        '<rect x="34" y="68" width="72" height="96" rx="18" fill="#8e2438" stroke="' + gold + '" stroke-width="2"/>' +
-        '<circle cx="70" cy="86" r="7" fill="#f4efe6"/><path d="M70 79 a7 7 0 0 1 0 14 a3.5 3.5 0 0 1 0-7 a3.5 3.5 0 0 0 0-7" fill="#8e2438"/><circle cx="70" cy="82.5" r="1.3" fill="#8e2438"/><circle cx="70" cy="89.5" r="1.3" fill="#f4efe6"/>' +
-        vertWord(voice.word, 70, 108, '#f6e6c0', 14) +
-        cityPlate(city, gold, 'none') +
-        tassel('#f7f4ee', 160);
+      body = '<path d="M70 10 C62 10 54 18 56 26 C58 34 64 38 70 38 C76 38 82 34 84 26 C86 18 78 10 70 10 Z" fill="none" stroke="' + dye.cord + '" stroke-width="3.2" stroke-linecap="round"/>' +
+        '<circle cx="70" cy="36" r="6" fill="none" stroke="' + dye.trim + '" stroke-width="2"/>' +
+        '<circle cx="70" cy="36" r="2.2" fill="' + dye.trim + '"/>' +
+        '<rect x="34" y="68" width="72" height="96" rx="18" fill="' + dye.cloth + '" stroke="' + dye.trim + '" stroke-width="2"/>' +
+        '<circle cx="70" cy="86" r="7" fill="#f4efe6"/><path d="M70 79 a7 7 0 0 1 0 14 a3.5 3.5 0 0 1 0-7 a3.5 3.5 0 0 0 0-7" fill="' + dye.cloth + '"/><circle cx="70" cy="82.5" r="1.3" fill="' + dye.cloth + '"/><circle cx="70" cy="89.5" r="1.3" fill="#f4efe6"/>' +
+        vertWord(voice.word, 70, 108, dye.ink, 14) +
+        cityPlate(city, edge, 'none') +
+        tassel(tail, 160);
     } else {
-      body = cordLoop('#b0893e') +
-        '<rect x="38" y="72" width="64" height="90" rx="10" fill="#e4d2b4" stroke="#b0893e" stroke-width="2"/>' +
-        vertWord(voice.word, 70, 108, '#6e5344', 16) +
-        cityPlate(city, '#8a7564', 'none') +
-        tassel('#d7c4a4', 158);
+      body = cordLoop(dye.cord) +
+        '<rect x="38" y="72" width="64" height="90" rx="10" fill="' + dye.cloth + '" stroke="' + dye.trim + '" stroke-width="2"/>' +
+        vertWord(voice.word, 70, 108, dye.ink, 16) +
+        cityPlate(city, edge, 'none') +
+        tassel(tail, 158);
     }
     return body;
+  }
+  function pouchBody(x, y, w, h, country, dye) {
+    const right = x + w;
+    const bot = y + h;
+    const cx = x + w / 2;
+    const stroke = ' stroke="' + dye.trim + '" stroke-width="1.5"';
+    if (country === 'tw') {
+      const flap = y + Math.min(12, h * 0.22);
+      return '<path d="M' + x + ' ' + flap + ' H' + right + ' V' + bot + ' H' + x + ' Z" fill="' + dye.cloth + '"' + stroke + '/>' +
+        '<path d="M' + x + ' ' + flap + ' L' + cx + ' ' + y + ' L' + right + ' ' + flap + '" fill="' + dye.cord + '"' + stroke + '/>';
+    }
+    if (country === 'kr') {
+      return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + Math.min(12, w / 4) + '" fill="' + dye.cloth + '"' + stroke + '/>';
+    }
+    if (country === 'jp') {
+      const neck = y + Math.min(14, h * 0.24);
+      return '<path d="M' + x + ' ' + neck + ' L' + cx + ' ' + y + ' L' + right + ' ' + neck + ' V' + bot + ' H' + x + ' Z" fill="' + dye.cloth + '"' + stroke + '/>';
+    }
+    return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="6" fill="' + dye.cloth + '"' + stroke + '/>';
+  }
+  function charmPacketSvg(mem) {
+    const dye = charmDye(mem);
+    const voice = mem.voice || VOICE.plain;
+    const city = clipChars(mem.dest || '這趟', 4);
+    const citySize = Array.from(city).length >= 4 ? 14 : 18;
+    const word = clipChars(voice.word, 2);
+    return '<svg class="charmpack" viewBox="0 0 160 132" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><rect x="14" y="28" width="132" height="90" rx="4" fill="' + dye.paper + '" stroke="' + dye.cord + '" stroke-width="1.6"/><path d="M14 28 L80 70 L146 28" fill="' + dye.cloth + '" stroke="' + dye.trim + '" stroke-width="1.6" stroke-linejoin="round"/><path d="M48 70 H112" stroke="' + dye.cord + '" stroke-width="1.4"/><circle cx="80" cy="70" r="5" fill="' + dye.paper + '" stroke="' + dye.cord + '" stroke-width="1.6"/><rect x="14" y="86" width="132" height="7" fill="' + dye.accent + '"/><text x="24" y="112" text-anchor="start" fill="' + dye.cord + '" font-size="' + citySize + '" font-weight="800">' + esc(city) + '</text><circle cx="124" cy="108" r="16" fill="' + dye.cloth + '" stroke="' + dye.trim + '" stroke-width="1.4"/><text x="124" y="113" text-anchor="middle" fill="' + dye.ink + '" font-size="12" font-weight="800">' + esc(word) + '</text></svg>';
+  }
+  function charmBlisterSvg(mem) {
+    const dye = charmDye(mem);
+    const voice = mem.voice || VOICE.plain;
+    const country = (mem.motif && mem.motif.country) || '';
+    const city = clipChars(mem.dest || '', 4);
+    const word = clipChars(voice.word, 2);
+    return '<svg class="charmblister" viewBox="0 0 150 188" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><rect x="28" y="6" width="94" height="14" rx="3" fill="' + dye.paper + '" stroke="' + dye.cord + '" stroke-width="1.2"/><circle cx="75" cy="13" r="3.2" fill="none" stroke="' + dye.cord + '" stroke-width="1.4"/><rect x="16" y="18" width="118" height="158" rx="10" fill="' + dye.paper + '" stroke="' + dye.trim + '" stroke-width="1.6"/><text x="75" y="40" text-anchor="middle" fill="' + dye.cord + '" font-size="14" font-weight="800">' + esc(city) + '</text><rect x="32" y="48" width="86" height="92" rx="18" fill="#e7f2f8" stroke="#9ec4d8" stroke-width="2"/><ellipse cx="50" cy="66" rx="9" ry="14" fill="rgba(255,255,255,.72)"/><g>' + pouchBody(56, 74, 38, 50, country, dye) + '</g><text x="75" y="114" text-anchor="middle" fill="' + dye.ink + '" font-size="12" font-weight="800">' + esc(word) + '</text><text x="75" y="160" text-anchor="middle" fill="' + dye.cord + '" font-size="13" font-weight="800">' + esc(voice.charm) + '</text></svg>';
+  }
+  function charmRackSvg(mem) {
+    const dye = charmDye(mem);
+    const m = mem.motif || {};
+    const voice = mem.voice || VOICE.plain;
+    const country = m.country || '';
+    const bits = [
+      mem.dest || '',
+      (m.known && m.land) || voice.word,
+      (m.known && m.food) || ((mem.spots && mem.spots[0]) || voice.charm)
+    ];
+    const tail = tasselInk(dye);
+    const pegs = [14, 80, 146].map(function (x, i) {
+      const cx = x + 28;
+      const chars = Array.from(clipChars(bits[i], 4));
+      const size = chars.length >= 4 ? 10 : 11;
+      const step = size + 2;
+      const text = chars.map(function (ch, n) {
+        return '<text x="' + cx + '" y="' + (68 + n * step) + '" text-anchor="middle" fill="' + dye.ink + '" font-size="' + size + '" font-weight="800">' + esc(ch) + '</text>';
+      }).join('');
+      return '<g><circle cx="' + cx + '" cy="16" r="3" fill="#6e5344"/><path d="M' + cx + ' 16 V34" stroke="' + dye.cord + '" stroke-width="1.6" fill="none"/>' + pouchBody(x + 8, 40, 40, 78, country, dye) + text + '<path d="M' + (cx - 5) + ' 118 h10 v5 h-10 z" fill="' + tail + '"/><path d="M' + cx + ' 123 v8" stroke="' + tail + '" stroke-width="1.4" stroke-linecap="round"/></g>';
+    }).join('');
+    return '<svg class="charmrack" viewBox="0 0 228 142" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><rect x="6" y="12" width="216" height="7" rx="2" fill="#8a6244"/>' + pegs + '</svg>';
+  }
+  function charmCell(cls, lab, small, name, svg, interactive) {
+    const act = interactive ? ' onclick="Journey.pickMount(this)"' : '';
+    return '<span class="bvar ' + cls + '" data-lab="' + lab + '"' + act + '>' + svg + '<small>' + esc(small) + '</small><b>' + esc(name) + '</b></span>';
+  }
+  function charmVariants(mem, interactive) {
+    const voice = mem.voice || VOICE.plain;
+    const name = voice.charm;
+    const pouch = '<svg class="charmthumb" viewBox="0 0 140 214" preserveAspectRatio="xMidYMid meet" aria-hidden="true">' + charmSvg(mem) + '</svg>';
+    return '<span class="charm-vars"><span class="charm-row">' +
+      charmCell('charm-pouch', '布囊 · 繩與流蘇', '布囊', name, pouch, interactive) +
+      charmCell('charm-packet', '紙包 · 扁平封套', '紙包', name, charmPacketSvg(mem), interactive) +
+      charmCell('charm-blister', '吸塑 · 展示卡', '吸塑', name, charmBlisterSvg(mem), interactive) +
+      '</span>' + charmCell('charm-rackv', '掛牆 · 一排掛著', '掛牆', name, charmRackSvg(mem), interactive) + '</span>';
   }
   function charmHtml(mem) {
     const voice = mem.voice || VOICE.plain;
@@ -738,6 +851,7 @@
       : mem.kind === 'plaque' ? plaqueHtml(mem)
       : mem.kind === 'pack' ? packHtml(mem)
       : cardHtml(mem);
+    if (size === 'lg' && mem.kind === 'charm') body = withTail(body, charmVariants(mem, false));
     if (size === 'lg' && mem.kind === 'badge') body = withTail(body, badgeVariants(mem));
     if (size === 'lg' && mem.kind === 'plaque') body = withTail(body, emaVariants(mem));
     const cap = opt.cap === false ? '' : (mem.kind === 'pass'
@@ -883,15 +997,18 @@
     if (kind === 'plaque') {
       return '<div class="sovset sovset-plaque" data-kind="plaque">' + emaVariants(mem) + '<p class="sethint" data-idle="小牌、大牌單掛，或掛上一排">小牌、大牌單掛，或掛上一排</p><button type="button" class="btn ghost sm setgo" onclick="Journey.settleAct(this)">看下一掛</button></div>';
     }
+    if (kind === 'charm') {
+      const hangIdle = '布囊、紙包、吸塑，或掛上一排';
+      const drawIdle = '點一下，抽出一支籤';
+      return '<div class="sovset sovset-charm" data-kind="charm">' + charmVariants(mem, true) + '<p class="sethint hang-hint" data-idle="' + hangIdle + '">' + hangIdle + '</p><button type="button" class="btn ghost sm setgo setmount" onclick="Journey.settleAct(this)">換一種掛法</button><button type="button" class="setgo" onclick="Journey.settleAct(this)">' + charmStage(mem) + '</button><p class="sethint draw-hint" data-idle="' + drawIdle + '">' + drawIdle + '</p>' + settlePile(mem) + '</div>';
+    }
     const idle = kind === 'pack' ? '點一下，撕開卡包'
       : kind === 'pass' ? '點一下，撕下存根'
       : kind === 'stamp' ? '點一下，翻開印章冊'
-      : kind === 'charm' ? '點一下，抽出一支籤'
       : '點一下，刮開紀念卡';
     const stage = kind === 'pack' ? packStage(mem)
       : kind === 'pass' ? passStage(mem)
       : kind === 'stamp' ? stampStage(mem)
-      : kind === 'charm' ? charmStage(mem)
       : cardStage(mem);
     return '<div class="sovset sovset-' + kind + '" data-kind="' + kind + '"><button type="button" class="setgo" onclick="Journey.settleAct(this)">' + stage + '</button><p class="sethint" data-idle="' + idle + '">' + idle + '</p>' + settlePile(mem) + '</div>';
   }
@@ -921,24 +1038,68 @@
     next.hidden = false;
     return !!box.querySelector('.drawcard[hidden]');
   }
+  function paintCharmHero(box) {
+    if (!box || !box.getAttribute || box.getAttribute('data-kind') !== 'charm' || !box.closest) return;
+    const layer = box.closest('#jlayer');
+    if (!layer) return;
+    const hero = layer.querySelector('.sov-charm .charmart');
+    if (!hero) return;
+    if (!layer._charmHero) layer._charmHero = hero.outerHTML;
+    const on = box.querySelector('.bvar.is-on');
+    const stage = layer.querySelector('.sov-charm .charm-vars');
+    if (stage) {
+      const lab = on ? on.getAttribute('data-lab') : '';
+      stage.querySelectorAll('.bvar').forEach(function (n) {
+        n.classList.toggle('is-on', !!lab && n.getAttribute('data-lab') === lab);
+      });
+    }
+    if (!on) {
+      const fresh = layer.querySelector('.sov-charm .charmart');
+      if (fresh && layer._charmHero) fresh.outerHTML = layer._charmHero;
+      return;
+    }
+    const src = on.querySelector('svg');
+    if (!src) return;
+    const clone = src.cloneNode(true);
+    clone.setAttribute('class', ('charmart ' + (src.getAttribute('class') || '')).trim());
+    clone.setAttribute('preserveAspectRatio', 'xMidYMid meet');
+    const resting = hero.closest('.sov-rest');
+    hero.replaceWith(clone);
+    if (resting) {
+      clone.style.animation = 'none';
+      clone.style.transform = 'none';
+    }
+  }
+  function markMount(box, el) {
+    if (!box || !el) return;
+    box.querySelectorAll('.bvar,.rackpeg').forEach(function (n) { n.classList.remove('is-on'); });
+    el.classList.add('is-on');
+    const hint = box.querySelector('.hang-hint') || box.querySelector('.sethint');
+    const lab = el.getAttribute('data-lab');
+    if (hint && lab) hint.textContent = lab;
+    paintCharmHero(box);
+  }
+  function pickMount(el) {
+    const box = el && el.closest ? el.closest('.sovset') : null;
+    if (!box || !el.classList || !el.classList.contains('bvar')) return;
+    markMount(box, el);
+  }
   function cycleMount(box) {
     const nodes = box.querySelectorAll('.bvar,.rackpeg');
     if (!nodes.length) return;
     let i = -1;
     nodes.forEach(function (n, idx) { if (n.classList.contains('is-on')) i = idx; });
-    nodes.forEach(function (n) { n.classList.remove('is-on'); });
-    const next = nodes[(i + 1) % nodes.length];
-    next.classList.add('is-on');
-    const hint = box.querySelector('.sethint');
-    const lab = next.getAttribute('data-lab');
-    if (hint && lab) hint.textContent = lab;
+    markMount(box, nodes[(i + 1) % nodes.length]);
   }
   function settleAct(btn) {
     const box = btn && btn.closest ? btn.closest('.sovset') : null;
     if (!box) return;
     const kind = box.getAttribute('data-kind') || '';
-    if (kind === 'badge' || kind === 'plaque') { cycleMount(box); return; }
-    const hint = box.querySelector('.sethint');
+    if (kind === 'badge' || kind === 'plaque' || (btn.classList && btn.classList.contains('setmount'))) {
+      cycleMount(box);
+      return;
+    }
+    const hint = box.querySelector('.draw-hint') || box.querySelector('.sethint');
     if (!box.classList.contains('is-torn')) {
       box.classList.add('is-torn');
       if (hint) hint.textContent = tearHint(kind);
@@ -953,9 +1114,16 @@
       box.classList.remove('is-torn');
       box.querySelectorAll('.is-on').forEach(function (n) { n.classList.remove('is-on'); });
       box.querySelectorAll('.drawcard').forEach(function (el) { el.hidden = true; });
-      const hint = box.querySelector('.sethint');
-      if (hint && hint.dataset && hint.dataset.idle) hint.textContent = hint.dataset.idle;
+      box.querySelectorAll('.sethint').forEach(function (hint) {
+        if (hint.dataset && hint.dataset.idle) hint.textContent = hint.dataset.idle;
+      });
     });
+    const stage = layer.querySelector('.sov-charm .charm-vars');
+    if (stage) stage.querySelectorAll('.is-on').forEach(function (n) { n.classList.remove('is-on'); });
+    if (layer._charmHero) {
+      const hero = layer.querySelector('.sov-charm .charmart');
+      if (hero) hero.outerHTML = layer._charmHero;
+    }
   }
   function revealRecap(layer) {
     if (!layer || !layer.isConnected || !layer.querySelector('.sovrecap')) return;
@@ -2417,6 +2585,6 @@
     focusSpot, clearSpot, resetMap, zoomMap,
     themeSheet, setTripStyle, askArchive, dismissArchive, startArchive, unarchive, promptArchive, maybePrompt,
     SOUVENIRS, AIR_ZH, suggestSouvenir, souvenirOf, memoryOf, souvenirMarkup, shelfHtml, motifOf,
-    openKeepsakes, openSouvenir, setSouvenir, openKeptTrip, releaseSouvenir, dropSouvenir, pokeSouvenir, replaySouvenir, recapMarkup, tallyTrip, settleAct
+    openKeepsakes, openSouvenir, setSouvenir, openKeptTrip, releaseSouvenir, dropSouvenir, pokeSouvenir, replaySouvenir, recapMarkup, tallyTrip, settleAct, pickMount
   };
 });
