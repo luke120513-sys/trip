@@ -490,7 +490,7 @@
     kaisen: '<ellipse cx="32" cy="46" rx="20" ry="10" fill="#f4efe4"/><ellipse cx="32" cy="40" rx="16" ry="8" fill="#fbfaf6"/><path d="M20 36 q8 -8 14 -2 q6 -8 12 0" fill="#e07a5f"/>'
   };
   const SCENE = {
-    skyline: '<rect width="128" height="72" fill="#d5e6f2"/><circle cx="108" cy="16" r="7" fill="#f6e2b0"/><rect y="46" width="128" height="26" fill="#c5d4e0"/><rect x="8" y="36" width="12" height="22" fill="#8aa0b4"/><rect x="24" y="30" width="16" height="28" fill="#6e8698"/><path fill="#4e6578" d="M78 50 84 6 h3 L90 50 Z"/><ellipse cx="84.5" cy="20" rx="7" ry="2.2" fill="#4e6578"/><rect x="100" y="34" width="16" height="24" fill="#7f96a8"/>',
+    skyline: '<rect width="128" height="72" fill="#d5e6f2"/><circle cx="108" cy="16" r="7" fill="#f6e2b0"/><rect y="46" width="128" height="26" fill="#c5d4e0"/><rect x="8" y="36" width="12" height="22" fill="#8aa0b4"/><rect x="24" y="30" width="16" height="28" fill="#6e8698"/><path fill="#4e6578" d="M78 50 L82.5 6 H85.5 L90 50 Z"/><ellipse cx="84" cy="20" rx="7" ry="2.2" fill="#4e6578"/><rect x="100" y="34" width="16" height="24" fill="#7f96a8"/>',
     castle: '<rect width="128" height="38" fill="#f3e6d4"/><rect y="46" width="128" height="26" fill="#7ea4b4"/><path fill="#c4785a" d="M48 48 V26 h8 V16 h10 v10 h8 v22 Z"/><path fill="#8c3a32" d="M46 28 h36 l-4 6 H50 Z"/><path fill="#f3e6d4" d="M58 34 h6 v8 h-6 Z"/>',
     temple: '<rect width="128" height="40" fill="#f6eadc"/><path fill="#8ea484" d="M0 44 24 24 46 40 78 16 104 38 128 22 v24 H0 Z"/><path fill="#c4473c" d="M18 46 h10 V28 h8 V46 h10 V24 H18 Z"/><path fill="#8c3030" d="M16 28 h42 l-4 -6 H20 Z"/><circle cx="104" cy="50" r="8" fill="#b85a48"/>',
     snow: '<rect width="128" height="72" fill="#e7eef4"/><path fill="#fff" d="M0 46 22 20 40 36 62 12 84 34 108 18 128 40 v32 H0 Z"/><path fill="#d5e0ea" d="M0 50 28 28 48 42 70 22 128 52 v20 H0 Z"/><path fill="#8aa0b4" d="M54 40 64 28 74 40 v12 H54 Z"/><circle cx="64" cy="44" r="3" fill="none" stroke="#6e8698"/>',
@@ -569,10 +569,10 @@
     return { size: 12, y: 118, spacing: 0.3 };
   }
   function arcText(text) {
-    const id = sovId('arc');
     const chars = Array.from(String(text || '')).slice(0, 8);
-    const size = chars.length >= 7 ? 11 : chars.length >= 5 ? 12 : 14;
-    return '<defs><path id="' + id + '" d="M34,62 A78,78 0 0 1 166,62"/></defs><text fill="#c17a6e" font-size="' + size + '" font-weight="700" letter-spacing="1.4"><textPath href="#' + id + '" xlink:href="#' + id + '" startOffset="50%" text-anchor="middle">' + esc(chars.join('')) + '</textPath></text>';
+    const n = chars.length || 1;
+    const size = n >= 7 ? 11 : n >= 5 ? 12 : n >= 4 ? 14 : 16;
+    return '<text x="100" y="42" text-anchor="middle" fill="#c17a6e" font-size="' + size + '" font-weight="700">' + esc(chars.join('')) + '</text>';
   }
   function stampHtml(mem) {
     const m = mem.motif || {};
@@ -580,7 +580,7 @@
     const arc = m.known ? m.land : '到此一遊';
     const flowerY = mem.year ? 148 : 158;
     const year = mem.year ? '<text x="100" y="170" text-anchor="middle" fill="#c17a6e" font-size="11" font-weight="700" letter-spacing="1">' + esc(mem.year) + '</text>' : '';
-    return '<span class="sealcard papercard"><svg class="sealart" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet" aria-hidden="true" style="color:#c17a6e"><circle cx="100" cy="100" r="92" fill="none" stroke="#c17a6e" stroke-width="1.15"/><circle cx="100" cy="100" r="84" fill="none" stroke="#c17a6e" stroke-width="2.1" stroke-dasharray="1.15 3.3" stroke-linecap="round"/>' + arcText(arc) + '<g transform="translate(82,48) scale(.54)">' + markIcon(m.mark || 'pin') + '</g><text x="100" y="' + lay.y + '" text-anchor="middle" fill="#a85a4c" font-size="' + lay.size + '" font-weight="800" letter-spacing="' + lay.spacing + '">' + esc(mem.dest || '') + '</text><g transform="translate(100 ' + flowerY + ')">' + sealFlower(m.country) + '</g>' + year + '</svg><span class="paper-foot seal-foot"><svg viewBox="0 0 12 14" width="11" height="13" aria-hidden="true"><path d="M6 1.2C3.8 1.2 2.3 3 2.3 5c0 2.6 3.7 7.2 3.7 7.2S9.7 7.6 9.7 5C9.7 3 8.2 1.2 6 1.2z" fill="none" stroke="currentColor" stroke-width="1.1"/><circle cx="6" cy="5" r="1.15" fill="currentColor"/></svg><span>地標印章</span></span></span>';
+    return '<span class="sealcard papercard"><svg class="sealart" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet" aria-hidden="true" style="color:#c17a6e"><circle cx="100" cy="100" r="92" fill="none" stroke="#c17a6e" stroke-width="1.15"/><circle cx="100" cy="100" r="84" fill="none" stroke="#c17a6e" stroke-width="2.1" stroke-dasharray="1.15 3.3" stroke-linecap="round"/>' + arcText(arc) + '<g transform="translate(100,65.28) scale(.54) translate(-32,-32)">' + markIcon(m.mark || 'pin') + '</g><text x="100" y="' + lay.y + '" text-anchor="middle" fill="#a85a4c" font-size="' + lay.size + '" font-weight="800" letter-spacing="' + lay.spacing + '">' + esc(mem.dest || '') + '</text><g transform="translate(100 ' + flowerY + ')">' + sealFlower(m.country) + '</g>' + year + '</svg><span class="paper-foot seal-foot"><svg viewBox="0 0 12 14" width="11" height="13" aria-hidden="true"><path d="M6 1.2C3.8 1.2 2.3 3 2.3 5c0 2.6 3.7 7.2 3.7 7.2S9.7 7.6 9.7 5C9.7 3 8.2 1.2 6 1.2z" fill="none" stroke="currentColor" stroke-width="1.1"/><circle cx="6" cy="5" r="1.15" fill="currentColor"/></svg><span>地標印章</span></span></span>';
   }
   function cityPlate(city, stroke, fill) {
     const chars = Array.from(String(city || ''));
@@ -677,7 +677,7 @@
     const seal = chars.length > 0 && chars.length <= 3
       ? '<rect x="124" y="72" width="16" height="16" fill="#b4332a"/><text x="132" y="84" text-anchor="middle" fill="#f6e0c0" font-size="10" font-weight="800">旅</text>'
       : '';
-    return '<span class="emacard papercard"><svg class="emaart" viewBox="0 0 200 228" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path class="ema-cord" d="M100 6 C118 16 124 32 100 42 C76 32 82 16 100 6" fill="none" stroke="#b4332a" stroke-width="3.2" stroke-linecap="round"/><circle cx="100" cy="24" r="5" fill="none" stroke="#b4332a" stroke-width="2.2"/><rect x="46" y="50" width="108" height="156" rx="8" fill="#e7c99a" stroke="#c4a36e" stroke-width="2"/><rect x="54" y="58" width="92" height="140" rx="4" fill="#f0dcb4"/><circle cx="100" cy="70" r="3.4" fill="#f6f1e7"/>' + plaqueName(mem.dest) + seal + '<clipPath id="' + clip + '"><rect x="54" y="58" width="92" height="140" rx="4"/></clipPath><g clip-path="url(#' + clip + ')" transform="translate(54,146) scale(.71875)">' + scene + '</g></svg><span class="paper-foot ema-foot"><span class="ema-pill">' + esc(voice.plaque) + '</span></span></span>';
+    return '<span class="emacard papercard"><svg class="emaart" viewBox="0 0 200 228" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path class="ema-cord" d="M100 6 C118 16 124 32 100 42 C76 32 82 16 100 6" fill="none" stroke="#b4332a" stroke-width="3.2" stroke-linecap="round"/><circle cx="100" cy="24" r="5" fill="none" stroke="#b4332a" stroke-width="2.2"/><rect x="46" y="50" width="108" height="156" rx="8" fill="#e7c99a" stroke="#c4a36e" stroke-width="2"/><rect x="54" y="58" width="92" height="140" rx="4" fill="#f0dcb4"/><circle cx="100" cy="70" r="3.4" fill="#f6f1e7"/>' + plaqueName(mem.dest) + seal + '<clipPath id="' + clip + '"><rect x="54" y="58" width="92" height="140" rx="4"/></clipPath><g clip-path="url(#' + clip + ')"><g transform="translate(54,146) scale(.71875)">' + scene + '</g></g></svg><span class="paper-foot ema-foot"><span class="ema-pill">' + esc(voice.plaque) + '</span></span></span>';
   }
   function souvenirMarkup(trip, diary, opt) {
     opt = opt || {};

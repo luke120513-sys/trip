@@ -704,6 +704,17 @@ assert.equal(J.suggestSouvenir(trip({ dest: '東京', days: [[]] }), []), 'pass'
 const tokyoStamp = J.souvenirMarkup(trip({ dest: '東京', souvenir: 'stamp' }), [], { size: 'lg' });
 assert.match(tokyoStamp, /晴空塔/);
 assert.match(tokyoStamp, /sov-poke/);
+assert.equal(/textPath|<textPath|A78,78/.test(tokyoStamp), false);
+assert.match(tokyoStamp, /translate\(100,65\.28\) scale\(\.54\) translate\(-32,-32\)/);
+const tokyoPlaque = J.souvenirMarkup(trip({ dest: '東京', souvenir: 'plaque' }), [], { size: 'lg' });
+assert.match(tokyoPlaque, /M78 50 L82\.5 6 H85\.5 L90 50 Z/);
+assert.equal(/M78 50 84 6/.test(tokyoPlaque), false);
+assert.equal(/clip-path="url\(#[^"]+\)" transform=/.test(tokyoPlaque), false);
+assert.match(tokyoPlaque, /clip-path="url\(#[^"]+\)"><g transform="translate\(54,146\) scale\(\.71875\)">/);
+J.CITIES.forEach(c => {
+  const stamp = J.souvenirMarkup(trip({ dest: c.name, souvenir: 'stamp' }), [], { size: 'mini' });
+  assert.equal(/textPath/.test(stamp), false, c.name);
+});
 const lands = new Set();
 const foods = new Set();
 J.CITIES.forEach(c => {
