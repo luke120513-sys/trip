@@ -62,14 +62,26 @@ const day = [spot('甲', { visited: true }), spot('乙', { visited: true }), spo
 jp.days.push(day);
 jp.expenses = [{ amount: 1200, currency: 'JPY' }, { amount: 80, currency: 'TWD' }];
 
+assert.equal(J.detectCity({ name: '淺草寺', lat: 34.9671, lng: 135.7727 }, trip({ dest: '東京' })), 'kyo');
+assert.equal(J.detectCity({ name: '伏見稻荷大社' }, trip({ dest: '東京' })), 'kyo');
+assert.equal(J.detectCity({ name: '拉麵' }, trip({ dest: '東京' })), 'tyo');
+assert.equal(J.detectCity({ name: '這裡', lat: 35.7148, lng: 139.7967 }, trip({ dest: '大阪' })), 'tyo');
+assert.equal(J.detectCity({ name: '海雲臺', lat: 35.1587, lng: 129.1604 }, trip({ dest: '首爾' })), 'pus');
+assert.equal(J.detectCity({ name: '景福宮' }, trip({ dest: '首爾' })), 'sel');
+assert.equal(J.detectCity({ name: '黑豬肉' }, trip({ dest: '濟州' })), 'cju');
+assert.equal(J.detectCity({ name: '札幌啤酒' }, trip({ dest: '東京' })), 'spk');
+
 let res = J.evaluate([jp], diary, {}, 1712000000000);
 const ids = new Set(res.fresh.map(c => c.id));
-['jp-first', 'jp-ramen', 'jp-shrine', 'jp-rail', 'jp-konbini', 'jp-tokyo', 'jp-early', 'jp-foodie', 'jp-perfect'].forEach(id => {
+['jp-first', 'tyo-senso', 'tyo-metro', 'kyo-fushimi', 'kyo-kinkaku', 'kyo-kiyomizu'].forEach(id => {
   assert.ok(ids.has(id), id);
   assert.equal(res.earned[id], 1712000000000);
 });
 assert.equal(ids.has('jp-archive'), false);
-assert.equal(ids.has('jp-osaka'), false);
+assert.equal(ids.has('tyo-pass'), false);
+assert.equal(ids.has('jp-ramen'), false);
+assert.equal(ids.has('osa-pass'), false);
+assert.equal(ids.has('tyo-scramble'), false);
 
 jp.archived = true;
 jp.archivedAt = 1712100000000;
@@ -79,16 +91,27 @@ assert.equal(res.earned['jp-first'], 1712000000000);
 const again = J.evaluate([jp], diary, res.earned, 1712300000000);
 assert.equal(again.fresh.length, 0);
 
-const earlyOnly = trip({ days: [[spot('市場', { visited: true, time: '07:30' })]] });
-assert.ok(J.evaluate([earlyOnly], [], {}, 1712000000000).fresh.some(c => c.id === 'jp-early'));
-const late = trip({ days: [[spot('市場', { visited: true, time: '09:00', visitedAt: Date.parse('2026-04-02T09:10:00') })]] });
-assert.equal(J.evaluate([late], [], {}, 1712000000000).fresh.some(c => c.id === 'jp-early'), false);
+const morning = trip({ days: [[spot('築地市場', { visited: true, time: '07:30' })]] });
+assert.ok(J.evaluate([morning], [], {}, 1712000000000).fresh.some(c => c.id === 'tyo-tsukiji'));
+const brunch = trip({ days: [[spot('築地', { visited: true, time: '10:40' })]] });
+assert.ok(J.evaluate([brunch], [], {}, 1712000000000).fresh.some(c => c.id === 'tyo-tsukiji'));
+const afternoon = trip({ days: [[spot('築地市場', { visited: true, time: '15:00', visitedAt: Date.parse('2026-04-02T15:10:00') })]] });
+assert.equal(J.evaluate([afternoon], [], {}, 1712000000000).fresh.some(c => c.id === 'tyo-tsukiji'), false);
+const diaryBreakfast = trip({ dest: '東京', days: [[]] });
+assert.ok(J.evaluate([diaryBreakfast], [{ date: '2026-04-02', placeName: '築地', text: '早餐' }], {}, 1712000000000).fresh.some(c => c.id === 'tyo-tsukiji'));
+
+const nearTree = trip({ dest: '大阪', days: [[spot('展望台', { visited: true, lat: 35.7101, lng: 139.8107 })]] });
+assert.ok(J.evaluate([nearTree], [], {}, 1712000000000).fresh.some(c => c.id === 'tyo-skytree'));
+
+const kept = J.evaluate([jp], diary, { 'jp-ramen': 1711000000000 }, 1712400000000);
+assert.equal(kept.earned['jp-ramen'], 1711000000000);
+assert.equal(kept.fresh.some(c => c.id === 'jp-ramen'), false);
 
 const kr = trip({
   dest: '首爾',
   days: [[
     spot('景福宮', { visited: true, icon: 'sightseeing' }),
-    spot('明洞逛街'),
+    spot('明洞逛街', { visited: true }),
     spot('韓式烤肉', { time: '18:30' }),
     spot('咖啡廳一', { icon: 'cafe' }),
     spot('咖啡廳二', { icon: 'cafe' }),
@@ -99,35 +122,52 @@ const kr = trip({
 const krDiary = [{ date: '2026-04-02', placeName: '炸雞', text: '辣炒雞' }, { date: '2026-04-03', text: '又吃炸雞' }];
 const krRes = J.evaluate([kr], krDiary, {}, 1712000000000);
 const krIds = new Set(krRes.fresh.map(c => c.id));
-['kr-first', 'kr-spicy', 'kr-palace', 'kr-shop', 'kr-bbq', 'kr-cafe', 'kr-perfect'].forEach(id => assert.ok(krIds.has(id), id));
+['kr-first', 'sel-hanbok', 'sel-myeong', 'sel-bbq', 'sel-cafe'].forEach(id => assert.ok(krIds.has(id), id));
 assert.equal(krIds.has('kr-archive'), false);
+assert.equal(krIds.has('sel-chicken'), false);
+assert.equal(krIds.has('kr-perfect'), false);
+assert.equal(krIds.has('sel-hongdae'), false);
 
 const tw = trip({
   dest: '高雄',
   days: [[
-    spot('駁二', { visited: true }),
-    spot('蓮池潭', { visited: true }),
-    spot('六合夜市', { visited: true }),
-    spot('瑞豐夜市')
-  ], day.map(s => Object.assign({}, s))]
+    spot('駁二藝術特區', { visited: true, lat: 22.61953, lng: 120.28162 }),
+    spot('打狗英國領事館', { visited: true, lat: 22.61967, lng: 120.26651 }),
+    spot('蓮池潭', { visited: true, lat: 22.68384, lng: 120.29645 })
+  ]]
 });
-const twDiary = [
-  { date: '2026-04-02', text: '牛肉麵' },
-  { date: '2026-04-03', placeName: '滷肉飯', text: '配湯' }
-];
-const twRes = J.evaluate([tw], twDiary, {}, 1712000000000);
+const twRes = J.evaluate([tw], [], {}, 1712000000000);
 const twIds = new Set(twRes.fresh.map(c => c.id));
-['tw-first', 'tw-kaohsiung', 'tw-night', 'tw-noodle', 'tw-perfect'].forEach(id => assert.ok(twIds.has(id), id));
+['tw-first', 'khh-pier2', 'khh-takow', 'khh-lotus'].forEach(id => assert.ok(twIds.has(id), id));
 assert.equal(twIds.has('tw-archive'), false);
-assert.equal(twIds.has('tw-taipei'), false);
+assert.equal(twIds.has('khh-pass'), false);
+assert.equal(J.detectCity({ name: '駁二', lat: 22.61953, lng: 120.28162 }, trip({ dest: '高雄' })), 'khh');
+assert.equal(J.detectCity({ name: '日月潭', lat: 23.85233, lng: 120.92861 }, trip({ dest: '台中' })), 'nto');
+assert.equal(J.detectCity({ name: '九二一地震教育園區', lat: 24.04261, lng: 120.69914 }, trip({ dest: '南投' })), 'txg');
+assert.equal(J.detectCity({ name: '阿里山' }, trip({ dest: '嘉義' })), 'cyi');
+assert.equal(J.detectCity({ name: '台北101', lat: 25.03384, lng: 121.5645 }, trip({ dest: '高雄' })), 'tpe');
 tw.archived = true;
-assert.deepEqual(J.evaluate([tw], twDiary, twRes.earned, 1712400000000).fresh.map(c => c.id), ['tw-archive']);
+assert.deepEqual(J.evaluate([tw], [], twRes.earned, 1712400000000).fresh.map(c => c.id), ['tw-archive']);
 const packedTw = Share.normTrip(Object.assign({}, trip({ dest: '台南' }), { themeStyle: 'tw' }), 0, true);
 assert.equal(packedTw.themeStyle, 'tw');
+assert.equal(J.shortStyle('tw'), '台灣');
 const noon = trip({ dest: '首爾', days: [[spot('烤肉', { time: '12:00' })]] });
-assert.equal(J.evaluate([noon], [], {}, 1712000000000).fresh.some(c => c.id === 'kr-bbq'), false);
+assert.equal(J.evaluate([noon], [], {}, 1712000000000).fresh.some(c => c.id === 'sel-bbq'), false);
 const nightNote = trip({ dest: '首爾', days: [[]] });
-assert.ok(J.evaluate([nightNote], [{ date: '2026-04-02', text: '烤肉' }], {}, 1712000000000).fresh.some(c => c.id === 'kr-bbq'));
+assert.ok(J.evaluate([nightNote], [{ date: '2026-04-02', text: '烤肉' }], {}, 1712000000000).fresh.some(c => c.id === 'sel-bbq'));
+const chickenBeer = trip({ dest: '首爾', days: [[]] });
+assert.ok(J.evaluate([chickenBeer], [{ date: '2026-04-02', text: '炸雞' }, { date: '2026-04-03', text: '生啤' }], {}, 1712000000000).fresh.some(c => c.id === 'sel-chicken'));
+const moved = J.evaluate([], [], { 'jp-tokyo': 1712000000000, 'kr-shop': 1711800000000, 'jp-first': 1711000000000 }, 1713000000000);
+assert.equal(moved.fresh.length, 0);
+assert.equal(moved.earned['tyo-pass'], 1712000000000);
+assert.equal(moved.earned['jp-tokyo'], 1712000000000);
+assert.equal(moved.earned['sel-hongdae'], 1711800000000);
+assert.equal(moved.earned['sel-myeong'], 1711800000000);
+assert.equal(moved.earned['jp-first'], 1711000000000);
+assert.equal(J.progressBrief({ 'tyo-senso': 1712000000000, 'tyo-pass': 1712000000000 }), '東京 2/8');
+assert.equal(J.progressBrief({}), '尚未收集');
+assert.equal(J.shortStyle('auto'), '自動');
+assert.equal(J.shortStyle('plain'), '系統預設');
 
 const sum = J.summarize(jp, diary);
 assert.equal(sum.days, 5);
@@ -156,10 +196,45 @@ assert.equal(newer.themeStyle, 'plain');
 assert.equal(newer.archived, undefined);
 assert.equal(newer.archiveAsked, true);
 
-assert.equal(J.CARDS.filter(c => c.country === 'jp').length, 11);
-assert.equal(J.CARDS.filter(c => c.country === 'kr').length, 8);
-assert.equal(J.CARDS.filter(c => c.country === 'tw').length, 15);
+['tyo', 'osa', 'kyo', 'spk', 'oka', 'fuk', 'sel', 'pus', 'cju'].forEach(id => {
+  const n = J.CARDS.filter(c => c.city === id && !c.legacy).length;
+  assert.ok(n >= 6 && n <= 10, id + ' ' + n);
+  assert.ok(J.CITIES.some(c => c.id === id));
+});
+['tpe', 'txg', 'tnn', 'khh', 'hul', 'ttt', 'cyi', 'ktn', 'yil', 'nto'].forEach(id => {
+  const n = J.CARDS.filter(c => c.city === id && !c.legacy).length;
+  assert.ok(n >= 4 && n <= 8, id + ' ' + n);
+  const city = J.CITIES.find(c => c.id === id);
+  assert.equal(city.country, 'tw');
+  assert.ok(city.color);
+  assert.equal(city.box.length, 4);
+});
+for (let i = 0; i < J.CITIES.length; i++) {
+  for (let j = i + 1; j < J.CITIES.length; j++) {
+    const a = J.CITIES[i].box, b = J.CITIES[j].box;
+    const overlap = a[0] <= b[2] && b[0] <= a[2] && a[1] <= b[3] && b[1] <= a[3];
+    assert.equal(overlap, false, J.CITIES[i].id + ' ' + J.CITIES[j].id);
+  }
+}
+assert.ok(J.CARDS.some(c => c.id === 'jp-first' && !c.city && !c.legacy));
+assert.ok(J.CARDS.some(c => c.id === 'jp-archive' && !c.legacy));
+assert.ok(J.CARDS.some(c => c.id === 'kr-first' && !c.legacy));
+assert.ok(J.CARDS.some(c => c.id === 'tw-first' && !c.city && !c.legacy));
+assert.ok(J.CARDS.some(c => c.id === 'tw-archive' && !c.legacy));
+assert.ok(J.CARDS.some(c => c.id === 'jp-ramen' && c.legacy));
+assert.equal(J.cardById('jp-tokyo'), null);
+assert.deepEqual(J.ALIAS['jp-tokyo'], ['tyo-pass']);
+assert.deepEqual(J.ALIAS['kr-spicy'], ['sel-chicken']);
 assert.ok(J.CARDS.every(c => c.title && c.hint && c.desc && c.test));
+const page = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+assert.match(page, /成就收藏/);
+assert.match(page, /openThemeSet/);
+assert.match(page, /class="setrow"/);
+assert.match(page, /settingsPage/);
+assert.match(page, /theme-tw/);
+['tpe', 'txg', 'tnn', 'khh', 'hul', 'ttt', 'cyi', 'ktn', 'yil', 'nto'].forEach(id => {
+  assert.match(page, new RegExp('ach\\.city-' + id));
+});
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 assert.match(sw, /tripmate-v56/);
@@ -177,5 +252,12 @@ J.importState({ badges: { 'jp-first': 1711000000000 }, themeStyle: 'nope' });
 assert.equal(J.exportState().badges['jp-first'], 1711000000000);
 assert.equal(J.exportState().badges.nope, undefined);
 assert.equal(J.exportState().themeStyle, 'kr');
+J.importState({ badges: { 'jp-tokyo': 1714000000000, 'kr-palace': 1712500000000 } });
+assert.equal(J.exportState().badges['jp-tokyo'], 1714000000000);
+assert.equal(J.exportState().badges['tyo-pass'], 1714000000000);
+assert.equal(J.exportState().badges['sel-hanbok'], 1712500000000);
+J.importState({ badges: { 'tyo-pass': 1711500000000 } });
+assert.equal(J.exportState().badges['tyo-pass'], 1711500000000);
+assert.equal(J.exportState().badges['jp-first'], 1711000000000);
 
 console.log('journey tests ok');

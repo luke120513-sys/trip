@@ -591,17 +591,22 @@ function paintAccount() {
   const el = $('#acct');
   if (!el) return;
   if (!cloudUser) {
-    const gis = GOOGLE_WEB_CLIENT_ID ? '<div id="gisbtn"></div><p class="mut">請用上面的 Google 按鈕。它直接在這個網站登入，不會打開 firebaseapp.com。</p>' : '';
-    const label = GOOGLE_WEB_CLIENT_ID ? '改用彈出視窗登入' : '用 Google 登入';
-    el.innerHTML = `<div class="card"><b>Google 帳號</b><p class="mut">不登入也能排行程，資料只在這台裝置。登入之後才能把行程分享給朋友、一起改，也才有雲端備份。</p>${gis}<button type="button" class="btn${GOOGLE_WEB_CLIENT_ID ? ' ghost' : ''}" onclick="signInGoogle({kind:'account'}).then(()=>paintAccount()).catch(()=>{})">${label}</button></div>`;
-    renderGisButton();
+    el.innerHTML = `<button type="button" class="accthead" onclick="accountSheet()"><span class="ava">旅</span><span class="acctname">登入 Google<small>不登入也能排，資料留在這台裝置</small></span><i class="chev" aria-hidden="true"></i></button>`;
     paintBackupHint();
     return;
   }
   const name = cloudUser.displayName || cloudUser.email || '已登入';
-  const photo = /^https:\/\//.test(cloudUser.photoURL || '') ? `<img class="ava" src="${TM.esc(cloudUser.photoURL)}" alt="">` : '';
-  el.innerHTML = `<div class="card"><div class="memrow">${photo}<b>${TM.esc(name)}</b></div><p class="mut">登入後行程會自動存進雲端備份。沒登入時，用「其他」的 JSON 匯出即可。</p><button type="button" class="btn ghost" style="margin-top:8px" onclick="signOutGoogle()">登出</button></div>`;
+  const photo = /^https:\/\//.test(cloudUser.photoURL || '') ? `<img class="ava" src="${TM.esc(cloudUser.photoURL)}" alt="">` : `<span class="ava">${TM.esc(String(name).slice(0, 1))}</span>`;
+  el.innerHTML = `<div class="accthead">${photo}<span class="acctname">${TM.esc(name)}<small>已登入 Google</small></span><button type="button" class="textbtn" onclick="signOutGoogle()">登出</button></div>`;
   paintBackupHint();
+}
+function accountSheet() {
+  if (cloudUser) return;
+  const gis = GOOGLE_WEB_CLIENT_ID ? '<div id="gisbtn"></div><p class="mut">請用上面的 Google 按鈕。它直接在這個網站登入，不會打開 firebaseapp.com。</p>' : '';
+  const label = GOOGLE_WEB_CLIENT_ID ? '改用彈出視窗登入' : '用 Google 登入';
+  $('#sheetBody').innerHTML = `<h2>Google 帳號</h2><p class="mut">不登入也能排行程，資料只在這台裝置。登入之後才能把行程分享給朋友、一起改，也才有雲端備份。</p>${gis}<button type="button" class="btn${GOOGLE_WEB_CLIENT_ID ? ' ghost' : ''}" onclick="signInGoogle({kind:'account'}).then(()=>{paintAccount();closeSheet()}).catch(()=>{})">${label}</button>`;
+  if (!$('#sheet').classList.contains('on')) TM.openSheet();
+  renderGisButton();
 }
 function memberBar(t) {
   if (!t || !t.cloudId) return '';

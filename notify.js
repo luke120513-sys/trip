@@ -258,6 +258,7 @@ function bootNotes(api) {
   const nfy = document.querySelector('#nfybell');
   if (ann) ann.onclick = openNotes;
   if (nfy) nfy.onclick = openNotes;
+  window.openNotes = openNotes;
   scanNotes();
   setInterval(scanNotes, 60000);
 }
