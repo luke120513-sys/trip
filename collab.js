@@ -125,7 +125,11 @@ function tripDoc(t) {
     orderRev: t.orderRev || 0,
     metaRev: t.metaRev || 0,
     tomb: t.tomb || {},
-    expTomb: t.expTomb || {}
+    expTomb: t.expTomb || {},
+    themeStyle: t.themeStyle || '',
+    archived: t.archived === true,
+    archivedAt: +t.archivedAt || 0,
+    archiveAsked: t.archiveAsked === true
   };
   return JSON.parse(JSON.stringify(o));
 }
@@ -530,12 +534,13 @@ async function pushBackup() {
     }
     packed.push(n);
   }
-  let payload = { v: 1, at: Date.now(), trips: packed };
+  const journeyState = window.Journey ? Journey.exportState() : {};
+  let payload = { v: 1, at: Date.now(), trips: packed, badges: journeyState.badges || {}, themeStyle: journeyState.themeStyle || 'auto' };
   if (note) payload.ticketNote = note;
   if (JSON.stringify(payload).length > 900000) {
     packed.forEach(t => (t.tickets || []).forEach(tk => (tk.files || []).forEach(f => { delete f.data; })));
     note = (window.Tickets && Tickets.NOTE) || note || '票券檔案留在這台裝置。';
-    payload = { v: 1, at: Date.now(), ticketNote: note, trips: packed };
+    payload = { v: 1, at: Date.now(), ticketNote: note, trips: packed, badges: journeyState.badges || {}, themeStyle: journeyState.themeStyle || 'auto' };
   }
   if (JSON.stringify(payload).length > 900000) {
     if (TM.toast) TM.toast('行程太大，這次沒有寫進雲端備份。請改匯出 JSON');
@@ -550,9 +555,11 @@ async function pullBackup(user) {
   const { db, fsM } = await fbLoad();
   const snap = await fsM.getDoc(fsM.doc(db, 'backups', user.uid));
   if (!snap.exists()) { paintBackupHint(); return; }
-  const v = SharePack.validateTrips(snap.data(), { backup: true });
+  const raw = snap.data() || {};
+  const v = SharePack.validateTrips(raw, { backup: true });
   if (!v.ok) return;
   const local = TM.trips ? TM.trips() : [];
+  if (window.Journey) Journey.importState({ badges: raw.badges, themeStyle: !local.length ? raw.themeStyle : undefined });
   if (!local.length && v.trips.length && typeof TM.replaceTrips === 'function') {
     if (window.Tickets && Tickets.ingestFiles) { for (const t of v.trips) { try { await Tickets.ingestFiles(t); } catch (e) {} } }
     TM.replaceTrips(v.trips);

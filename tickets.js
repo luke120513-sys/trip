@@ -266,6 +266,7 @@ function ticketCard(x, today, t) {
 }
 function ticketMarkUsed(id, on) {
   const t = TM.T(); if (!t) return;
+  if (t.archived) { TM.toast('這份行程已封存，只能看'); return; }
   const cur = (t.tickets || []).find(x => x.id === id); if (!cur) return;
   if (on !== false && on !== 'false') { cur.used = true; tixUsedOpen = true; }
   else delete cur.used;
@@ -294,6 +295,8 @@ function ticketSpots(t, day) {
   return t.days[+day].map(s => s && s.name).filter(Boolean);
 }
 async function ticketForm(id) {
+  const trip = TM.T && TM.T();
+  if (trip && trip.archived) { TM.toast('這份行程已封存，只能看'); return; }
   const t = TM.T(); if (!t) return;
   const cur = id ? (t.tickets || []).find(x => x.id === id) : null;
   tixDraft = { id: cur ? cur.id : '', files: [] };
@@ -390,6 +393,8 @@ async function ticketOcr(canvas) {
   } catch (e) { if (say) say.textContent = '這次沒讀成，請自己填訂位編號。'; }
 }
 async function ticketSave() {
+  const cur = TM.T && TM.T();
+  if (cur && cur.archived) { TM.toast('這份行程已封存，只能看'); return; }
   const t = TM.T(); if (!t || !tixDraft) return;
   const name = $('#tixname').value.trim();
   if (!name) { TM.toast('請寫票券名稱'); return; }
@@ -414,6 +419,8 @@ async function ticketSave() {
   TM.save(); TM.closeSheet(); TM.render(); TM.toast('已存進這份行程的票券');
 }
 async function ticketRm(id) {
+  const trip = TM.T && TM.T();
+  if (trip && trip.archived) { TM.toast('這份行程已封存，只能看'); return; }
   const t = TM.T(); if (!t || !confirm('刪除這張票券？')) return;
   const cur = (t.tickets || []).find(x => x.id === id);
   t.tickets = (t.tickets || []).filter(x => x.id !== id);

@@ -171,6 +171,13 @@
       if (t.tomb && typeof t.tomb === 'object' && !Array.isArray(t.tomb)) o.tomb = t.tomb;
       if (t.expTomb && typeof t.expTomb === 'object' && !Array.isArray(t.expTomb)) o.expTomb = t.expTomb;
       if (Array.isArray(t.expSeen)) o.expSeen = t.expSeen.filter(x => typeof x === 'string').slice(0, 400);
+      if (t.themeStyle === 'auto' || t.themeStyle === 'jp' || t.themeStyle === 'kr' || t.themeStyle === 'plain') o.themeStyle = t.themeStyle;
+      if (t.archived === true) {
+        o.archived = true;
+        const at = +t.archivedAt;
+        if (at > 1e11 && at < 1e14) o.archivedAt = Math.round(at);
+      }
+      if (t.archiveAsked === true) o.archiveAsked = true;
     }
     return o;
   }
