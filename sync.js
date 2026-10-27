@@ -156,7 +156,7 @@
     L.ret = meta.ret;
     L.pax = meta.pax;
     L.orig = meta.orig;
-    if (meta.themeStyle === 'auto' || meta.themeStyle === 'jp' || meta.themeStyle === 'kr' || meta.themeStyle === 'plain') L.themeStyle = meta.themeStyle;
+    if (meta.themeStyle === 'auto' || meta.themeStyle === 'jp' || meta.themeStyle === 'kr' || meta.themeStyle === 'plain' || meta.themeStyle === 'tw') L.themeStyle = meta.themeStyle;
     else delete L.themeStyle;
     if (meta.archived === true) {
       L.archived = true;

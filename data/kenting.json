@@ -1,0 +1,132 @@
+{
+  "city": "kenting",
+  "checked": "2026-10-27",
+  "items": [
+    {
+      "id": "kenting-0",
+      "name": "國立海洋生物博物館",
+      "local": "National Museum of Marine Biology and Aquarium",
+      "type": "景點",
+      "area": "車城",
+      "dur": 180,
+      "slot": "早",
+      "summary": "票價頁寫 1–12 月 09:00–17:00，每週二休館；國定假日、連續假期或寒暑假照常。最後售票為閉館前一小時。春節與暑假初一至初五 09:00–18:00。當日以現場公告為準。",
+      "price": "全票 NT$450、優待 NT$250、65歲以上博愛 NT$225、20人以上同一團體 NT$350。身高115公分以下及未滿6歲需家人同行免費；身心障礙者與一位陪同者免費。",
+      "rom": "nmmba",
+      "lat": 22.04575,
+      "lng": 120.69933,
+      "src": [
+        "https://www.nmmba.gov.tw/cp.aspx?n=A6476B49BA86BBD5"
+      ],
+      "count": 1,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "kenting-1",
+      "name": "墾丁國家森林遊樂區",
+      "local": "Kenting Forest Recreation Area",
+      "type": "景點",
+      "area": "恆春",
+      "dur": 90,
+      "slot": "下午",
+      "summary": "這是林業及自然保育署的森林遊樂區大門，不是整個墾丁國家公園，也不是鵝鑾鼻公園。假日與非假日票價不同。",
+      "price": "假日全票 NT$150；非假日、持大眾運輸票根或一次買20張以上全票為一般優待 NT$100；半票 NT$75；65歲以上或3–6歲優待 NT$10。",
+      "rom": "kentingforest",
+      "lat": 21.96354,
+      "lng": 120.82035,
+      "src": [
+        "https://recreation.forest.gov.tw/mis/api/Admission/RANoArray?format=csv",
+        "https://recreation.forest.gov.tw/Forest/RA?typ_id=0600002"
+      ],
+      "count": 2,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "kenting-2",
+      "name": "鵝鑾鼻公園",
+      "local": "Eluanbi Park",
+      "type": "景點",
+      "area": "恆春",
+      "dur": 70,
+      "slot": "下午",
+      "summary": "墾丁國家公園管理處寫地址屏東縣恆春鎮燈塔路301號。全票 NT$60、半票 NT$30，40人以上團體 8 折。開放時間 1–3月與10–12月 07:00–17:30，4–9月 06:30–18:30。燈塔本體由交通部航港局管理。停車另計。",
+      "price": "全票 NT$60、半票 NT$30；40人以上團體 8 折。",
+      "rom": "eluanbi",
+      "lat": 21.9042,
+      "lng": 120.85087,
+      "src": [
+        "https://www.ktnp.gov.tw/News_Content.aspx?n=C40E6CD20CC179F1&s=69C0C86772C70B04&sms=9D39A7A86DB67B11"
+      ],
+      "count": 1,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "kenting-3",
+      "name": "海生館附近午餐",
+      "local": "Lunch near the aquarium",
+      "type": "餐廳",
+      "area": "車城",
+      "dur": 50,
+      "slot": "午",
+      "meal": "午",
+      "summary": "座標用鄰近景點，方便排在同一天。沒有指定店名。評分與單價未查核。",
+      "src": [],
+      "count": 0,
+      "rom": "nmmbalunch",
+      "checked": "2026-10-27",
+      "lat": 22.04575,
+      "lng": 120.69933
+    },
+    {
+      "id": "kenting-4",
+      "name": "海生館附近晚餐",
+      "local": "Dinner near the aquarium",
+      "type": "餐廳",
+      "area": "車城",
+      "dur": 50,
+      "slot": "晚",
+      "meal": "晚",
+      "summary": "座標用鄰近景點，方便排在同一天。沒有指定店名。評分與單價未查核。",
+      "src": [],
+      "count": 0,
+      "rom": "nmmbadinner",
+      "checked": "2026-10-27",
+      "lat": 22.04575,
+      "lng": 120.69933
+    },
+    {
+      "id": "kenting-5",
+      "name": "鵝鑾鼻附近午餐",
+      "local": "Lunch near Eluanbi",
+      "type": "餐廳",
+      "area": "恆春",
+      "dur": 50,
+      "slot": "午",
+      "meal": "午",
+      "summary": "座標用鄰近景點，方便排在同一天。沒有指定店名。評分與單價未查核。",
+      "src": [],
+      "count": 0,
+      "rom": "eluanbilunch",
+      "checked": "2026-10-27",
+      "lat": 21.9042,
+      "lng": 120.85087
+    },
+    {
+      "id": "kenting-6",
+      "name": "鵝鑾鼻附近晚餐",
+      "local": "Dinner near Eluanbi",
+      "type": "餐廳",
+      "area": "恆春",
+      "dur": 50,
+      "slot": "晚",
+      "meal": "晚",
+      "summary": "座標用鄰近景點，方便排在同一天。沒有指定店名。評分與單價未查核。",
+      "src": [],
+      "count": 0,
+      "rom": "eluanbidinner",
+      "checked": "2026-10-27",
+      "lat": 21.9042,
+      "lng": 120.85087
+    }
+  ]
+}

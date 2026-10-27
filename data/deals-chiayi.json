@@ -1,0 +1,29 @@
+{
+  "city": "chiayi",
+  "checked": "2026-10-27",
+  "items": [
+    {
+      "cat": "門票",
+      "name": "阿里山國家森林遊樂區大門",
+      "price": "全票 NT$300",
+      "desc": "本國籍持身分證明文件優惠票 NT$200。持大眾運輸票根一般優待 NT$150，半票 NT$150，3–6歲或符合條件之65歲以上優待 NT$10。",
+      "src": [
+        "https://recreation.forest.gov.tw/mis/api/Admission/RANoArray?format=csv",
+        "https://recreation.forest.gov.tw/Forest/RA?typ_id=0500001"
+      ],
+      "id": "chiayi-d0",
+      "checked": "2026-10-27"
+    },
+    {
+      "cat": "交通",
+      "name": "阿里山電動遊園車",
+      "price": "沼平或香林線全票單程 NT$70、去回 NT$120",
+      "desc": "祝山日出或日間專線（祝山車站、對高岳）全票去回 NT$300、全票單程 NT$150。未滿6歲免票。大門門票另計。",
+      "src": [
+        "https://recreation.forest.gov.tw/mis/api/Admission/RANoArray?format=csv"
+      ],
+      "id": "chiayi-d1",
+      "checked": "2026-10-27"
+    }
+  ]
+}

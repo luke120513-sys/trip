@@ -1,0 +1,28 @@
+{
+  "city": "kaohsiung",
+  "checked": "2026-10-27",
+  "items": [
+    {
+      "cat": "門票",
+      "name": "駁二藝術特區展場",
+      "price": "一般套票 NT$150、單展票 NT$80",
+      "desc": "學生套票 NT$100、單展 NT$60；敬老套票 NT$75、單展 NT$45。駁二塔另投幣 NT$10。週一至週四10:00–18:00，週五至週日及國定假日10:00–20:00。",
+      "src": [
+        "https://khh.travel/zh-tw/attractions/detail/6/"
+      ],
+      "id": "kaohsiung-d0",
+      "checked": "2026-10-27"
+    },
+    {
+      "cat": "門票",
+      "name": "打狗英國領事館",
+      "price": "全票 NT$99",
+      "desc": "市民、國內在學學生、20人團體 NT$49；部分優惠 NT$39。週三休館。",
+      "src": [
+        "https://britishconsulate.kcg.gov.tw/home02.aspx?EXEC=L&ID=%243002&IDK=2"
+      ],
+      "id": "kaohsiung-d1",
+      "checked": "2026-10-27"
+    }
+  ]
+}

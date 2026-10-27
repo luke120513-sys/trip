@@ -4,13 +4,14 @@
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.Journey = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
-  const HOME = { TPE: 1, TSA: 1, KHH: 1, RMQ: 1, TNN: 1, HUN: 1 };
+  const HOME = { TPE: 1, TSA: 1, KHH: 1, RMQ: 1, TNN: 1, HUN: 1, TTT: 1, CYI: 1, PIF: 1 };
   const JP_AIR = { NRT: 1, HND: 1, KIX: 1, ITM: 1, UKB: 1, NGO: 1, CTS: 1, FUK: 1, OKA: 1, KOJ: 1, HIJ: 1, SDJ: 1, KMQ: 1, TAK: 1, KMJ: 1, FSZ: 1, OKJ: 1, TOY: 1, KIJ: 1, AOJ: 1, MMB: 1, AKJ: 1 };
   const KR_AIR = { ICN: 1, GMP: 1, PUS: 1, CJU: 1, TAE: 1, KWJ: 1, CJJ: 1, RSU: 1 };
   const JP_WORDS = ['日本', '東京', '大阪', '京都', '福岡', '札幌', '沖繩', '名古屋', '奈良', '神戶', '神戸', '橫濱', '横浜', '鎌倉', '箱根', '北海道', '廣島', '広島', '金澤', '金沢', '淺草', '浅草', '新宿', '澀谷', '渋谷', '上野', '晴空塔', '東京鐵塔', '東京塔', '道頓堀', '心齋橋', '心斎橋', '伏見稻荷', '伏見稲荷', '清水寺', '金閣寺', '嵐山', 'Tokyo', 'Osaka', 'Kyoto', 'Japan', 'Sapporo', 'Okinawa', 'Hiroshima', 'Nara', 'Kobe', 'Yokohama'];
   const KR_WORDS = ['韓國', '首爾', '釜山', '濟州', '仁川', '大邱', '光州', '慶州', '江陵', '明洞', '弘大', '弘益', '景福宮', '昌德宮', '昌慶宮', '德壽宮', '北村', '韓屋', 'Seoul', 'Busan', 'Korea', 'Jeju', 'Incheon', 'Myeongdong', 'Hongdae'];
-  const STYLES = [['auto', '自動（依目的地）'], ['jp', '日本'], ['kr', '韓國'], ['plain', '系統預設']];
-  const STYLE_SHORT = { auto: '自動', jp: '日本', kr: '韓國', plain: '系統預設' };
+  const TW_WORDS = ['台灣', '臺灣', '台北', '臺北', '新北', '台中', '臺中', '台南', '臺南', '高雄', '花蓮', '台東', '臺東', '嘉義', '阿里山', '墾丁', '屏東', '宜蘭', '南投', '日月潭', '太魯閣', '九份', '野柳', '淡水', '駁二', '七星潭', '三仙台', '伯朗大道', '鵝鑾鼻', '傳藝', '九族', 'Taipei', 'Taichung', 'Tainan', 'Kaohsiung', 'Hualien', 'Taitung', 'Chiayi', 'Alishan', 'Kenting', 'Pingtung', 'Yilan', 'Nantou', 'Taiwan', 'Sun Moon Lake'];
+  const STYLES = [['auto', '自動（依目的地）'], ['jp', '日本'], ['kr', '韓國'], ['tw', '台灣'], ['plain', '系統預設']];
+  const STYLE_SHORT = { auto: '自動', jp: '日本', kr: '韓國', tw: '台灣', plain: '系統預設' };
   /* 加一座城市：在這裡放一筆，再加 city 欄位相同的卡片即可。box 是 [南, 西, 北, 東]，不要跟別的城市重疊。 */
   const CITIES = [
     { id: 'tyo', country: 'jp', name: '東京', color: '#1E3A5F', box: [35.53, 139.55, 35.82, 139.92], words: ['東京', '新宿', '澀谷', '渋谷', '淺草', '浅草', '上野', '晴空塔', 'スカイツリー', '秋葉原', '銀座', '原宿', '六本木', '台場', '築地', '筑地', 'Tokyo', 'Skytree', 'Shibuya', 'Asakusa', 'Akihabara', 'Tsukiji', 'Shinjuku', 'Ueno', 'Ginza'] },
@@ -21,11 +22,22 @@
     { id: 'fuk', country: 'jp', name: '福岡', color: '#C45B73', box: [33.45, 130.25, 33.70, 130.70], words: ['福岡', '博多', '中洲', '太宰府', 'Fukuoka', 'Hakata', 'Nakasu'] },
     { id: 'sel', country: 'kr', name: '首爾', color: '#0F6B56', box: [37.42, 126.80, 37.70, 127.18], words: ['首爾', '서울', '明洞', '명동', '弘大', '弘益', '홍대', '景福宮', '경복궁', '南山塔', 'Seoul', 'Myeongdong', 'Hongdae', 'Gyeongbok'] },
     { id: 'pus', country: 'kr', name: '釜山', color: '#2A6F9A', box: [35.05, 128.95, 35.30, 129.25], words: ['釜山', '부산', '海雲臺', '海雲台', '해운대', '甘川', '감천', '札嘎其', '자갈치', 'Busan', 'Haeundae', 'Gamcheon'] },
-    { id: 'cju', country: 'kr', name: '濟州', color: '#C47B2B', box: [33.20, 126.15, 33.60, 126.95], words: ['濟州', '제주', '城山', '성산', '漢拿', '한라', 'Jeju', 'Hallasan', 'Seongsan'] }
+    { id: 'cju', country: 'kr', name: '濟州', color: '#C47B2B', box: [33.20, 126.15, 33.60, 126.95], words: ['濟州', '제주', '城山', '성산', '漢拿', '한라', 'Jeju', 'Hallasan', 'Seongsan'] },
+    { id: 'tpe', country: 'tw', name: '台北', color: '#1565C0', box: [24.96, 121.28, 25.30, 122.05], words: ['台北', '臺北', '新北', '台北101', '故宮', '九份', '淡水', '士林', '西門', '貓空', '象山', '野柳', '北投', '大稻埕', 'Taipei', 'Jiufen', 'Yehliu'] },
+    { id: 'txg', country: 'tw', name: '台中', color: '#E07A3D', box: [24.02, 120.40, 24.50, 121.00], words: ['台中', '臺中', '科博館', '自然科學博物館', '高美', '彩虹眷村', '逢甲', '霧峰', '九二一', 'Taichung'] },
+    { id: 'tnn', country: 'tw', name: '台南', color: '#8C3A4A', box: [22.88, 120.05, 23.12, 120.32], words: ['台南', '臺南', '奇美', '赤嵌', '赤崁', '安平', '億載', 'Tainan'] },
+    { id: 'khh', country: 'tw', name: '高雄', color: '#0F4C81', box: [22.48, 120.22, 22.85, 120.42], words: ['高雄', '駁二', '蓮池潭', '打狗', '美麗島', '鹽埕', '旗津', 'Kaohsiung'] },
+    { id: 'hul', country: 'tw', name: '花蓮', color: '#1B7A4A', box: [23.75, 121.35, 24.35, 121.80], words: ['花蓮', '太魯閣', '七星潭', '池南', 'Hualien', 'Taroko'] },
+    { id: 'ttt', country: 'tw', name: '台東', color: '#C4922A', box: [22.50, 120.85, 23.45, 121.60], words: ['台東', '臺東', '三仙台', '伯朗', '池上', '知本', 'Taitung'] },
+    { id: 'cyi', country: 'tw', name: '嘉義', color: '#4A5D23', box: [23.30, 120.30, 23.68, 120.84], words: ['嘉義', '阿里山', 'Alishan', 'Chiayi'] },
+    { id: 'ktn', country: 'tw', name: '墾丁', color: '#E26D5A', box: [21.85, 120.62, 22.40, 120.95], words: ['墾丁', '屏東', '鵝鑾鼻', '海生館', '海洋生物博物館', '恆春', 'Kenting', 'Eluanbi'] },
+    { id: 'yil', country: 'tw', name: '宜蘭', color: '#5C7C99', box: [24.40, 121.45, 24.95, 122.05], words: ['宜蘭', '傳藝', '礁溪', '羅東', 'Yilan'] },
+    { id: 'nto', country: 'tw', name: '南投', color: '#6B7C3A', box: [23.70, 120.55, 24.01, 121.15], words: ['南投', '日月潭', '九族', '魚池', 'Sun Moon'] }
   ];
   const COUNTRIES = [
     { id: 'jp', name: '日本' },
-    { id: 'kr', name: '韓國' }
+    { id: 'kr', name: '韓國' },
+    { id: 'tw', name: '台灣' }
   ];
 
   function hasWord(text, words) {
@@ -39,7 +51,7 @@
     return false;
   }
   function airScore(text) {
-    const bag = { jp: 0, kr: 0 };
+    const bag = { jp: 0, kr: 0, tw: 0 };
     const re = /\b([A-Za-z]{3})\b/g;
     let m;
     const s = String(text || '');
@@ -55,13 +67,15 @@
     if (!text) return;
     if (hasWord(text, JP_WORDS)) bag.jp += w;
     if (hasWord(text, KR_WORDS)) bag.kr += w;
+    if (hasWord(text, TW_WORDS)) bag.tw += w;
     const a = airScore(text);
     bag.jp += a.jp * w;
     bag.kr += a.kr * w;
+    bag.tw += a.tw * w;
   }
   function detectCountry(trip) {
     if (!trip) return '';
-    const bag = { jp: 0, kr: 0 };
+    const bag = { jp: 0, kr: 0, tw: 0 };
     addScore(bag, trip.dest, 4);
     (trip.days || []).forEach(d => (d || []).forEach(s => {
       if (!s) return;
@@ -71,22 +85,22 @@
       addScore(bag, s.to, 3);
       addScore(bag, s.note, 1);
     }));
-    if (!bag.jp && !bag.kr) return '';
-    if (bag.jp === bag.kr) {
-      const d = String(trip.dest || '');
-      const j = hasWord(d, JP_WORDS) || airScore(d).jp;
-      const k = hasWord(d, KR_WORDS) || airScore(d).kr;
-      if (j && !k) return 'jp';
-      if (k && !j) return 'kr';
-    }
-    return bag.jp >= bag.kr ? 'jp' : 'kr';
+    const ids = ['jp', 'kr', 'tw'];
+    const max = Math.max(bag.jp, bag.kr, bag.tw);
+    if (!max) return '';
+    const winners = ids.filter(id => bag[id] === max);
+    if (winners.length === 1) return winners[0];
+    const d = String(trip.dest || '');
+    const words = { jp: JP_WORDS, kr: KR_WORDS, tw: TW_WORDS };
+    const named = winners.filter(id => hasWord(d, words[id]) || airScore(d)[id]);
+    return (named.length === 1 ? named : winners)[0];
   }
   function resolveTheme(trip, globalStyle) {
     const g = STYLES.some(x => x[0] === globalStyle) ? globalStyle : 'auto';
     const local = trip && STYLES.some(x => x[0] === trip.themeStyle) ? trip.themeStyle : '';
     const pick = local || g;
     if (pick === 'plain') return '';
-    if (pick === 'jp' || pick === 'kr') return pick;
+    if (pick === 'jp' || pick === 'kr' || pick === 'tw') return pick;
     return trip ? detectCountry(trip) : '';
   }
   function spotsOf(trip) {
@@ -303,6 +317,62 @@
     card('cju-udo', 'kr', 'cju', '牛島', '🚲', '在牛島蓋上到此一遊', '小島繞一圈就夠。海在每一個轉彎。', ctx => seen(ctx, 'cju', /牛島|우도|udo/i, [33.5060, 126.9530, 1.2])),
     card('cju-seongeup', 'kr', 'cju', '城邑民俗村', '🏘️', '在城邑民俗村蓋上到此一遊', '石頭牆還在，草屋頂也還在。時間走得比較慢。', ctx => seen(ctx, 'cju', /城邑|성읍민속마을|seongeup/i, [33.3840, 126.7840, 0.8])),
     card('cju-pass', 'kr', 'cju', '濟州通', '🍊', '在濟州蓋上 4 個到此一遊', '橘子、風、火山石。這座島開始認得你。', ctx => ctx.city.cju.spots.filter(x => x.s.visited === true).length >= 4),
+    card('tw-first', 'tw', '', '初訪台灣', '🏝️', '建立一趟台灣行程', '第一趟台灣行程已經在旅伴裡了。從台北走到恆春，都算這一頁。', ctx => ctx.tw.length > 0),
+    card('tw-archive', 'tw', '', '旅程封存', '📗', '封存一趟台灣行程', '行程收進冊子裡。海風、夜市和山路都還在。', ctx => ctx.tw.some(t => t.archived === true)),
+    card('tpe-101', 'tw', 'tpe', '台北101', '🏙️', '在台北101蓋上到此一遊', '城市在腳下。那一層風，你站進去了。', ctx => seen(ctx, 'tpe', /台北\s?101|台北101|taipei\s?101/i, [25.03384, 121.5645, 0.6])),
+    card('tpe-palace', 'tw', 'tpe', '故宮', '🏺', '在故宮蓋上到此一遊', '櫃子一格一格打開。這座城把時間收在裡面。', ctx => seen(ctx, 'tpe', /故宮|palace museum/i, [25.10157, 121.54886, 0.7])),
+    card('tpe-jiufen', 'tw', 'tpe', '九份', '🏮', '在九份蓋上到此一遊', '階梯很陡，燈一盞一盞亮起來。你走過那一條老街。', ctx => seen(ctx, 'tpe', /九份|jiufen|chiufen/i, [25.10862, 121.84443, 0.8])),
+    card('tpe-night', 'tw', 'tpe', '台北夜市', '🍢', '在夜市蓋上到此一遊', '士林、饒河、寧夏或臨江。晚上的台北從這裡開始。', ctx => seen(ctx, 'tpe', /夜市/, null)),
+    card('tpe-yehliu', 'tw', 'tpe', '野柳', '🪨', '在野柳蓋上到此一遊', '海風很大，石頭一顆一顆站著。你走到女王頭前面了。', ctx => seen(ctx, 'tpe', /野柳|yehliu/i, [25.21135, 121.69638, 0.8])),
+    card('tpe-bowl', 'tw', 'tpe', '牛肉麵與滷肉飯', '🍜', '吃過牛肉麵、滷肉飯或豆漿油條', '一碗麵、一盤飯，或一早的豆漿。台北的日常就在這裡。', ctx => foodHits(ctx, 'tpe', /牛肉麵|滷肉飯|魯肉飯|豆漿|油條/) >= 1),
+    card('tpe-pass', 'tw', 'tpe', '台北通', '🗺️', '在台北蓋上 6 個到此一遊', '巷子開始認得你了。北車到淡水，不再只是地圖上的名字。', ctx => ctx.city.tpe.spots.filter(x => x.s.visited === true).length >= 6),
+    card('txg-nmns', 'tw', 'txg', '科博館', '🦕', '在自然科學博物館蓋上到此一遊', '大廳很高，恐龍還在。台中的一個下午從這裡開始。', ctx => seen(ctx, 'txg', /科博館|自然科學博物館|nmns/i, [24.15683, 120.66509, 0.6])),
+    card('txg-gaomei', 'tw', 'txg', '高美濕地', '🦀', '在高美濕地蓋上到此一遊', '風車、潮水、一條木棧道。夕陽下來的時候會停很久。', ctx => seen(ctx, 'txg', /高美/, [24.31486, 120.54978, 0.9])),
+    card('txg-rainbow', 'tw', 'txg', '彩虹眷村', '🌈', '在彩虹眷村蓋上到此一遊', '牆上一筆一筆的顏色。巷子不長，可是每面牆都不一樣。', ctx => seen(ctx, 'txg', /彩虹眷村/, [24.13368, 120.60983, 0.5])),
+    card('txg-fengjia', 'tw', 'txg', '逢甲夜市', '🍢', '在逢甲夜市蓋上到此一遊', '燈很亮，人很多。這一晚算你來過台中。', ctx => seen(ctx, 'txg', /逢甲/, [24.17735, 120.6466, 0.6])),
+    card('txg-921', 'tw', 'txg', '九二一地震教育園區', '🏫', '在九二一園區蓋上到此一遊', '操場還在，教室也還在。走慢一點就好。', ctx => seen(ctx, 'txg', /九二一|地震教育/, [24.04261, 120.69914, 0.6])),
+    card('txg-pass', 'tw', 'txg', '台中通', '🌇', '在台中蓋上 4 個到此一遊', '從科博館到海邊，這座城慢慢讓你進來。', ctx => ctx.city.txg.spots.filter(x => x.s.visited === true).length >= 4),
+    card('tnn-chimei', 'tw', 'tnn', '奇美博物館', '🎻', '在奇美博物館蓋上到此一遊', '大廳的光很穩。琴和畫都在等你走完這一圈。', ctx => seen(ctx, 'tnn', /奇美|chimei/i, [22.93446, 120.22646, 0.6])),
+    card('tnn-chihkan', 'tw', 'tnn', '赤嵌樓', '🏯', '在赤嵌樓蓋上到此一遊', '紅磚還在，城在巷子裡。你推開那一扇門了。', ctx => seen(ctx, 'tnn', /赤嵌|赤崁|chihkan/i, [22.99727, 120.2027, 0.4])),
+    card('tnn-anping', 'tw', 'tnn', '安平古堡', '⚓', '在安平古堡蓋上到此一遊', '海風從城牆外過來。老街就在旁邊。', ctx => seen(ctx, 'tnn', /安平古堡|熱蘭遮|zeelandia/i, [23.00161, 120.16057, 0.5])),
+    card('tnn-beef', 'tw', 'tnn', '牛肉湯', '🥣', '吃過牛肉湯、擔仔麵或蝦捲', '早上的一碗湯，或安平的蝦捲。台南是這樣吃的。', ctx => foodHits(ctx, 'tnn', /牛肉湯|擔仔麵|蝦捲/) >= 1),
+    card('tnn-pass', 'tw', 'tnn', '台南通', '🏮', '在台南蓋上 4 個到此一遊', '巷子窄，廟很多。你已經走熟了一點。', ctx => ctx.city.tnn.spots.filter(x => x.s.visited === true).length >= 4),
+    card('khh-pier2', 'tw', 'khh', '駁二', '🏭', '在駁二蓋上到此一遊', '倉庫還在，牆上都是畫。港邊的風從這裡進來。', ctx => seen(ctx, 'khh', /駁二|pier-?\s?2/i, [22.61953, 120.28162, 0.6])),
+    card('khh-takow', 'tw', 'khh', '打狗英國領事館', '🏛️', '在打狗英國領事館蓋上到此一遊', '山坡上的紅磚，下面就是海。你走上去了。', ctx => seen(ctx, 'khh', /打狗|英國領事|british consulate|takow/i, [22.61967, 120.26651, 0.5])),
+    card('khh-lotus', 'tw', 'khh', '蓮池潭', '🐉', '在蓮池潭蓋上到此一遊', '龍虎塔對著水面。風一過，城就安靜下來。', ctx => seen(ctx, 'khh', /蓮池潭|lotus pond/i, [22.68384, 120.29645, 0.8])),
+    card('khh-dome', 'tw', 'khh', '美麗島站', '🌈', '在美麗島站蓋上到此一遊', '光穹在頭頂轉。出站之前會多站一下。', ctx => seen(ctx, 'khh', /美麗島/, [22.63139, 120.30186, 0.4])),
+    card('khh-bowl', 'tw', 'khh', '米苔目', '🍜', '吃過米苔目或木瓜牛奶', '一碗湯，或早餐的木瓜牛奶。港都的味道從這裡開始。', ctx => foodHits(ctx, 'khh', /米苔目|木瓜牛奶/) >= 1),
+    card('khh-pass', 'tw', 'khh', '高雄通', '⚓', '在高雄蓋上 4 個到此一遊', '港、河、車站。這座城你已經沿著它走了一段。', ctx => ctx.city.khh.spots.filter(x => x.s.visited === true).length >= 4),
+    card('hul-taroko', 'tw', 'hul', '太魯閣', '🏞️', '在太魯閣蓋上到此一遊', '峽谷很深，路沿著山壁走。你到過這一頭。', ctx => seen(ctx, 'hul', /太魯閣|taroko/i, [24.15816, 121.62337, 0.8])),
+    card('hul-qixing', 'tw', 'hul', '七星潭', '🌊', '在七星潭蓋上到此一遊', '石頭是黑的，海是直的。風會把一個下午吹慢。', ctx => seen(ctx, 'hul', /七星潭|qixing/i, [24.03143, 121.62717, 0.8])),
+    card('hul-night', 'tw', 'hul', '東大門夜市', '🏮', '在東大門夜市蓋上到此一遊', '晚上的花蓮市從這條街開始。湯是熱的。', ctx => seen(ctx, 'hul', /東大門/, [23.97254, 121.61131, 0.6])),
+    card('hul-pool', 'tw', 'hul', '池南', '🌲', '在池南森林遊樂區蓋上到此一遊', '林子比市區安靜。走到裡面，時間會慢下來。', ctx => seen(ctx, 'hul', /池南/, [23.9183, 121.50119, 0.8])),
+    card('hul-dumpling', 'tw', 'hul', '扁食', '🥟', '吃過扁食', '一碗湯，幾顆扁食。花蓮市區的午餐常常就是這樣。', ctx => foodHits(ctx, 'hul', /扁食/) >= 1),
+    card('hul-pass', 'tw', 'hul', '花蓮通', '⛰️', '在花蓮蓋上 4 個到此一遊', '山和海靠得很近。你已經在中間走了一段。', ctx => ctx.city.hul.spots.filter(x => x.s.visited === true).length >= 4),
+    card('ttt-sanxian', 'tw', 'ttt', '三仙台', '🌉', '在三仙台蓋上到此一遊', '橋對著海。風很大的時候，人會站久一點。', ctx => seen(ctx, 'ttt', /三仙台|sanxiantai/i, [23.12528, 121.41776, 0.8])),
+    card('ttt-brown', 'tw', 'ttt', '伯朗大道', '🌾', '在伯朗大道蓋上到此一遊', '稻子一直鋪到山邊。路很直，天空很大。', ctx => seen(ctx, 'ttt', /伯朗/, [23.09878, 121.2126, 1.2])),
+    card('ttt-zhiben', 'tw', 'ttt', '知本', '♨️', '在知本蓋上到此一遊', '林子裡比較暖。走完這一圈，腳會記得。', ctx => seen(ctx, 'ttt', /知本/, [22.69726, 120.98483, 0.9])),
+    card('ttt-bento', 'tw', 'ttt', '池上便當', '🍱', '吃過池上便當或釋迦', '趕路的時候是便當。產季到了，才有釋迦。', ctx => foodHits(ctx, 'ttt', /池上便當|釋迦/) >= 1),
+    card('ttt-pass', 'tw', 'ttt', '台東通', '🌅', '在台東蓋上 3 個到此一遊', '海岸線很長。你已經停過其中幾站。', ctx => ctx.city.ttt.spots.filter(x => x.s.visited === true).length >= 3),
+    card('cyi-alishan', 'tw', 'cyi', '阿里山', '🌲', '在阿里山蓋上到此一遊', '杉木很高，空氣比較冷。你到過這一座山。', ctx => seen(ctx, 'cyi', /阿里山|alishan/i, [23.53245, 120.80505, 1.2])),
+    card('cyi-rice', 'tw', 'cyi', '火雞肉飯', '🍗', '吃過火雞肉飯', '一盤飯、一碗湯。嘉義市區的日常是這樣。', ctx => foodHits(ctx, 'cyi', /火雞肉飯/) >= 1),
+    card('cyi-tea', 'tw', 'cyi', '阿里山茶', '🍵', '喝過阿里山茶', '茶是山上的。喝一口，霧還在杯子外面。', ctx => foodHits(ctx, 'cyi', /阿里山茶|高山茶/) >= 1),
+    card('cyi-pass', 'tw', 'cyi', '阿里山通', '🚂', '在嘉義蓋上 2 個到此一遊', '山上的路比想像中長。你已經走上一截。', ctx => ctx.city.cyi.spots.filter(x => x.s.visited === true).length >= 2),
+    card('ktn-aqua', 'tw', 'ktn', '海生館', '🐋', '在海洋生物博物館蓋上到此一遊', '魚從玻璃另一邊游過。你會在那裡停很久。', ctx => seen(ctx, 'ktn', /海生館|海洋生物博物館|nmmba/i, [22.04575, 120.69933, 0.6])),
+    card('ktn-forest', 'tw', 'ktn', '墾丁森林遊樂區', '🌴', '在墾丁森林遊樂區蓋上到此一遊', '林子貼著海。走進去，風會小一點。', ctx => seen(ctx, 'ktn', /森林遊樂區|墾丁森林/, [21.96354, 120.82035, 0.8])),
+    card('ktn-eluanbi', 'tw', 'ktn', '鵝鑾鼻', '🗼', '在鵝鑾鼻蓋上到此一遊', '燈塔在台灣這一頭。海在三面。', ctx => seen(ctx, 'ktn', /鵝鑾鼻|eluanbi/i, [21.9042, 120.85087, 0.7])),
+    card('ktn-onion', 'tw', 'ktn', '恆春洋蔥', '🧅', '吃過恆春洋蔥', '這一帶的味道比較甜。海鮮是晚上的事。', ctx => foodHits(ctx, 'ktn', /洋蔥/) >= 1),
+    card('ktn-pass', 'tw', 'ktn', '墾丁通', '🐚', '在墾丁蓋上 3 個到此一遊', '半島比地圖上更長。你已經從這一頭走到那一頭。', ctx => ctx.city.ktn.spots.filter(x => x.s.visited === true).length >= 3),
+    card('yil-arts', 'tw', 'yil', '宜蘭傳藝', '🎭', '在傳藝園區蓋上到此一遊', '戲台、老街、一池水。走慢的話，一個下午剛剛好。', ctx => seen(ctx, 'yil', /傳藝/, [24.68546, 121.82375, 0.6])),
+    card('yil-cake', 'tw', 'yil', '牛舌餅', '🥮', '吃過或買過牛舌餅', '這是帶回去的。咬開的時候，糖還是熱的。', ctx => foodHits(ctx, 'yil', /牛舌餅/) >= 1),
+    card('yil-noodle', 'tw', 'yil', '海鮮麵', '🍜', '吃過海鮮麵', '一碗麵，海就在不遠的地方。', ctx => foodHits(ctx, 'yil', /海鮮麵/) >= 1),
+    card('yil-pass', 'tw', 'yil', '宜蘭通', '🌧️', '在宜蘭蓋上 2 個到此一遊', '雨來的時候，城會更安靜。你已經在這裡待過。', ctx => ctx.city.yil.spots.filter(x => x.s.visited === true).length >= 2),
+    card('nto-lake', 'tw', 'nto', '日月潭', '⛰️', '在日月潭蓋上到此一遊', '水面很寬，山圍在旁邊。你到過這一圈。', ctx => seen(ctx, 'nto', /日月潭(?!纜車)|sun moon/i, [23.85233, 120.92861, 1.2])),
+    card('nto-rope', 'tw', 'nto', '日月潭纜車', '🚡', '在日月潭纜車蓋上到此一遊', '潭在腳下慢慢變小。這一趟是往上的。', ctx => seen(ctx, 'nto', /纜車|ropeway/i, [23.85618, 120.94289, 0.5])),
+    card('nto-nine', 'tw', 'nto', '九族文化村', '🏘️', '在九族文化村蓋上到此一遊', '園子很大，山就在後面。走完一圈，天色會不一樣。', ctx => seen(ctx, 'nto', /九族/, [23.86498, 120.94864, 0.7])),
+    card('nto-egg', 'tw', 'nto', '茶葉蛋', '🥚', '吃過日月潭茶葉蛋', '這是點心，不是正餐。茶香會留在手上。', ctx => foodHits(ctx, 'nto', /茶葉蛋/) >= 1),
+    card('nto-tea', 'tw', 'nto', '阿薩姆紅茶', '🍵', '喝過阿薩姆或魚池紅茶', '這一帶的茶比較厚。喝完，湖還在外面。', ctx => foodHits(ctx, 'nto', /阿薩姆|紅茶/) >= 1),
+    card('nto-pass', 'tw', 'nto', '日月潭通', '🚤', '在南投蓋上 3 個到此一遊', '潭、纜車、園區。這一片山你已經進來了。', ctx => ctx.city.nto.spots.filter(x => x.s.visited === true).length >= 3),
     keep('jp-ramen', 'jp', '拉麵達人', '🍜', '行程或美食日記裡出現 3 次拉麵', '三碗拉麵，三種湯頭。這趟沒有白來。', ctx => countRe(ctx.jpSpots, /拉麵|ラーメン|ramen/i, x => blob(x.s)) + countRe(ctx.jpDiary, /拉麵|ラーメン|ramen/i, diaryBlob) >= 3),
     keep('jp-shrine', 'jp', '寺社巡禮', '⛩️', '5 座寺廟或神社蓋上到此一遊', '寺鐘和鳥居都蓋上了到此一遊。慢慢走就好。', ctx => ctx.jpSpots.filter(x => x.s.visited === true && /寺|神社|神宮|大社|佛閣/.test(blob(x.s))).length >= 5),
     keep('jp-rail', 'jp', '鐵道迷', '🚃', '累積 10 段大眾運輸', '十段電車或地鐵，沿線的風景都算旅費。', ctx => ctx.jp.reduce((n, t) => n + transitLegs(t), 0) >= 10),
@@ -323,6 +393,7 @@
   function makeCtx(trips, diary) {
     const jp = countryTrips(trips, 'jp');
     const kr = countryTrips(trips, 'kr');
+    const tw = countryTrips(trips, 'tw');
     const city = {};
     CITIES.forEach(c => { city[c.id] = { spots: [], diary: [], legs: 0 }; });
     (trips || []).forEach(t => spotsOf(t).forEach(x => {
@@ -338,7 +409,7 @@
       new Set(ids).forEach(id => { if (city[id]) city[id].diary.push(d); });
     });
     return {
-      jp, kr, city,
+      jp, kr, tw, city,
       jpSpots: jp.reduce((a, t) => a.concat(spotsOf(t)), []),
       krSpots: kr.reduce((a, t) => a.concat(spotsOf(t)), []),
       jpDiary: diaryFor(jp, diary),
@@ -400,12 +471,13 @@
     const rootEl = document.documentElement;
     rootEl.classList.toggle('theme-jp', id === 'jp');
     rootEl.classList.toggle('theme-kr', id === 'kr');
+    rootEl.classList.toggle('theme-tw', id === 'tw');
     const editing = !!(globalThis.TM && TM.getTab && TM.getTab() === 'edit');
     if (document.body) document.body.classList.toggle('trip-ro', !!(t && t.archived && editing));
     const meta = document.querySelector('meta[name=theme-color]');
     if (meta) {
       const dark = rootEl.classList.contains('dark');
-      meta.content = dark ? (id === 'jp' ? '#161C26' : id === 'kr' ? '#141C1A' : '#18212C') : (id === 'jp' ? '#F3E6D4' : id === 'kr' ? '#F4F7F2' : '#F4F8FC');
+      meta.content = dark ? (id === 'jp' ? '#161C26' : id === 'kr' ? '#141C1A' : id === 'tw' ? '#121E1E' : '#18212C') : (id === 'jp' ? '#F3E6D4' : id === 'kr' ? '#F4F7F2' : id === 'tw' ? '#E5F3EF' : '#F4F8FC');
     }
     return id;
   }
@@ -472,7 +544,7 @@
     const ach = document.querySelector('#achievebox');
     if (theme) {
       const cur = globalStyle();
-      theme.innerHTML = `<div class="card"><b>主題風格</b><p class="mut">自動會依行程目的地換成日本或韓國的紙感背景。每份行程也可以自己改，隨時能回到系統預設。</p><div class="row" style="margin-top:8px">${STYLES.map(([k, lab]) => `<button type="button" class="chip${k === cur ? ' on' : ''}" onclick="Journey.setGlobalStyle('${k}')">${lab}</button>`).join('')}</div></div>`;
+      theme.innerHTML = `<div class="card"><b>主題風格</b><p class="mut">自動會依行程目的地換成日本、韓國或台灣的紙感背景。每份行程也可以自己改，隨時能回到系統預設。</p><div class="row" style="margin-top:8px">${STYLES.map(([k, lab]) => `<button type="button" class="chip${k === cur ? ' on' : ''}" onclick="Journey.setGlobalStyle('${k}')">${lab}</button>`).join('')}</div></div>`;
     }
     if (ach) {
       const earned = badges();
@@ -497,7 +569,11 @@
     return `<button type="button" class="${cls}" onclick="Journey.peek('${card.id}')"><span class="ach-art" aria-hidden="true">${card.art}</span><b>${esc(card.title)}</b><small>${esc(ymd(earned[card.id]))}</small></button>`;
   }
   function openAchieve(which) {
-    if (which === 'jp' || which === 'kr') achCountry = which;
+    if (which === 'jp' || which === 'kr' || which === 'tw') achCountry = which;
+    else if (!which) {
+      const id = detectCountry(globalThis.TM && TM.T && TM.T());
+      if (id) achCountry = id;
+    }
     const earned = badges();
     const tabs = `<div class="seg achtabs">${COUNTRIES.map(c => `<button type="button" class="${c.id === achCountry ? 'on' : ''}" onclick="Journey.openAchieve('${c.id}')">${c.name}</button>`).join('')}</div>`;
     const country = CARDS.filter(c => c.country === achCountry && !c.city && !c.legacy).map(c => achButton(c, earned)).join('');
@@ -565,7 +641,7 @@
     if (!t) return;
     const cur = STYLES.some(x => x[0] === t.themeStyle) ? t.themeStyle : 'auto';
     const found = detectCountry(t);
-    const name = found === 'jp' ? '日本' : found === 'kr' ? '韓國' : '還沒對上日本或韓國';
+    const name = found === 'jp' ? '日本' : found === 'kr' ? '韓國' : found === 'tw' ? '台灣' : '還沒對上日本、韓國或台灣';
     TM.openSheet();
     document.querySelector('#sheetBody').innerHTML = `<h2>主題風格</h2><p class="mut">這份行程自動判斷是${esc(name)}。選系統預設就回到旅伴原來的顏色。</p><div class="seg">${STYLES.map(([k]) => `<button type="button" class="${k === cur ? 'on' : ''}" onclick="Journey.setTripStyle('${k}')">${shortStyle(k)}</button>`).join('')}</div>`;
   }

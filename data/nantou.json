@@ -1,0 +1,96 @@
+{
+  "city": "nantou",
+  "checked": "2026-10-27",
+  "items": [
+    {
+      "id": "nantou-0",
+      "name": "日月潭",
+      "local": "Sun Moon Lake",
+      "type": "景點",
+      "area": "魚池",
+      "dur": 90,
+      "slot": "早",
+      "summary": "日月潭國家風景區管理處網站。這次讀到的票價表是區間車資，不是潭區入園門票，所以不列門票。纜車與九族文化村另外計價。",
+      "rom": "sunmoonlake",
+      "lat": 23.85233,
+      "lng": 120.92861,
+      "src": [
+        "https://www.sunmoonlake.gov.tw/"
+      ],
+      "count": 1,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "nantou-1",
+      "name": "日月潭纜車",
+      "local": "Sun Moon Lake Ropeway",
+      "type": "景點",
+      "area": "魚池",
+      "dur": 80,
+      "slot": "下午",
+      "summary": "官方票價頁寫 2026 年 6 月 1 日起調整，價格是來回一趟。九族文化村入園票另含當日纜車，兩邊不要各買一次。",
+      "price": "來回個人全票 NT$420、優待 NT$330；20人以上遊覽車團體全票 NT$380、優待 NT$310。未滿3歲或身高未滿100公分免費。限當日來回一趟。",
+      "rom": "sunmoonrope",
+      "lat": 23.85618,
+      "lng": 120.94289,
+      "src": [
+        "https://www.ropeway.com.tw/page/about/index.aspx?kind=34"
+      ],
+      "count": 1,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "nantou-2",
+      "name": "九族文化村",
+      "local": "Formosan Aboriginal Culture Village",
+      "type": "景點",
+      "area": "魚池",
+      "dur": 150,
+      "slot": "早",
+      "summary": "地址南投縣魚池鄉大林村金天巷45號。入園票當日設施可搭，餐飲與標示收費項目除外。官網寫入園票贈送當日日月潭纜車，纜車不在園區營業範圍，暫停不另外補償。",
+      "price": "成人 NT$1,100、學生 NT$980、兒童 NT$880、博幼 NT$550。未滿3歲或身高未滿100公分免費。",
+      "rom": "ninevillage",
+      "lat": 23.86498,
+      "lng": 120.94864,
+      "src": [
+        "https://www.nine.com.tw/page/about/index.aspx?kind=234&lang=TW"
+      ],
+      "count": 1,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "nantou-3",
+      "name": "日月潭附近午餐",
+      "local": "Lunch near Sun Moon Lake",
+      "type": "餐廳",
+      "area": "魚池",
+      "dur": 50,
+      "slot": "午",
+      "meal": "午",
+      "summary": "座標用鄰近景點，方便排在同一天。沒有指定店名。評分與單價未查核。",
+      "src": [],
+      "count": 0,
+      "rom": "smllunch",
+      "checked": "2026-10-27",
+      "lat": 23.85233,
+      "lng": 120.92861
+    },
+    {
+      "id": "nantou-4",
+      "name": "日月潭附近晚餐",
+      "local": "Dinner near Sun Moon Lake",
+      "type": "餐廳",
+      "area": "魚池",
+      "dur": 50,
+      "slot": "晚",
+      "meal": "晚",
+      "summary": "座標用鄰近景點，方便排在同一天。沒有指定店名。評分與單價未查核。",
+      "src": [],
+      "count": 0,
+      "rom": "smldinner",
+      "checked": "2026-10-27",
+      "lat": 23.85233,
+      "lng": 120.92861
+    }
+  ]
+}

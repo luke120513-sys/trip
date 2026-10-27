@@ -19,7 +19,12 @@ assert.equal(J.detectCountry(trip({ dest: '金浦', days: [[{ from: 'GMP', to: '
 assert.equal(J.detectCountry(trip({ dest: '釜山', days: [[{ name: '航班', to: 'PUS' }]] })), 'kr');
 assert.equal(J.detectCountry(trip({ dest: '東京' })), 'jp');
 assert.equal(J.detectCountry(trip({ dest: '首爾' })), 'kr');
-assert.equal(J.detectCountry(trip({ dest: '高雄', orig: 'TPE', days: [[{ name: '駁二', from: 'TPE', to: 'KHH' }]] })), '');
+assert.equal(J.detectCountry(trip({ dest: '高雄', orig: 'TPE', days: [[{ name: '駁二', from: 'TPE', to: 'KHH' }]] })), 'tw');
+assert.equal(J.detectCountry(trip({ dest: '台中' })), 'tw');
+assert.equal(J.detectCountry(trip({ dest: '日月潭' })), 'tw');
+assert.equal(J.detectCountry(trip({ dest: '東京', days: [[{ name: '淺草寺', note: '台灣朋友推薦' }]] })), 'jp');
+assert.equal(J.resolveTheme(trip({ dest: '花蓮' }), 'auto'), 'tw');
+assert.equal(J.resolveTheme(trip({ dest: '高雄', themeStyle: 'plain' }), 'auto'), '');
 
 assert.equal(J.resolveTheme(trip({ dest: '首爾', themeStyle: 'plain' }), 'auto'), '');
 assert.equal(J.resolveTheme(trip({ dest: '首爾' }), 'plain'), '');
@@ -122,6 +127,30 @@ assert.equal(krIds.has('kr-archive'), false);
 assert.equal(krIds.has('sel-chicken'), false);
 assert.equal(krIds.has('kr-perfect'), false);
 assert.equal(krIds.has('sel-hongdae'), false);
+
+const tw = trip({
+  dest: '高雄',
+  days: [[
+    spot('駁二藝術特區', { visited: true, lat: 22.61953, lng: 120.28162 }),
+    spot('打狗英國領事館', { visited: true, lat: 22.61967, lng: 120.26651 }),
+    spot('蓮池潭', { visited: true, lat: 22.68384, lng: 120.29645 })
+  ]]
+});
+const twRes = J.evaluate([tw], [], {}, 1712000000000);
+const twIds = new Set(twRes.fresh.map(c => c.id));
+['tw-first', 'khh-pier2', 'khh-takow', 'khh-lotus'].forEach(id => assert.ok(twIds.has(id), id));
+assert.equal(twIds.has('tw-archive'), false);
+assert.equal(twIds.has('khh-pass'), false);
+assert.equal(J.detectCity({ name: '駁二', lat: 22.61953, lng: 120.28162 }, trip({ dest: '高雄' })), 'khh');
+assert.equal(J.detectCity({ name: '日月潭', lat: 23.85233, lng: 120.92861 }, trip({ dest: '台中' })), 'nto');
+assert.equal(J.detectCity({ name: '九二一地震教育園區', lat: 24.04261, lng: 120.69914 }, trip({ dest: '南投' })), 'txg');
+assert.equal(J.detectCity({ name: '阿里山' }, trip({ dest: '嘉義' })), 'cyi');
+assert.equal(J.detectCity({ name: '台北101', lat: 25.03384, lng: 121.5645 }, trip({ dest: '高雄' })), 'tpe');
+tw.archived = true;
+assert.deepEqual(J.evaluate([tw], [], twRes.earned, 1712400000000).fresh.map(c => c.id), ['tw-archive']);
+const packedTw = Share.normTrip(Object.assign({}, trip({ dest: '台南' }), { themeStyle: 'tw' }), 0, true);
+assert.equal(packedTw.themeStyle, 'tw');
+assert.equal(J.shortStyle('tw'), '台灣');
 const noon = trip({ dest: '首爾', days: [[spot('烤肉', { time: '12:00' })]] });
 assert.equal(J.evaluate([noon], [], {}, 1712000000000).fresh.some(c => c.id === 'sel-bbq'), false);
 const nightNote = trip({ dest: '首爾', days: [[]] });
@@ -172,9 +201,26 @@ assert.equal(newer.archiveAsked, true);
   assert.ok(n >= 6 && n <= 10, id + ' ' + n);
   assert.ok(J.CITIES.some(c => c.id === id));
 });
+['tpe', 'txg', 'tnn', 'khh', 'hul', 'ttt', 'cyi', 'ktn', 'yil', 'nto'].forEach(id => {
+  const n = J.CARDS.filter(c => c.city === id && !c.legacy).length;
+  assert.ok(n >= 4 && n <= 8, id + ' ' + n);
+  const city = J.CITIES.find(c => c.id === id);
+  assert.equal(city.country, 'tw');
+  assert.ok(city.color);
+  assert.equal(city.box.length, 4);
+});
+for (let i = 0; i < J.CITIES.length; i++) {
+  for (let j = i + 1; j < J.CITIES.length; j++) {
+    const a = J.CITIES[i].box, b = J.CITIES[j].box;
+    const overlap = a[0] <= b[2] && b[0] <= a[2] && a[1] <= b[3] && b[1] <= a[3];
+    assert.equal(overlap, false, J.CITIES[i].id + ' ' + J.CITIES[j].id);
+  }
+}
 assert.ok(J.CARDS.some(c => c.id === 'jp-first' && !c.city && !c.legacy));
 assert.ok(J.CARDS.some(c => c.id === 'jp-archive' && !c.legacy));
 assert.ok(J.CARDS.some(c => c.id === 'kr-first' && !c.legacy));
+assert.ok(J.CARDS.some(c => c.id === 'tw-first' && !c.city && !c.legacy));
+assert.ok(J.CARDS.some(c => c.id === 'tw-archive' && !c.legacy));
 assert.ok(J.CARDS.some(c => c.id === 'jp-ramen' && c.legacy));
 assert.equal(J.cardById('jp-tokyo'), null);
 assert.deepEqual(J.ALIAS['jp-tokyo'], ['tyo-pass']);
@@ -185,9 +231,13 @@ assert.match(page, /成就收藏/);
 assert.match(page, /openThemeSet/);
 assert.match(page, /class="setrow"/);
 assert.match(page, /settingsPage/);
+assert.match(page, /theme-tw/);
+['tpe', 'txg', 'tnn', 'khh', 'hul', 'ttt', 'cyi', 'ktn', 'yil', 'nto'].forEach(id => {
+  assert.match(page, new RegExp('ach\\.city-' + id));
+});
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v55/);
+assert.match(sw, /tripmate-v56/);
 assert.match(sw, /journey\.js/);
 
 const store = {};

@@ -1,0 +1,150 @@
+{
+  "city": "taichung",
+  "checked": "2026-10-27",
+  "items": [
+    {
+      "id": "taichung-0",
+      "name": "國立自然科學博物館",
+      "local": "National Museum of Natural Science",
+      "type": "景點",
+      "area": "北區",
+      "dur": 180,
+      "slot": "早",
+      "summary": "展示場門票含生命科學廳、人類文化廳、地球環境廳。週二至週日 09:00–17:00，週一休館。地址臺中市北區館前路1號。太空劇場、植物園溫室、科學中心另計，不併進展示場票價。",
+      "price": "展示場一般 NT$120；6歲至未滿12歲 NT$60；12歲以上學生 NT$90；20人以上團體 NT$90。未滿6歲展示場免費。65歲以上平日全館免費、假日展示場 NT$60。2026年每週五14:00–17:00展示場免費。太空劇場 NT$100，植物園溫室與科學中心各 NT$20。",
+      "rom": "nmns",
+      "lat": 24.15683,
+      "lng": 120.66509,
+      "src": [
+        "https://www.nmns.edu.tw/ch/visit/ticket/index.html"
+      ],
+      "count": 1,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "taichung-1",
+      "name": "高美濕地",
+      "local": "Gaomei Wetland",
+      "type": "景點",
+      "area": "清水",
+      "dur": 90,
+      "slot": "下午",
+      "summary": "臺中市政府海象頁介紹木棧道與潮汐。每日漲潮前後1小時30分、大潮前後2小時及日落後禁止進入，其餘時間開放永續利用區；現場巡守可再調整。頁面沒有門票欄，不列票價。遊客中心餐廳與露營場曾公告暫停，出發前查臺中觀光旅遊網。",
+      "rom": "gaomei",
+      "lat": 24.31486,
+      "lng": 120.54978,
+      "src": [
+        "https://travel.taichung.gov.tw/ocean-realtime/zh-tw/gaomei-wetlands-reserve"
+      ],
+      "count": 1,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "taichung-2",
+      "name": "彩虹眷村",
+      "local": "Rainbow Village",
+      "type": "景點",
+      "area": "南屯",
+      "dur": 60,
+      "slot": "下午",
+      "summary": "交通部觀光署頁記載地址臺中市南屯區春安路56巷25號，彩繪來自黃永阜與後來的在地共創。該頁沒有門票欄，不列票價。開放時間以臺中市政府文化局現場公告為準。",
+      "rom": "rainbowvillage",
+      "lat": 24.13368,
+      "lng": 120.60983,
+      "src": [
+        "https://www.taiwan.net.tw/m1.aspx?id=A12-00236&sno=0001016"
+      ],
+      "count": 1,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "taichung-3",
+      "name": "逢甲夜市",
+      "local": "Fengjia Night Market",
+      "type": "餐廳",
+      "area": "西屯",
+      "dur": 90,
+      "slot": "晚",
+      "meal": "晚",
+      "summary": "臺中觀光旅遊網列為景點。這次頁面沒有讀到門票或評分，夜市各攤價格不同，不列單一票價或評分。",
+      "rom": "fengjia",
+      "lat": 24.17735,
+      "lng": 120.6466,
+      "src": [
+        "https://travel.taichung.gov.tw/zh-tw/attractions/intro/39"
+      ],
+      "count": 1,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "taichung-4",
+      "name": "九二一地震教育園區",
+      "local": "921 Earthquake Museum",
+      "type": "景點",
+      "area": "霧峰",
+      "dur": 120,
+      "slot": "早",
+      "summary": "園區在臺中市霧峰區坑口里新生路192號，週二至週日 09:00–17:00。地震體驗平台要另外加買，不能只用展示場票進平台。",
+      "price": "展示場一般 NT$50；地震體驗平台另 NT$30。6歲至未滿12歲展示場 NT$25。12歲以上學生或20人以上團體展示場 NT$30。未滿6歲、身心障礙者與一位陪同者展示場免費。65歲以上平日展示場免費、假日 NT$25。",
+      "rom": "921museum",
+      "lat": 24.04261,
+      "lng": 120.69914,
+      "src": [
+        "https://www.nmns.edu.tw/park_921/visit/fare/ticket/index.html"
+      ],
+      "count": 1,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "taichung-5",
+      "name": "科博館附近午餐",
+      "local": "Lunch near the science museum",
+      "type": "餐廳",
+      "area": "北區",
+      "dur": 50,
+      "slot": "午",
+      "meal": "午",
+      "summary": "座標用鄰近景點，方便排在同一天。沒有指定店名。評分與單價未查核。",
+      "src": [],
+      "count": 0,
+      "rom": "nmnslunch",
+      "checked": "2026-10-27",
+      "lat": 24.15683,
+      "lng": 120.66509
+    },
+    {
+      "id": "taichung-6",
+      "name": "高美附近簡餐",
+      "local": "Food near Gaomei",
+      "type": "餐廳",
+      "area": "清水",
+      "dur": 50,
+      "slot": "午",
+      "meal": "午",
+      "summary": "座標用鄰近景點，方便排在同一天。沒有指定店名。評分與單價未查核。",
+      "src": [],
+      "count": 0,
+      "rom": "gaomeilunch",
+      "checked": "2026-10-27",
+      "lat": 24.31486,
+      "lng": 120.54978
+    },
+    {
+      "id": "taichung-7",
+      "name": "霧峰園區附近午餐",
+      "local": "Lunch near the 921 museum",
+      "type": "餐廳",
+      "area": "霧峰",
+      "dur": 50,
+      "slot": "午",
+      "meal": "午",
+      "summary": "座標用鄰近景點，方便排在同一天。沒有指定店名。評分與單價未查核。",
+      "src": [],
+      "count": 0,
+      "rom": "wufenglunch",
+      "checked": "2026-10-27",
+      "lat": 24.04261,
+      "lng": 120.69914
+    }
+  ]
+}

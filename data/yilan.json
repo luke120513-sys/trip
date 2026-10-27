@@ -1,0 +1,59 @@
+{
+  "city": "yilan",
+  "checked": "2026-10-27",
+  "items": [
+    {
+      "id": "yilan-0",
+      "name": "宜蘭傳藝園區",
+      "local": "National Center for Traditional Arts, Yilan",
+      "type": "景點",
+      "area": "五結",
+      "dur": 150,
+      "slot": "早",
+      "summary": "地址宜蘭縣五結鄉五濱路二段201號。普通票 NT$150。營業時間依節日與季節公告，旺季可能開到 20:00，出發前查園區。停車費另計，不併進門票。",
+      "price": "普通票 NT$150；宜蘭縣民 NT$100；65歲以上敬老 NT$75；6歲以上學生優惠 NT$120。未滿6歲或身高115公分以下、身心障礙者與一位必要陪伴者免費。",
+      "rom": "yilanarts",
+      "lat": 24.68546,
+      "lng": 121.82375,
+      "src": [
+        "https://www.px-sunmake.org.tw/info"
+      ],
+      "count": 1,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "yilan-1",
+      "name": "傳藝園區附近午餐",
+      "local": "Lunch near the arts center",
+      "type": "餐廳",
+      "area": "五結",
+      "dur": 50,
+      "slot": "午",
+      "meal": "午",
+      "summary": "座標用鄰近景點，方便排在同一天。沒有指定店名。評分與單價未查核。",
+      "src": [],
+      "count": 0,
+      "rom": "yilanlunch",
+      "checked": "2026-10-27",
+      "lat": 24.68546,
+      "lng": 121.82375
+    },
+    {
+      "id": "yilan-2",
+      "name": "傳藝園區附近晚餐",
+      "local": "Dinner near the arts center",
+      "type": "餐廳",
+      "area": "五結",
+      "dur": 50,
+      "slot": "晚",
+      "meal": "晚",
+      "summary": "座標用鄰近景點，方便排在同一天。沒有指定店名。評分與單價未查核。",
+      "src": [],
+      "count": 0,
+      "rom": "yilandinner",
+      "checked": "2026-10-27",
+      "lat": 24.68546,
+      "lng": 121.82375
+    }
+  ]
+}
