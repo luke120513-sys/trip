@@ -279,9 +279,9 @@ assert.match(page, /theme-tw/);
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v64/);
+assert.match(sw, /tripmate-v65/);
 assert.match(sw, /journey\.js/);
-assert.match(page, /v2\.21\.0/);
+assert.match(page, /v2\.22\.0/);
 assert.match(page, /openVisitMap/);
 assert.match(page, /class="vmap-entry"/);
 assert.match(page, /\.ach-q/);
@@ -529,8 +529,8 @@ const grill = J.spotStory({ name: '敘敘苑 晴空塔店' });
 assert.equal(grill.trivia.length, 0);
 const shib = J.spotStory({ name: '澀谷十字路口' });
 assert.ok(shib.intro);
-assert.equal(shib.trivia.length, 0);
-assert.equal(J.spotCardHtml(shib).includes('冷知識'), false);
+assert.ok(shib.trivia.length >= 1 && shib.trivia.length <= 3);
+assert.match(J.spotCardHtml(shib), /冷知識/);
 assert.match(J.spotCardHtml(J.spotStory({ name: '完全沒有的點' })), /還沒有收進小檔案/);
 
 const wideCard = J.placeCard({ x: 211, y: 193 }, { w: 640, h: 420 }, { w: 220, h: 140 });
@@ -562,5 +562,23 @@ assert.match(mixedTokyo, /data-i="1"[^>]*aria-label="晴空塔"/);
 assert.match(mixedTokyo, /data-i="2"[^>]*aria-label="澀谷十字路口"/);
 assert.match(closeTokyo, /aria-label="晴空塔"/);
 assert.match(closeTokyo, /role="button"/);
+assert.match(closeTokyo, /class="spotpin-hit"/);
+assert.match(closeTokyo, /class="spotpin-num"/);
+assert.match(closeTokyo, /class="spotpin-ring"/);
+assert.match(closeTokyo, />1</);
+assert.match(closeTokyo, />2</);
+const near = J.nearestPin([{ i: 0, x: 0, y: 0 }, { i: 1, x: 14, y: 4 }], 14, 4, 26);
+assert.equal(near.i, 1);
+assert.equal(J.nearestPin([{ i: 0, x: 0, y: 0 }], 40, 0, 26), null);
+const towerStory = J.spotStory({ name: '東京鐵塔' });
+assert.ok(towerStory.intro);
+assert.ok(towerStory.trivia.length >= 1 && towerStory.trivia.length <= 3);
+assert.match(towerStory.trivia.join(''), /333/);
+assert.match(J.spotCardHtml(towerStory), /冷知識/);
+['明治神宮', '上野恩賜公園', '皇居外苑', '秋葉原', '哈利波特影城', '澀谷十字路口'].forEach(name => {
+  const st = J.spotStory({ name });
+  assert.ok(st.trivia.length >= 1, name);
+  assert.match(J.spotCardHtml(st), /簡介/, name);
+});
 
 console.log('journey tests ok');
