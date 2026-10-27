@@ -170,6 +170,588 @@
     return { days, visited, diary: notes, spend };
   }
 
+  /* 封存後的紀念品。純函式，畫面只負責把結果畫出來。 */
+  const SOUVENIRS = [['pass', '登機證'], ['card', '紀念卡'], ['stamp', '印章'], ['charm', '護符'], ['badge', '徽章'], ['plaque', '木牌']];
+  const AIR_ZH = {
+    TPE: '桃園', TSA: '松山', KHH: '高雄', RMQ: '台中', TNN: '台南', HUN: '花蓮', TTT: '台東', CYI: '嘉義', PIF: '屏東',
+    KNH: '金門', LZN: '南竿', MFK: '北竿', KYD: '蘭嶼', GNI: '綠島',
+    NRT: '成田', HND: '羽田', KIX: '關西', ITM: '伊丹', UKB: '神戶', NGO: '中部', CTS: '新千歲', FUK: '福岡', OKA: '那霸',
+    KOJ: '鹿兒島', HIJ: '廣島', SDJ: '仙台', KMQ: '小松', TAK: '高松', KMJ: '熊本', FSZ: '靜岡', OKJ: '岡山',
+    ICN: '仁川', GMP: '金浦', PUS: '金海', CJU: '濟州', TAE: '大邱',
+    BKK: '素萬那普', DMK: '廊曼', CNX: '清邁', HKT: '普吉', HKG: '香港', MFM: '澳門', SIN: '樟宜', KUL: '吉隆坡',
+    MNL: '馬尼拉', CEB: '宿霧', SGN: '胡志明市', HAN: '河內', DAD: '峴港', DPS: '峇里島',
+    PVG: '浦東', SHA: '虹橋', PEK: '首都', CDG: '戴高樂', LHR: '希斯洛', JFK: '甘迺迪', LAX: '洛杉磯', SFO: '舊金山', SYD: '雪梨', BNE: '布里斯本'
+  };
+  const DEST_AIR = {
+    東京: 'NRT', 大阪: 'KIX', 京都: 'KIX', 福岡: 'FUK', 札幌: 'CTS', 北海道: 'CTS', 沖繩: 'OKA', 名古屋: 'NGO',
+    首爾: 'ICN', 釜山: 'PUS', 濟州: 'CJU', 曼谷: 'BKK', 香港: 'HKG', 新加坡: 'SIN', 吉隆坡: 'KUL', 馬尼拉: 'MNL',
+    胡志明市: 'SGN', 河內: 'HAN', 峇里島: 'DPS', 巴黎: 'CDG', 倫敦: 'LHR', 紐約: 'JFK',
+    台北: 'TPE', 臺北: 'TPE', 台灣: 'TPE', 臺灣: 'TPE', 高雄: 'KHH', 台中: 'RMQ', 臺中: 'RMQ', 台南: 'TNN', 臺南: 'TNN',
+    花蓮: 'HUN', 台東: 'TTT', 臺東: 'TTT', 嘉義: 'CYI', 墾丁: 'KHH', 屏東: 'KHH', 宜蘭: 'TPE', 南投: 'RMQ', 日月潭: 'RMQ'
+  };
+  function kindOk(v) { return SOUVENIRS.some(x => x[0] === v); }
+  function kindLabel(v) { return (SOUVENIRS.find(x => x[0] === v) || ['', '紀念品'])[1]; }
+  function airName(code) {
+    const c = String(code || '').toUpperCase();
+    if (AIR_ZH[c]) return AIR_ZH[c];
+    return c;
+  }
+  function routeText(from, to, destName) {
+    const a = from ? airName(from) : '';
+    const b = to ? airName(to) : '';
+    if (a && b) return a + ' → ' + b;
+    if (a && destName) return a + ' → ' + destName;
+    if (b && destName) return destName + ' → ' + b;
+    return a || b || '';
+  }
+  function flightLegs(trip) {
+    const out = [];
+    (trip && trip.days || []).forEach(d => (d || []).forEach(s => {
+      if (!s || (s.kind !== 'flight' && !isHop(s))) return;
+      let from = String(s.from || '').toUpperCase();
+      let to = String(s.to || '').toUpperCase();
+      const name = String(s.name || '');
+      if (!/^[A-Z]{3}$/.test(from) || !/^[A-Z]{3}$/.test(to)) {
+        const m = /([A-Z]{3})\s*(?:→|->|–|~|-)\s*([A-Z]{3})/.exec(name);
+        if (m) {
+          if (!/^[A-Z]{3}$/.test(from)) from = m[1];
+          if (!/^[A-Z]{3}$/.test(to)) to = m[2];
+        }
+      }
+      const no = (name.match(/[A-Z0-9]{2}\s?\d{1,4}/) || [])[0] || '';
+      out.push({
+        from: /^[A-Z]{3}$/.test(from) ? from : '',
+        to: /^[A-Z]{3}$/.test(to) ? to : '',
+        no: String(no).replace(/\s/g, ''),
+        leg: s.leg === 'return' ? 'return' : 'out'
+      });
+    }));
+    return out;
+  }
+  function isEat(s) {
+    if (!s || s.kind === 'flight' || s.kind === 'hotel' || isHop(s)) return false;
+    return s.icon === 'food' || s.icon === 'cafe' || s.ptype === '餐廳';
+  }
+  function isShop(s) {
+    if (!s || s.kind === 'flight' || s.kind === 'hotel' || isHop(s)) return false;
+    if (s.icon === 'shopping' || s.ptype === '購物') return true;
+    return /伴手禮|紀念品/.test(String(s.name || '') + String(s.note || ''));
+  }
+  function isNature(s) {
+    return !!(s && s.kind !== 'flight' && s.kind !== 'hotel' && !isHop(s) && (s.icon === 'nature' || s.icon === 'museum'));
+  }
+  function isSight(s) {
+    if (!s || s.kind === 'flight' || s.kind === 'hotel' || isHop(s) || isEat(s) || isShop(s)) return false;
+    return !!String(s.name || '').trim();
+  }
+  function impliedHop(trip) {
+    const orig = String(trip && trip.orig || '').toUpperCase();
+    const destAir = DEST_AIR[String(trip && trip.dest || '').trim()] || '';
+    return !!(destAir && orig && destAir !== orig);
+  }
+  function suggestSouvenir(trip, diary) {
+    if (!trip) return 'card';
+    if (flightLegs(trip).length) return 'pass';
+    let shop = 0, food = 0, nature = 0, sight = 0;
+    (trip.days || []).forEach(d => (d || []).forEach(s => {
+      if (isShop(s)) shop++;
+      else if (isEat(s)) food++;
+      else if (isNature(s)) nature++;
+      else if (isSight(s)) sight++;
+    }));
+    const notes = (diary || []).filter(d => d && inRange(d.date, trip) && (d.placeName || d.dishes)).length;
+    if (shop > 0 || notes >= 2) return 'badge';
+    if (food >= 2 && food > sight) return 'badge';
+    if (nature > 0 && nature >= sight) return 'plaque';
+    if (sight > 0) return 'card';
+    if (food > 0 || notes > 0) return 'badge';
+    if (impliedHop(trip)) return 'pass';
+    return 'card';
+  }
+  function souvenirOf(trip, diary) {
+    if (trip && kindOk(trip.souvenir)) return trip.souvenir;
+    return suggestSouvenir(trip, diary);
+  }
+  function pushUnique(arr, name, max) {
+    const n = String(name || '').replace(/\s+/g, ' ').trim();
+    if (!n || n.length > 40 || arr.indexOf(n) >= 0 || arr.length >= max) return;
+    arr.push(n);
+  }
+  function mdSlash(s) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ''));
+    return m ? (+m[2]) + '/' + (+m[3]) : '';
+  }
+  function toneOf(trip) {
+    const id = detectCountry(trip);
+    return id === 'jp' || id === 'kr' || id === 'tw' ? id : 'plain';
+  }
+  function memoryLine(mem) {
+    const spot = mem.spots[0] || '';
+    const eat = mem.eats[0] || '';
+    const dest = mem.dest || '這趟';
+    if (mem.kind === 'pass') {
+      if (mem.route && spot && eat) return mem.route + '。下了飛機，' + spot + '和' + eat + '都還在。';
+      if (mem.route && spot) return mem.route + '。下了飛機去的' + spot + '，還想再走一次。';
+      if (mem.route) return mem.route + '。這張登機證還留著那幾天的光。';
+      return '這張' + dest + '的登機證，還留著那幾天的光。';
+    }
+    const motif = mem.motif || {};
+    const voice = mem.voice || VOICE.plain;
+    if (mem.kind === 'stamp') {
+      if (motif.known) return '這枚' + dest + '的地標印章，中間是' + motif.land + '。';
+      return '這枚' + dest + '的地標印章，先把城名留在這裡。';
+    }
+    if (mem.kind === 'charm') {
+      if (motif.known) return voice.say + dest + '的' + voice.charm + '，還繫著' + motif.land + '的方向。';
+      return voice.say + dest + '的' + voice.charm + '，收著那幾天的心願。';
+    }
+    if (mem.kind === 'badge') {
+      if (motif.known) return '徽章上是' + dest + '的' + motif.food + '。想再看一眼就打開。';
+      return '這枚' + dest + '的徽章，先收著這趟。';
+    }
+    if (mem.kind === 'plaque') {
+      if (motif.known) return '這面' + dest + '的' + voice.plaque + '，寫著地名，畫的是' + motif.land + '。';
+      return '這面' + dest + '的' + voice.plaque + '，先把城名留在木牌上。';
+    }
+    if (spot && eat) return dest + '的' + spot + '，還有' + eat + '。翻開這張卡就回去了。';
+    if (spot) return '翻開這張卡，' + dest + '的' + spot + '還在。';
+    return '這張' + dest + '的紀念卡，收著那幾天。';
+  }
+  function memoryOf(trip, diary) {
+    const t = trip || {};
+    const kind = souvenirOf(t, diary);
+    const flights = flightLegs(t);
+    const go = flights.find(f => f.leg !== 'return' && (f.from || f.to)) || flights.find(f => f.from || f.to) || null;
+    const back = go ? flights.find(f => f !== go && f.leg === 'return' && (f.from || f.to)) : null;
+    let from = '', to = '', no = '';
+    if (go) {
+      from = go.from;
+      to = go.to;
+      no = go.no;
+    } else if (impliedHop(t)) {
+      from = String(t.orig || 'TPE').toUpperCase();
+      to = DEST_AIR[String(t.dest || '').trim()] || '';
+    }
+    const dest = String(t.dest || '這趟').trim() || '這趟';
+    const route = routeText(from, to, to ? '' : dest);
+    const backRoute = back ? routeText(back.from, back.to, '') : '';
+    const spots = [], eats = [];
+    const all = [];
+    (t.days || []).forEach(d => (d || []).forEach(s => { if (s) all.push(s); }));
+    function take(pred, bucket, max, visitedOnly) {
+      all.forEach(s => {
+        if (visitedOnly && s.visited !== true) return;
+        if (!pred(s)) return;
+        pushUnique(bucket, s.name, max);
+      });
+    }
+    take(s => isSight(s) || isShop(s), spots, 4, true);
+    take(s => isSight(s) || isShop(s), spots, 4, false);
+    take(isEat, eats, 3, true);
+    take(isEat, eats, 3, false);
+    (diary || []).forEach(d => {
+      if (!inRange(d && d.date, t)) return;
+      pushUnique(eats, d && d.placeName, 3);
+    });
+    (diary || []).forEach(d => {
+      if (!inRange(d && d.date, t) || !d.dishes) return;
+      String(d.dishes).split(/[、,，]/).forEach(bit => pushUnique(eats, bit, 3));
+    });
+    const days = dayCount(t);
+    const dep = mdSlash(t.dep), ret = mdSlash(t.ret);
+    const when = [dep && ret ? dep + '–' + ret : (dep || ret), days ? days + ' 天' : '', (+t.pax || 0) > 0 ? (+t.pax) + ' 人' : ''].filter(Boolean).join(' · ');
+    const motif = motifOf(t);
+    const voice = VOICE[motif.country] || VOICE.plain;
+    const year = (/^(\d{4})/.exec(String(t.dep || '')) || [])[1] || '';
+    const mem = {
+      kind, label: faceLabel(kind, voice), dest, when, days, pax: +t.pax || 1,
+      from, to, fromName: from ? airName(from) : '', toName: to ? airName(to) : '',
+      no, route, backRoute, flew: flights.length > 0,
+      spots, eats, inside: (eats.length ? eats : spots).slice(0, 2), tone: toneOf(t),
+      year, motif, voice
+    };
+    mem.line = memoryLine(mem);
+    return mem;
+  }
+  function airEnd(code, name) {
+    const zh = code && AIR_ZH[code] ? AIR_ZH[code] : '';
+    const label = zh || name || code || '—';
+    const small = zh && code ? '<small>' + esc(code) + '</small>' : '';
+    return '<span class="bp-end"><b>' + esc(label) + '</b>' + small + '</span>';
+  }
+  function passHtml(mem) {
+    const meta = [mem.when.split(' · ')[0] || '', mem.no || '', mem.pax ? mem.pax + ' 人' : ''].filter(Boolean);
+    const back = mem.backRoute ? '<span class="bp-back">回程 ' + esc(mem.backRoute) + '</span>' : '';
+    const route = mem.from || mem.to
+      ? '<span class="bp-route">' + airEnd(mem.from, mem.fromName) + '<span class="bp-go" aria-hidden="true">→</span>' + airEnd(mem.to, mem.toName) + '</span>'
+      : '<span class="bp-route"><span class="bp-end"><b>' + esc(mem.dest) + '</b></span></span>';
+    return '<span class="bp"><span class="bp-top"><span>旅伴</span><b>登機證</b></span>' + route + '<span class="bp-meta">' + meta.map(x => '<span>' + esc(x) + '</span>').join('') + '</span>' + back + '<span class="bp-bar" aria-hidden="true"></span></span>';
+  }
+  function cardHtml(mem) {
+    const faceWhen = (mem.when || '').split(' · ')[0] || '這幾天';
+    return '<span class="mcard mcard-' + mem.tone + '"><span class="mcard-shine" aria-hidden="true"></span><span class="mcard-top"><span>收藏卡</span><span>旅伴</span></span><b class="mcard-dest">' + esc(mem.dest) + '</b><span class="mcard-foot"><span class="mcard-sub">' + esc(faceWhen) + '</span><span class="mcard-stamp">到此<br>一遊</span></span></span>';
+  }
+  /* 台、韓、日城市各自的地標、名產、風景。其他國家只用城名後備，不套晴空塔。 */
+  const VOICE = {
+    jp: { charm: '御守', word: '御守', plaque: '繪馬', say: '這只' },
+    kr: { charm: '護身符', word: '護身', plaque: '紀念牌', say: '這只' },
+    tw: { charm: '平安符', word: '平安', plaque: '祈福木牌', say: '這道' },
+    plain: { charm: '祈福掛飾', word: '祈福', plaque: '紀念木牌', say: '這件' }
+  };
+  const MOTIFS = {
+    tyo: { land: '晴空塔', mark: 'skytree', food: '壽司', foodEn: 'SUSHI', dish: 'sushi', blurb: '東京・迴轉壽司與握壽司', scene: 'skyline', en: 'TOKYO' },
+    osa: { land: '大阪城', mark: 'castle', food: '章魚燒', foodEn: 'TAKOYAKI', dish: 'tako', blurb: '大阪・道頓堀的招牌小吃', scene: 'castle', en: 'OSAKA' },
+    kyo: { land: '清水寺', mark: 'torii', food: '八橋', foodEn: 'YATSUHASHI', dish: 'sweet', blurb: '京都・清水坡上的和菓子', scene: 'temple', en: 'KYOTO' },
+    spk: { land: '札幌時計台', mark: 'clock', food: '湯咖哩', foodEn: 'SOUP CURRY', dish: 'curry', blurb: '札幌・暖熱的湯咖哩', scene: 'snow', en: 'SAPPORO' },
+    oka: { land: '守禮門', mark: 'shuri', food: '紅芋塔', foodEn: 'BENIIMO', dish: 'tart', blurb: '沖繩・紅芋做的點心', scene: 'seagate', en: 'OKINAWA' },
+    fuk: { land: '太宰府', mark: 'shrine', food: '明太子', foodEn: 'MENTAIKO', dish: 'roe', blurb: '福岡・博多的明太子', scene: 'plum', en: 'FUKUOKA' },
+    sel: { land: '景福宮', mark: 'palace', food: '韓式炸雞', foodEn: 'FRIED CHICKEN', dish: 'chicken', blurb: '首爾・晚一點的炸雞', scene: 'palace', en: 'SEOUL' },
+    pus: { land: '海雲臺', mark: 'beach', food: '豬肉湯飯', foodEn: 'PORK SOUP', dish: 'soup', blurb: '釜山・一碗豬肉湯飯', scene: 'bridge', en: 'BUSAN' },
+    cju: { land: '城山日出峰', mark: 'peak', food: '柑橘', foodEn: 'TANGERINE', dish: 'citrus', blurb: '濟州・風裡的柑橘', scene: 'volcano', en: 'JEJU' },
+    tpe: { land: '台北101', mark: 't101', food: '牛肉麵', foodEn: 'BEEF NOODLE', dish: 'noodle', blurb: '台北・一碗牛肉麵', scene: 'taipei', en: 'TAIPEI' },
+    txg: { land: '高美濕地', mark: 'wind', food: '太陽餅', foodEn: 'SUN CAKE', dish: 'cake', blurb: '台中・酥皮的太陽餅', scene: 'wetland', en: 'TAICHUNG' },
+    tnn: { land: '赤嵌樓', mark: 'fort', food: '牛肉湯', foodEn: 'BEEF SOUP', dish: 'soup2', blurb: '台南・清晨的牛肉湯', scene: 'oldtown', en: 'TAINAN' },
+    khh: { land: '美麗島穹頂', mark: 'dome', food: '鹽埕豆花', foodEn: 'DOUHUA', dish: 'tofu', blurb: '高雄・鹽埕的豆花', scene: 'harbor', en: 'KAOHSIUNG' },
+    hul: { land: '太魯閣', mark: 'gorge', food: '麻糬', foodEn: 'MOCHI', dish: 'mochi', blurb: '花蓮・軟軟的麻糬', scene: 'coast', en: 'HUALIEN' },
+    ttt: { land: '三仙台', mark: 'arch', food: '池上米', foodEn: 'CHISHANG RICE', dish: 'rice', blurb: '台東・池上的米', scene: 'arch', en: 'TAITUNG' },
+    cyi: { land: '阿里山', mark: 'rail', food: '火雞肉飯', foodEn: 'TURKEY RICE', dish: 'bowl', blurb: '嘉義・一盤火雞肉飯', scene: 'rail', en: 'CHIAYI' },
+    ktn: { land: '鵝鑾鼻', mark: 'light', food: '洋蔥', foodEn: 'ONION', dish: 'onion', blurb: '墾丁・恆春的洋蔥', scene: 'cape', en: 'KENTING' },
+    yil: { land: '龜山島', mark: 'isle', food: '三星蔥', foodEn: 'SCALLION', dish: 'scallion', blurb: '宜蘭・三星的蔥', scene: 'isle', en: 'YILAN' },
+    nto: { land: '日月潭', mark: 'lake', food: '阿薩姆紅茶', foodEn: 'ASSAM TEA', dish: 'tea', blurb: '南投・日月潭的紅茶', scene: 'lake', en: 'NANTOU' },
+    kmn: { land: '莒光樓', mark: 'pagoda', food: '貢糖', foodEn: 'PEANUT BRITTLE', dish: 'candy', blurb: '金門・酥脆的貢糖', scene: 'pagoda', en: 'KINMEN' },
+    mzu: { land: '東莒燈塔', mark: 'cliff', food: '淡菜', foodEn: 'MUSSEL', dish: 'mussel', blurb: '馬祖・海裡的淡菜', scene: 'lightsea', en: 'MATSU' },
+    lud: { land: '綠島燈塔', mark: 'greenlight', food: '柴魚', foodEn: 'BONITO', dish: 'flake', blurb: '綠島・曬過的柴魚', scene: 'green', en: 'GREEN ISLAND' },
+    lny: { land: '拼板舟', mark: 'canoe', food: '飛魚', foodEn: 'FLYING FISH', dish: 'flyfish', blurb: '蘭嶼・海上的飛魚', scene: 'canoe', en: 'LANYU' }
+  };
+  const MOTIF_ALIAS = [
+    { re: /九份/, base: 'tpe', land: '九份老街', mark: 'alley', food: '芋圓', foodEn: 'TARO BALL', dish: 'taro', blurb: '九份・熱熱的芋圓', scene: 'alley', en: 'JIUFEN' },
+    { re: /淡水/, base: 'tpe', land: '淡水渡船', mark: 'river', food: '阿給', foodEn: 'AGEI', dish: 'agei', blurb: '淡水・油豆腐裡的阿給', scene: 'river', en: 'TAMSUI' },
+    { re: /野柳/, base: 'tpe', land: '女王頭', mark: 'queen', food: '魚丸', foodEn: 'FISH BALL', dish: 'fishball', blurb: '野柳・一碗魚丸湯', scene: 'rock', en: 'YEHLIU' },
+    { re: /小樽/, base: 'spk', land: '小樽運河', mark: 'canal', food: '海產丼', foodEn: 'KAISEN', dish: 'kaisen', blurb: '小樽・運河邊的海產丼', scene: 'canal', en: 'OTARU' }
+  ];
+  const MARK = {
+    skytree: '<path d="M32 2 v16"/><path d="M20 20 h24"/><path d="M23 20 c1 7 5 9 9 9 s8-2 9-9"/><path d="M25 34 h14"/><path d="M27 34 c1 5 3 7 5 7 s4-2 5-7"/><path d="M32 41 v14"/><path d="M21 56 h22"/>',
+    castle: '<path d="M18 58 V34"/><path d="M46 58 V34"/><path d="M18 34 h28"/><path d="M24 34 V22 h16 v12"/><path d="M30 22 V12 h4 v10"/><path d="M28 12 h8"/><path d="M30 42 v10 M34 42 v10"/>',
+    torii: '<path d="M8 18 h48"/><path d="M12 14 h40"/><path d="M16 26 h32"/><path d="M22 26 v30"/><path d="M42 26 v30"/>',
+    clock: '<path d="M14 32 L32 16 L50 32"/><path d="M18 32 v24 h28 V32"/><circle cx="32" cy="42" r="6"/><path d="M32 42 V38 M32 42 h3"/>',
+    shuri: '<path d="M6 30 Q32 8 58 30"/><path d="M12 30 h40"/><path d="M18 30 v26"/><path d="M46 30 v26"/><path d="M18 56 h28"/><path d="M28 40 v16 M36 40 v16"/>',
+    shrine: '<path d="M8 32 Q32 14 56 32"/><path d="M14 32 v22 h36 V32"/><path d="M28 40 v14 M36 40 v14"/><circle cx="50" cy="16" r="2.2" fill="currentColor" stroke="none"/><path d="M50 10 v3 M50 19 v3 M44 16 h3 M53 16 h3" stroke="currentColor"/>',
+    palace: '<path d="M4 28 L32 12 L60 28"/><path d="M10 28 h44 v26 H10 Z"/><path d="M20 38 v16 M30 38 v16 M40 38 v16 M48 36"/>',
+    beach: '<circle cx="46" cy="16" r="6"/><path d="M6 36 q12 -8 24 0 t24 0"/><path d="M6 48 q12 -8 24 0 t24 0"/>',
+    peak: '<path d="M4 58 L24 18 L32 32 L42 12 L60 58"/><path d="M24 18 l8 10"/>',
+    t101: '<path d="M30 4 h4 l1 8 H29 Z"/><path d="M26 12 h12 l2 10 H24 Z"/><path d="M22 22 h20 l2 12 H20 Z"/><path d="M18 34 h28 l2 14 H16 Z"/><path d="M28 48 h8 v8 h-8 Z"/>',
+    wind: '<path d="M32 58 V32"/><circle cx="32" cy="28" r="2.4"/><path d="M32 28 C30 10 42 12 38 22"/><path d="M32 28 C50 24 48 38 36 34"/><path d="M32 28 C18 40 24 48 30 38"/>',
+    fort: '<path d="M8 30 L32 12 L56 30"/><path d="M14 30 v26 h36 V30"/><path d="M28 40 v16 h8 V40"/><path d="M20 30 v-6 M44 30 v-6 M32 12 v-5"/>',
+    dome: '<path d="M10 50 a22 22 0 0 1 44 0"/><path d="M10 50 h44"/><circle cx="32" cy="38" r="8"/><path d="M32 30 v16 M24 38 h16"/>',
+    gorge: '<path d="M6 8 L28 58"/><path d="M20 8 L34 58"/><path d="M58 8 L36 58"/><path d="M44 8 L30 58"/><path d="M28 58 q4 -10 8 0"/>',
+    arch: '<path d="M8 50 Q32 8 56 50"/><path d="M18 50 Q32 24 46 50"/><path d="M6 56 h52"/>',
+    rail: '<path d="M2 38 L22 16 L40 32 L62 12"/><rect x="16" y="40" width="30" height="10" rx="2"/><circle cx="24" cy="52" r="2.4"/><circle cx="38" cy="52" r="2.4"/><path d="M8 56 h48"/>',
+    light: '<path d="M27 16 h10 v8 H27 Z"/><path d="M32 6 v10"/><path d="M24 24 h16 l-2 8 H26 Z"/><path d="M31 32 v18"/><path d="M22 52 h20"/>',
+    cliff: '<path d="M6 58 L22 30 h18 L58 58"/><path d="M28 30 V16 h8 v8"/><path d="M32 8 v8"/><path d="M26 20 h12"/>',
+    greenlight: '<ellipse cx="32" cy="48" rx="20" ry="8"/><circle cx="16" cy="42" r="5"/><path d="M16 37 V30"/><path d="M29 46 V30 h7 v8"/><path d="M27 30 h11"/><path d="M32 22 v8"/>',
+    isle: '<path d="M12 42 Q18 26 32 28 Q48 20 54 36 Q60 50 36 52 Q16 56 12 42"/><circle cx="52" cy="34" r="3.5"/><path d="M6 56 q26 -8 52 0"/>',
+    lake: '<path d="M2 34 L18 14 L32 26 L50 10 L62 34"/><ellipse cx="32" cy="48" rx="22" ry="8"/><circle cx="52" cy="16" r="4"/>',
+    pagoda: '<path d="M32 4 L44 16 H20 Z"/><path d="M16 18 h32 l6 12 H10 Z"/><path d="M8 32 h48 l6 14 H2 Z"/><path d="M30 46 v12 M34 46 v12"/>',
+    canoe: '<path d="M6 42 Q32 60 58 40"/><path d="M12 42 Q32 52 52 40"/><path d="M8 42 L2 34 h12"/><path d="M26 38 L44 16"/>',
+    alley: '<path d="M6 58 V22 h18 v36"/><path d="M40 58 V14 h18 v44"/><path d="M10 30 h10 M44 26 h10"/><circle cx="32" cy="30" r="4"/><path d="M32 34 v8"/>',
+    river: '<path d="M6 26 h52"/><path d="M12 26 v12 h36 V26"/><path d="M20 38 v8 M40 38 v8"/><path d="M4 52 q14 -8 28 0 t28 0"/>',
+    queen: '<path d="M24 54 Q16 34 28 18 Q42 8 48 24 Q56 22 50 38 Q44 54 28 54"/><path d="M14 58 h36"/>',
+    canal: '<path d="M4 16 h22 v26 H4 Z"/><path d="M38 12 h22 v30 H38 Z"/><path d="M8 24 h14 M42 22 h14"/><path d="M2 50 h60"/><path d="M2 56 h60"/>',
+    pin: '<path d="M32 6 C22 6 16 16 16 24 c0 14 16 30 16 30 s16-16 16-30 C48 16 42 6 32 6z"/><circle cx="32" cy="24" r="5"/>'
+  };
+  const DISH = {
+    sushi: '<ellipse cx="32" cy="40" rx="20" ry="9" fill="#f4efe4"/><path d="M14 36 Q32 22 50 36 Q32 30 14 36" fill="#e07a5f"/><path d="M18 34 q4 2 6 0" fill="none" stroke="#fff"/>',
+    tako: '<path d="M12 46 Q32 38 52 46 L48 54 Q32 48 16 54 Z" fill="#f3e6cf"/><path d="M16 54 L10 58 h44 L48 54" fill="#c4473c"/><circle cx="32" cy="32" r="13" fill="#7a4328"/><path d="M22 30 q10 -8 20 2" fill="none" stroke="#f7f1e4" stroke-width="2"/><circle cx="26" cy="28" r="1.4" fill="#6a9a45"/>',
+    sweet: '<path d="M32 10 L54 32 L32 54 L10 32 Z" fill="#c4785a"/><path d="M32 18 L46 32 L32 46 L18 32 Z" fill="#f0d2b0"/>',
+    curry: '<ellipse cx="32" cy="44" rx="20" ry="11" fill="#f7f3ea"/><ellipse cx="32" cy="40" rx="16" ry="9" fill="#e0a82a"/><circle cx="26" cy="38" r="3" fill="#5d8a3e"/><circle cx="36" cy="36" r="2.4" fill="#c4473c"/>',
+    tart: '<ellipse cx="32" cy="42" rx="18" ry="8" fill="#e6c48a"/><ellipse cx="32" cy="36" rx="15" ry="10" fill="#b05a9a"/><ellipse cx="32" cy="34" rx="8" ry="4" fill="#f2d2ea"/>',
+    roe: '<path d="M14 30 Q32 14 50 30 Q46 50 32 54 Q18 50 14 30" fill="#f0b6a6"/><circle cx="24" cy="34" r="2" fill="#e07a5f"/><circle cx="34" cy="32" r="2.2" fill="#d45a48"/><circle cx="30" cy="42" r="2" fill="#e07a5f"/><circle cx="40" cy="40" r="1.8" fill="#d45a48"/>',
+    chicken: '<circle cx="28" cy="36" r="14" fill="#e6b15a"/><circle cx="42" cy="32" r="10" fill="#f0d090"/><path d="M18 40 q10 10 22 4" fill="none" stroke="#c4903a" stroke-width="2"/>',
+    soup: '<ellipse cx="32" cy="44" rx="20" ry="12" fill="#f7f4ee"/><ellipse cx="32" cy="40" rx="16" ry="8" fill="#fbfaf6"/><path d="M24 34 v12 M32 32 v12 M40 36 v10" fill="none" stroke="#5d8a3e" stroke-width="2"/>',
+    citrus: '<circle cx="32" cy="36" r="16" fill="#f0a020"/><path d="M32 20 v8" fill="none" stroke="#5d8a3e" stroke-width="2"/><ellipse cx="32" cy="18" rx="3" ry="5" fill="#5d8a3e"/>',
+    noodle: '<ellipse cx="32" cy="42" rx="20" ry="11" fill="#c4896a"/><ellipse cx="32" cy="38" rx="15" ry="7" fill="#e6c49a"/><path d="M18 36 H46 M20 39 H44 M22 42 H42" fill="none" stroke="#f7f1e4" stroke-width="1.6" stroke-linecap="round"/><rect x="26" y="31" width="12" height="5" rx="1.5" fill="#7a4328"/>',
+    cake: '<circle cx="32" cy="34" r="16" fill="#f3ddb0"/><circle cx="32" cy="34" r="6" fill="#e0b15e"/><circle cx="32" cy="34" r="16" fill="none" stroke="#e0c48a" stroke-width="2"/>',
+    soup2: '<ellipse cx="32" cy="44" rx="20" ry="12" fill="#ead8c8"/><ellipse cx="32" cy="40" rx="16" ry="8" fill="#f7f1ea"/><rect x="22" y="34" width="14" height="6" rx="1" fill="#a65d4a"/>',
+    tofu: '<ellipse cx="32" cy="46" rx="20" ry="10" fill="#f7f4ee"/><ellipse cx="32" cy="38" rx="16" ry="12" fill="#fbfaf6"/><path d="M18 36 Q32 48 46 36" fill="#6b3a2a"/>',
+    mochi: '<circle cx="22" cy="40" r="10" fill="#f7f4ee"/><circle cx="36" cy="34" r="12" fill="#fff"/><circle cx="46" cy="44" r="8" fill="#f3d5d8"/><path d="M32 30 q4 4 0 8" fill="none" stroke="#e7b8bc"/>',
+    rice: '<ellipse cx="32" cy="44" rx="20" ry="11" fill="#f4efe4"/><ellipse cx="32" cy="38" rx="16" ry="10" fill="#fbfaf6"/>',
+    bowl: '<ellipse cx="32" cy="46" rx="20" ry="11" fill="#e7d3c0"/><ellipse cx="32" cy="40" rx="16" ry="9" fill="#f7f4ee"/><ellipse cx="32" cy="34" rx="8" ry="5" fill="#f0d060"/>',
+    onion: '<circle cx="32" cy="38" r="14" fill="#f0e2c4"/><circle cx="32" cy="38" r="6" fill="#e4d0aa"/><path d="M30 24 h4 v-8 h-4 z" fill="#c4a574"/>',
+    scallion: '<path d="M18 58 V30" stroke="#f4efe6" stroke-width="5" fill="none"/><path d="M18 32 V8" stroke="#5d8a3e" stroke-width="5" fill="none"/><path d="M32 58 V26" stroke="#f4efe6" stroke-width="5" fill="none"/><path d="M32 28 V6" stroke="#6a9a45" stroke-width="5" fill="none"/><path d="M46 58 V34" stroke="#f4efe6" stroke-width="5" fill="none"/><path d="M46 36 V12" stroke="#3f6e32" stroke-width="5" fill="none"/>',
+    tea: '<path d="M16 28 h26 v14 a12 12 0 0 1-12 12 h-4 a12 12 0 0 1-10-12 Z" fill="#f7f4ee"/><path d="M42 32 h8 a6 6 0 0 1 0 12 h-6" fill="none" stroke="#c4785a" stroke-width="3"/><ellipse cx="29" cy="28" rx="13" ry="4" fill="#6b8f4e"/>',
+    candy: '<rect x="14" y="18" width="36" height="28" rx="4" fill="#e6b15a"/><circle cx="24" cy="30" r="3" fill="#c4894a"/><circle cx="36" cy="36" r="3" fill="#a86a32"/><circle cx="34" cy="26" r="2" fill="#f2ddb0"/>',
+    mussel: '<path d="M16 42 Q32 12 48 42 Q32 50 16 42" fill="#2c4a44"/><path d="M20 40 Q32 22 44 40 Q32 46 20 40" fill="#f2e2c4"/>',
+    flake: '<ellipse cx="32" cy="46" rx="18" ry="8" fill="#e6c49a"/><path d="M24 42 L18 22 M32 40 L34 18 M40 42 L48 24" fill="none" stroke="#c4785a" stroke-width="2"/>',
+    flyfish: '<path d="M8 36 Q32 24 56 34 Q40 40 56 48 Q32 44 10 48 Q18 40 8 36" fill="#5c8eb5"/><path d="M20 32 L8 16 L18 34" fill="#9fc4da"/><circle cx="48" cy="36" r="1.4" fill="#1c140f"/>',
+    case: '<rect x="16" y="24" width="32" height="26" rx="4" fill="#2f5d8a"/><path d="M24 24 v-6 h16 v6" fill="none" stroke="#2f5d8a" stroke-width="3"/><path d="M16 34 h32" fill="none" stroke="#d7e4f2" stroke-width="2"/>',
+    taro: '<circle cx="22" cy="38" r="10" fill="#8a5a8a"/><circle cx="36" cy="34" r="11" fill="#a46ea4"/><circle cx="46" cy="44" r="8" fill="#c9a0c4"/>',
+    agei: '<path d="M18 26 h28 l4 22 H14 Z" fill="#e6b15a"/><ellipse cx="32" cy="26" rx="14" ry="5" fill="#f0d090"/><path d="M24 34 h16" fill="none" stroke="#f7f1e4" stroke-width="2"/>',
+    fishball: '<ellipse cx="32" cy="46" rx="20" ry="10" fill="#f7f4ee"/><circle cx="24" cy="38" r="6" fill="#fff"/><circle cx="36" cy="36" r="7" fill="#f7f4ee"/><circle cx="44" cy="42" r="5" fill="#efe8dc"/>',
+    kaisen: '<ellipse cx="32" cy="46" rx="20" ry="10" fill="#f4efe4"/><ellipse cx="32" cy="40" rx="16" ry="8" fill="#fbfaf6"/><path d="M20 36 q8 -8 14 -2 q6 -8 12 0" fill="#e07a5f"/>'
+  };
+  const SCENE = {
+    skyline: '<rect width="128" height="72" fill="#d5e6f2"/><circle cx="108" cy="16" r="7" fill="#f6e2b0"/><rect y="46" width="128" height="26" fill="#c5d4e0"/><rect x="8" y="36" width="12" height="22" fill="#8aa0b4"/><rect x="24" y="30" width="16" height="28" fill="#6e8698"/><path fill="#4e6578" d="M78 50 84 6 h3 L90 50 Z"/><ellipse cx="84.5" cy="20" rx="7" ry="2.2" fill="#4e6578"/><rect x="100" y="34" width="16" height="24" fill="#7f96a8"/>',
+    castle: '<rect width="128" height="38" fill="#f3e6d4"/><rect y="46" width="128" height="26" fill="#7ea4b4"/><path fill="#c4785a" d="M48 48 V26 h8 V16 h10 v10 h8 v22 Z"/><path fill="#8c3a32" d="M46 28 h36 l-4 6 H50 Z"/><path fill="#f3e6d4" d="M58 34 h6 v8 h-6 Z"/>',
+    temple: '<rect width="128" height="40" fill="#f6eadc"/><path fill="#8ea484" d="M0 44 24 24 46 40 78 16 104 38 128 22 v24 H0 Z"/><path fill="#c4473c" d="M18 46 h10 V28 h8 V46 h10 V24 H18 Z"/><path fill="#8c3030" d="M16 28 h42 l-4 -6 H20 Z"/><circle cx="104" cy="50" r="8" fill="#b85a48"/>',
+    snow: '<rect width="128" height="72" fill="#e7eef4"/><path fill="#fff" d="M0 46 22 20 40 36 62 12 84 34 108 18 128 40 v32 H0 Z"/><path fill="#d5e0ea" d="M0 50 28 28 48 42 70 22 128 52 v20 H0 Z"/><path fill="#8aa0b4" d="M54 40 64 28 74 40 v12 H54 Z"/><circle cx="64" cy="44" r="3" fill="none" stroke="#6e8698"/>',
+    seagate: '<rect width="128" height="36" fill="#d5eef2"/><rect y="36" width="128" height="36" fill="#3d9aaa"/><path fill="#c4785a" d="M36 40 Q64 18 92 40 v6 H36 Z"/><path fill="#f3e6d4" d="M46 46 h8 v16 h-8 Z M74 46 h8 v16 h-8 Z"/><path fill="#e6c48a" d="M40 46 h48"/>',
+    plum: '<rect width="128" height="40" fill="#f6eadc"/><path fill="#c4785a" d="M28 44 Q64 16 100 44 v20 H28 Z"/><path fill="#f3e6d4" d="M44 48 h12 v16 H44 Z M72 48 h12 v16 H72 Z"/><circle cx="20" cy="28" r="5" fill="#e7a0b0"/><circle cx="108" cy="24" r="4" fill="#e7a0b0"/><circle cx="100" cy="36" r="3" fill="#f2c4ce"/>',
+    palace: '<rect width="128" height="40" fill="#d5e6f2"/><path fill="#9aab8c" d="M0 42 22 24 44 40 74 16 108 38 128 22 v22 H0 Z"/><rect y="44" width="128" height="28" fill="#e7d7b8"/><path fill="#8e2438" d="M36 46 64 28 92 46 Z"/><rect x="44" y="46" width="40" height="16" fill="#f6f1e6"/><rect x="50" y="50" width="7" height="12" fill="#c4785a"/><rect x="62" y="50" width="7" height="12" fill="#c4785a"/><rect x="74" y="50" width="7" height="12" fill="#c4785a"/>',
+    bridge: '<rect width="128" height="28" fill="#d5e6f2"/><rect y="40" width="128" height="32" fill="#3d86b0"/><path fill="#e7d7b8" d="M0 40 h128 v8 H0 Z"/><path d="M8 40 Q64 8 120 40" fill="none" stroke="#c4473c" stroke-width="3"/><path d="M40 22 v18 M88 22 v18" fill="none" stroke="#c4473c" stroke-width="2"/><circle cx="24" cy="14" r="6" fill="#f6e2b0"/>',
+    volcano: '<rect width="128" height="30" fill="#f6eadc"/><rect y="44" width="128" height="28" fill="#3d9aaa"/><path fill="#6e8698" d="M18 48 46 16 58 30 74 12 110 48 Z"/><path fill="#c4785a" d="M52 22 64 34 70 18 Z"/><circle cx="100" cy="16" r="6" fill="#f0a020"/>',
+    taipei: '<rect width="128" height="36" fill="#d5e4f2"/><circle cx="110" cy="14" r="6" fill="#f6e2b0"/><rect y="48" width="128" height="24" fill="#b7c8b4"/><rect x="8" y="34" width="12" height="22" fill="#8aa0b4"/><rect x="24" y="28" width="16" height="28" fill="#6e8698"/><path fill="#2f5d8a" d="M70 50 74 8 h6 L84 50 Z"/><path fill="#1e3a5f" d="M66 24 h22 v3 H66 Z M64 32 h26 v3 H64 Z M62 42 h30 v3 H62 Z"/>',
+    wetland: '<rect width="128" height="36" fill="#d7e8f2"/><rect y="40" width="128" height="32" fill="#d5c49a"/><path fill="#e7dcc0" d="M0 48 q20 6 40 0 t40 0 t48 2 v22 H0 Z"/><path stroke="#8aa0b4" stroke-width="2" fill="none" d="M28 40 V18 M78 42 V16"/><circle cx="28" cy="16" r="3" fill="none" stroke="#8aa0b4" stroke-width="2"/><path d="M28 16 l8 4 M28 16 l-2 8 M28 16 l-8 -2" fill="none" stroke="#8aa0b4" stroke-width="1.6"/><circle cx="100" cy="14" r="6" fill="#f6e2b0"/>',
+    oldtown: '<rect width="128" height="72" fill="#f3e6d4"/><path fill="#a33b32" d="M28 28 64 12 100 28 v6 H28 Z"/><rect x="36" y="34" width="56" height="28" fill="#e7d3b8"/><path fill="#6b4630" d="M58 44 h12 v18 H58 Z"/><circle cx="18" cy="48" r="10" fill="#3e6b4a"/><rect x="16" y="48" width="4" height="18" fill="#6b4630"/>',
+    harbor: '<rect width="128" height="30" fill="#d5e6f2"/><rect y="42" width="128" height="30" fill="#3d86b0"/><path fill="#f6e2b0" d="M40 44 a24 20 0 0 1 48 0 Z"/><circle cx="64" cy="36" r="8" fill="#fff6d8"/><path d="M64 28 v16 M56 36 h16" fill="none" stroke="#e0b15a" stroke-width="1.4"/><rect x="16" y="30" width="10" height="16" fill="#8aa0b4"/>',
+    coast: '<rect width="128" height="72" fill="#e7f1f6"/><ellipse cx="28" cy="16" rx="16" ry="6" fill="#fff"/><ellipse cx="96" cy="18" rx="18" ry="6" fill="#fff"/><path fill="#8e9a78" d="M0 46 20 30 36 40 56 16 74 36 96 20 128 40 v10 H0 Z"/><path fill="#fff" d="M56 16 l7 9 -12 1 Z"/><path fill="#6d84a0" d="M0 48 16 34 38 46 60 22 80 44 104 30 128 46 v12 H0 Z"/><rect y="52" width="128" height="20" fill="#3c86b0"/><path fill="#2f6d90" d="M0 60 Q32 52 64 60 t64 -2 v14 H0 Z"/><path fill="#6b4630" d="M16 56 34 46 50 56 l-4 1 v8 H20 Z"/><path fill="#2f5c40" d="M76 64 82 44 88 64 Z"/><path fill="#244a34" d="M90 66 96 50 102 66 Z"/>',
+    arch: '<rect width="128" height="28" fill="#d5e6f2"/><rect y="36" width="128" height="36" fill="#3d86b0"/><path fill="#cbb892" d="M18 62 Q22 20 64 24 Q106 20 110 62 H92 Q86 40 64 42 Q42 40 36 62 Z"/><circle cx="24" cy="14" r="6" fill="#f6e2b0"/>',
+    rail: '<rect width="128" height="72" fill="#d5e6f2"/><path fill="#6e8a58" d="M0 40 20 16 44 32 70 10 96 28 128 14 v30 H0 Z"/><path fill="#3e6b4a" d="M0 46 28 26 52 40 80 20 128 42 v12 H0 Z"/><rect x="28" y="46" width="52" height="12" rx="2" fill="#b8453a"/><circle cx="40" cy="60" r="4" fill="#2a2118"/><circle cx="68" cy="60" r="4" fill="#2a2118"/><path d="M8 64 h112" fill="none" stroke="#cbb892" stroke-width="2"/>',
+    cape: '<rect width="128" height="30" fill="#d5e6f2"/><rect y="40" width="128" height="32" fill="#3d86b0"/><path fill="#d5c49a" d="M0 48 Q40 36 80 50 L128 42 v30 H0 Z"/><rect x="70" y="18" width="8" height="28" fill="#f7f4ee"/><path fill="#2a2118" d="M68 18 h12 v6 H68 Z"/><circle cx="74" cy="14" r="3" fill="#f6e2b0"/>',
+    isle: '<rect width="128" height="30" fill="#d5e6f2"/><rect y="40" width="128" height="32" fill="#3d9aaa"/><ellipse cx="70" cy="42" rx="28" ry="14" fill="#6e8a58"/><ellipse cx="92" cy="40" rx="8" ry="6" fill="#8ea484"/><circle cx="24" cy="16" r="6" fill="#f6e2b0"/>',
+    lake: '<rect width="128" height="72" fill="#d5e6f2"/><path fill="#6e8698" d="M0 36 18 16 36 30 58 12 80 28 104 14 128 32 v14 H0 Z"/><ellipse cx="64" cy="52" rx="40" ry="14" fill="#3d86b0"/><circle cx="104" cy="16" r="6" fill="#f6e2b0"/><path fill="#fff" d="M58 12 l6 8 -8 1 Z"/>',
+    pagoda: '<rect width="128" height="72" fill="#f6eadc"/><path fill="#a33b32" d="M64 8 84 24 H44 Z"/><path fill="#8c3030" d="M40 26 h48 l8 14 H32 Z"/><path fill="#a33b32" d="M28 42 h72 l8 16 H20 Z"/><rect x="58" y="58" width="12" height="12" fill="#6b4630"/><circle cx="24" cy="20" r="6" fill="#f6e2b0"/>',
+    lightsea: '<rect width="128" height="26" fill="#d5e6f2"/><rect y="36" width="128" height="36" fill="#3d86b0"/><path fill="#8a7564" d="M18 64 36 30 h24 L92 64 Z"/><rect x="52" y="16" width="8" height="16" fill="#f7f4ee"/><path fill="#2a2118" d="M50 16 h12 v5 H50 Z"/><path d="M56 8 v8" fill="none" stroke="#f6e2b0" stroke-width="2"/>',
+    green: '<rect width="128" height="28" fill="#d5e6f2"/><rect y="40" width="128" height="32" fill="#3d9aaa"/><ellipse cx="64" cy="46" rx="36" ry="16" fill="#3e6b4a"/><circle cx="40" cy="40" r="8" fill="#2f5c40"/><rect x="78" y="22" width="7" height="20" fill="#f7f4ee"/><path fill="#2a2118" d="M76 22 h11 v5 H76 Z"/>',
+    canoe: '<rect width="128" height="30" fill="#f6eadc"/><rect y="40" width="128" height="32" fill="#3d9aaa"/><path fill="#6b4630" d="M18 46 Q64 62 112 44 L104 50 Q64 60 28 50 Z"/><path d="M24 48 L16 36 h14" fill="none" stroke="#c4785a" stroke-width="2"/><circle cx="100" cy="16" r="6" fill="#f6e2b0"/>',
+    alley: '<rect width="128" height="72" fill="#2a241c"/><rect x="8" y="16" width="28" height="56" fill="#6b4630"/><rect x="44" y="8" width="30" height="64" fill="#8c5a3c"/><rect x="86" y="20" width="32" height="52" fill="#5c4030"/><circle cx="58" cy="28" r="6" fill="#e6b15a"/><path d="M58 34 v10" fill="none" stroke="#e6b15a" stroke-width="2"/><rect x="16" y="28" width="8" height="6" fill="#f6e2b0"/><rect x="96" y="32" width="8" height="6" fill="#f6e2b0"/>',
+    river: '<rect width="128" height="30" fill="#f6eadc"/><rect y="36" width="128" height="36" fill="#3d86b0"/><path fill="#cbb892" d="M8 36 h70 v14 H8 Z"/><path d="M20 50 v12 M40 50 v12 M60 50 v12" fill="none" stroke="#6b4630" stroke-width="2"/><path fill="#f3e6d4" d="M78 20 h28 v16 H78 Z"/>',
+    rock: '<rect width="128" height="28" fill="#d5e6f2"/><rect y="40" width="128" height="32" fill="#3d86b0"/><path fill="#8a7564" d="M40 58 Q34 30 52 18 Q70 12 74 32 Q82 28 76 48 Q70 60 48 58 Z"/><path fill="#cbb892" d="M20 58 h88 v8 H20 Z"/><circle cx="24" cy="14" r="5" fill="#f6e2b0"/>',
+    canal: '<rect width="128" height="72" fill="#d5e6f2"/><rect x="6" y="10" width="34" height="30" fill="#c4785a"/><rect x="88" y="8" width="34" height="34" fill="#8c5a3c"/><rect x="14" y="18" width="10" height="8" fill="#f6e2b0"/><rect x="96" y="16" width="10" height="8" fill="#f6e2b0"/><rect y="46" width="128" height="26" fill="#3d86b0"/><path d="M20 46 v-8 M108 46 v-10" fill="none" stroke="#6b4630" stroke-width="3"/>',
+    hills: '<rect width="128" height="40" fill="#d5e6f2"/><circle cx="100" cy="18" r="8" fill="#f6e2b0"/><path fill="#8ea484" d="M0 48 24 28 48 44 80 22 128 46 v26 H0 Z"/><path fill="#6e8a58" d="M0 56 32 40 60 54 96 36 128 52 v20 H0 Z"/>'
+  };
+  let sovN = 0;
+  function sovId(prefix) { sovN += 1; return prefix + sovN.toString(36); }
+  function motifOf(trip) {
+    const dest = String(trip && trip.dest || '').trim() || '這趟';
+    const id = cityFromText(dest);
+    const city = id ? CITIES.find(c => c.id === id) : null;
+    const base = city && MOTIFS[id];
+    if (base && city) {
+      const over = MOTIF_ALIAS.find(a => a.base === id && a.re.test(dest));
+      const row = over ? Object.assign({}, base, over) : base;
+      return {
+        id: city.id, name: city.name, country: city.country, known: true,
+        land: row.land, mark: row.mark, food: row.food, foodEn: row.foodEn,
+        dish: row.dish, blurb: row.blurb, scene: row.scene, en: row.en
+      };
+    }
+    const country = toneOf(trip || { dest: dest });
+    return {
+      id: '', name: dest, country: country === 'jp' || country === 'kr' || country === 'tw' ? country : '',
+      known: false, land: dest, mark: 'pin', food: '旅途紀念', foodEn: 'KEEPSAKE',
+      dish: 'case', blurb: dest + '・這趟先收在這裡', scene: 'hills', en: ''
+    };
+  }
+  function faceLabel(kind, voice) {
+    const v = voice || VOICE.plain;
+    if (kind === 'stamp') return '地標印章';
+    if (kind === 'charm') return v.charm;
+    if (kind === 'badge') return '特色徽章';
+    if (kind === 'plaque') return v.plaque;
+    return kindLabel(kind);
+  }
+  function markIcon(name) {
+    return '<g fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">' + (MARK[name] || MARK.pin) + '</g>';
+  }
+  function sealFlower(country) {
+    const ink = '#c17a6e';
+    const gold = '#e0b15a';
+    if (country === 'kr') {
+      return '<g fill="' + ink + '"><circle cx="0" cy="-5.2" r="2.5"/><circle cx="4.9" cy="-1.5" r="2.5"/><circle cx="3" cy="4.3" r="2.5"/><circle cx="-3" cy="4.3" r="2.5"/><circle cx="-4.9" cy="-1.5" r="2.5"/><circle r="1.7" fill="' + gold + '"/></g>';
+    }
+    return '<g fill="' + ink + '"><circle cx="0" cy="-5.5" r="2.7"/><circle cx="5.2" cy="-1.6" r="2.7"/><circle cx="3.2" cy="4.5" r="2.7"/><circle cx="-3.2" cy="4.5" r="2.7"/><circle cx="-5.2" cy="-1.6" r="2.7"/><circle r="1.8" fill="' + gold + '"/></g>';
+  }
+  function nameLayout(name) {
+    const n = Array.from(String(name || '')).length;
+    if (n <= 2) return { size: 26, y: 124, spacing: 1 };
+    if (n === 3) return { size: 18, y: 122, spacing: 2 };
+    if (n === 4) return { size: 15, y: 120, spacing: 1 };
+    return { size: 12, y: 118, spacing: 0.3 };
+  }
+  function arcText(text) {
+    const id = sovId('arc');
+    const chars = Array.from(String(text || '')).slice(0, 8);
+    const size = chars.length >= 7 ? 11 : chars.length >= 5 ? 12 : 14;
+    return '<defs><path id="' + id + '" d="M34,62 A78,78 0 0 1 166,62"/></defs><text fill="#c17a6e" font-size="' + size + '" font-weight="700" letter-spacing="1.4"><textPath href="#' + id + '" xlink:href="#' + id + '" startOffset="50%" text-anchor="middle">' + esc(chars.join('')) + '</textPath></text>';
+  }
+  function stampHtml(mem) {
+    const m = mem.motif || {};
+    const lay = nameLayout(mem.dest);
+    const arc = m.known ? m.land : '到此一遊';
+    const flowerY = mem.year ? 148 : 158;
+    const year = mem.year ? '<text x="100" y="170" text-anchor="middle" fill="#c17a6e" font-size="11" font-weight="700" letter-spacing="1">' + esc(mem.year) + '</text>' : '';
+    return '<span class="sealcard papercard"><svg class="sealart" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet" aria-hidden="true" style="color:#c17a6e"><circle cx="100" cy="100" r="92" fill="none" stroke="#c17a6e" stroke-width="1.15"/><circle cx="100" cy="100" r="84" fill="none" stroke="#c17a6e" stroke-width="2.1" stroke-dasharray="1.15 3.3" stroke-linecap="round"/>' + arcText(arc) + '<g transform="translate(82,48) scale(.54)">' + markIcon(m.mark || 'pin') + '</g><text x="100" y="' + lay.y + '" text-anchor="middle" fill="#a85a4c" font-size="' + lay.size + '" font-weight="800" letter-spacing="' + lay.spacing + '">' + esc(mem.dest || '') + '</text><g transform="translate(100 ' + flowerY + ')">' + sealFlower(m.country) + '</g>' + year + '</svg><span class="paper-foot seal-foot"><svg viewBox="0 0 12 14" width="11" height="13" aria-hidden="true"><path d="M6 1.2C3.8 1.2 2.3 3 2.3 5c0 2.6 3.7 7.2 3.7 7.2S9.7 7.6 9.7 5C9.7 3 8.2 1.2 6 1.2z" fill="none" stroke="currentColor" stroke-width="1.1"/><circle cx="6" cy="5" r="1.15" fill="currentColor"/></svg><span>地標印章</span></span></span>';
+  }
+  function cityPlate(city, stroke, fill) {
+    const chars = Array.from(String(city || ''));
+    const n = chars.length || 1;
+    const fs = n <= 2 ? 12 : n <= 4 ? 10 : 8;
+    const w = Math.min(96, Math.max(46, n * (fs + 1) + 16));
+    const x = 70 - w / 2;
+    const shown = chars.slice(0, 6).join('');
+    return '<rect x="' + x + '" y="136" width="' + w + '" height="18" rx="8" fill="' + fill + '" stroke="' + stroke + '" stroke-width="1.4"/><text x="70" y="149" text-anchor="middle" fill="' + stroke + '" font-size="' + fs + '" font-weight="800">' + esc(shown) + '</text>';
+  }
+  function vertWord(word, x, y, fill, size) {
+    return Array.from(String(word || '')).slice(0, 2).map((ch, i) => '<text x="' + x + '" y="' + (y + i * (size + 3)) + '" text-anchor="middle" fill="' + fill + '" font-size="' + size + '" font-weight="800">' + esc(ch) + '</text>').join('');
+  }
+  function cordLoop(color) {
+    return '<path d="M70 40 C62 40 50 32 50 22 C50 12 58 6 70 6 C82 6 90 12 90 22 C90 32 78 40 70 40 Z" fill="none" stroke="' + color + '" stroke-width="3.1" stroke-linejoin="round"/>';
+  }
+  function tassel(color, top) {
+    const strands = [-14, -7, 0, 7, 14].map(dx => '<path d="M70 ' + (top + 9) + ' L' + (70 + dx) + ' ' + (top + 40 - Math.abs(dx) * 0.25) + '" stroke="' + color + '" stroke-width="1.35" stroke-linecap="round"/>').join('');
+    return '<path d="M63 ' + top + ' h14 v9 h-14 z" fill="' + color + '"/>' + strands;
+  }
+  function charmSvg(mem) {
+    const country = (mem.motif && mem.motif.country) || '';
+    const voice = mem.voice || VOICE.plain;
+    const city = mem.dest || '';
+    const gold = '#e6c98a';
+    let body = '';
+    if (country === 'jp') {
+      body = cordLoop('#b4332a') +
+        '<circle cx="70" cy="48" r="5" fill="#e6c56a"/><circle cx="70" cy="54" r="1.5" fill="#e6c56a"/>' +
+        '<path d="M34 68 L70 50 L106 68 V162 H34 Z" fill="#c43737" stroke="' + gold + '" stroke-width="2"/>' +
+        '<path d="M40 78 q6 -6 12 0 q6 -6 12 0" fill="none" stroke="' + gold + '" stroke-width="1.4"/>' +
+        '<path d="M86 74 q5 -5 10 0 q5 -5 10 0" fill="none" stroke="' + gold + '" stroke-width="1.3"/>' +
+        '<g fill="none" stroke="' + gold + '" stroke-width="2" stroke-linecap="round"><path d="M50 84 h40"/><path d="M54 80 h32"/><path d="M54 92 h32"/><path d="M60 92 v26 M80 92 v26"/></g>' +
+        vertWord(voice.word, 70, 108, '#f6e6c0', 13) +
+        cityPlate(city, gold, 'none') +
+        tassel('#f7f4ee', 158);
+    } else if (country === 'tw') {
+      body = cordLoop('#a63b34') +
+        '<path d="M34 82 h72 v80 H34 Z" fill="#a63b34" stroke="' + gold + '" stroke-width="2"/>' +
+        '<path d="M34 82 L70 64 L106 82" fill="#8d312c" stroke="' + gold + '" stroke-width="2"/>' +
+        '<g fill="#e7a0b0"><circle cx="96" cy="78" r="2.3"/><circle cx="100.2" cy="81.2" r="2.3"/><circle cx="98" cy="85.2" r="2.3"/><circle cx="93.8" cy="85.2" r="2.3"/><circle cx="91.6" cy="81.2" r="2.3"/><circle cx="96" cy="82" r="1.3" fill="#e6c56a"/></g>' +
+        vertWord(voice.word, 70, 112, '#f6e6c0', 16) +
+        cityPlate(city, gold, 'none') +
+        tassel('#f3ead8', 158);
+    } else if (country === 'kr') {
+      body = '<path d="M70 10 C62 10 54 18 56 26 C58 34 64 38 70 38 C76 38 82 34 84 26 C86 18 78 10 70 10 Z" fill="none" stroke="#8e2438" stroke-width="3.2" stroke-linecap="round"/>' +
+        '<circle cx="70" cy="36" r="6" fill="none" stroke="' + gold + '" stroke-width="2"/>' +
+        '<circle cx="70" cy="36" r="2.2" fill="' + gold + '"/>' +
+        '<rect x="34" y="68" width="72" height="96" rx="18" fill="#8e2438" stroke="' + gold + '" stroke-width="2"/>' +
+        '<circle cx="70" cy="86" r="7" fill="#f4efe6"/><path d="M70 79 a7 7 0 0 1 0 14 a3.5 3.5 0 0 1 0-7 a3.5 3.5 0 0 0 0-7" fill="#8e2438"/><circle cx="70" cy="82.5" r="1.3" fill="#8e2438"/><circle cx="70" cy="89.5" r="1.3" fill="#f4efe6"/>' +
+        vertWord(voice.word, 70, 108, '#f6e6c0', 14) +
+        cityPlate(city, gold, 'none') +
+        tassel('#f7f4ee', 160);
+    } else {
+      body = cordLoop('#b0893e') +
+        '<rect x="38" y="72" width="64" height="90" rx="10" fill="#e4d2b4" stroke="#b0893e" stroke-width="2"/>' +
+        vertWord(voice.word, 70, 108, '#6e5344', 16) +
+        cityPlate(city, '#8a7564', 'none') +
+        tassel('#d7c4a4', 158);
+    }
+    return body;
+  }
+  function charmHtml(mem) {
+    const voice = mem.voice || VOICE.plain;
+    return '<span class="charmcard papercard"><svg class="charmart" viewBox="0 0 140 214" preserveAspectRatio="xMidYMid meet" aria-hidden="true">' + charmSvg(mem) + '</svg><span class="paper-foot charm-foot"><b>' + esc(voice.charm) + '</b><i></i></span></span>';
+  }
+  function pinSvg(dish, banner) {
+    return '<svg class="pinart" viewBox="0 0 80 86" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><circle cx="40" cy="36" r="28" fill="#fffdf8" stroke="#c6a36a" stroke-width="3"/><g transform="translate(16,12) scale(.72)">' + (DISH[dish] || DISH.case) + '</g><ellipse cx="40" cy="66" rx="13" ry="8" fill="#2c241c" stroke="#c6a36a" stroke-width="1.4"/><text x="40" y="69" text-anchor="middle" fill="#f6e7c4" font-size="9" font-weight="800">' + esc(banner) + '</text></svg>';
+  }
+  function badgeHtml(mem) {
+    const m = mem.motif || {};
+    const title = m.known ? ((mem.dest || '') + '・' + m.food) : (mem.dest || '');
+    const en = m.known ? (((m.en || '') + '  ' + (m.foodEn || '')).trim()) : 'TRAVEL KEEPSAKE';
+    const banner = Array.from(mem.dest || '旅')[0] || '旅';
+    const note = m.blurb || ((mem.dest || '') + '・這趟先收在這裡');
+    return '<span class="badgecard papercard"><span class="badge-top paper-extra"><i></i><span>TRAVEL KEEPSAKE</span><b></b></span><b class="badge-title">' + esc(title) + '</b><span class="badge-en paper-extra">' + esc(en) + '</span><span class="badge-case">' + pinSvg(m.dish, banner) + '</span><b class="badge-kind paper-extra">當地特色徽章</b><span class="badge-en paper-extra">LOCAL SPECIALTY BADGE</span><span class="badge-note paper-extra">✿ ' + esc(note) + '</span></span>';
+  }
+  function plaqueName(name) {
+    const chars = Array.from(String(name || '這趟')).slice(0, 6);
+    if (chars.length <= 3) {
+      const size = chars.length >= 3 ? 18 : 26;
+      const gap = chars.length >= 3 ? 20 : 28;
+      const y0 = chars.length >= 3 ? 76 : 84;
+      return chars.map((ch, i) => '<text x="100" y="' + (y0 + i * gap) + '" text-anchor="middle" fill="#2a2118" font-size="' + size + '" font-weight="800">' + esc(ch) + '</text>').join('');
+    }
+    return '<text x="100" y="96" text-anchor="middle" fill="#2a2118" font-size="16" font-weight="800">' + esc(chars.slice(0, 5).join('')) + '</text>';
+  }
+  function plaqueHtml(mem) {
+    const m = mem.motif || {};
+    const voice = mem.voice || VOICE.plain;
+    const clip = sovId('wood');
+    const scene = SCENE[m.scene] || SCENE.hills;
+    const chars = Array.from(String(mem.dest || ''));
+    const seal = chars.length > 0 && chars.length <= 3
+      ? '<rect x="124" y="72" width="16" height="16" fill="#b4332a"/><text x="132" y="84" text-anchor="middle" fill="#f6e0c0" font-size="10" font-weight="800">旅</text>'
+      : '';
+    return '<span class="emacard papercard"><svg class="emaart" viewBox="0 0 200 228" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M100 6 C118 16 124 32 100 42 C76 32 82 16 100 6" fill="none" stroke="#b4332a" stroke-width="3.2" stroke-linecap="round"/><circle cx="100" cy="24" r="5" fill="none" stroke="#b4332a" stroke-width="2.2"/><rect x="46" y="50" width="108" height="156" rx="8" fill="#e7c99a" stroke="#c4a36e" stroke-width="2"/><rect x="54" y="58" width="92" height="140" rx="4" fill="#f0dcb4"/><circle cx="100" cy="70" r="3.4" fill="#f6f1e7"/>' + plaqueName(mem.dest) + seal + '<clipPath id="' + clip + '"><rect x="54" y="58" width="92" height="140" rx="4"/></clipPath><g clip-path="url(#' + clip + ')" transform="translate(54,146) scale(.71875)">' + scene + '</g></svg><span class="paper-foot ema-foot"><span class="ema-pill">' + esc(voice.plaque) + '</span></span></span>';
+  }
+  function souvenirMarkup(trip, diary, opt) {
+    opt = opt || {};
+    const mem = opt.mem || memoryOf(trip, diary);
+    const size = opt.size === 'lg' ? 'lg' : 'mini';
+    const body = mem.kind === 'pass' ? passHtml(mem)
+      : mem.kind === 'stamp' ? stampHtml(mem)
+      : mem.kind === 'charm' ? charmHtml(mem)
+      : mem.kind === 'badge' ? badgeHtml(mem)
+      : mem.kind === 'plaque' ? plaqueHtml(mem)
+      : cardHtml(mem);
+    const cap = opt.cap === false ? '' : (mem.kind === 'pass'
+      ? '<span class="sovcap"><b>' + esc(mem.dest) + '</b><small>' + esc(mem.label) + '</small></span>'
+      : '<span class="sovcap"><small>' + esc(mem.label) + '</small></span>');
+    const poke = size === 'lg' ? ' sov-poke' : '';
+    return '<span class="sov sov-' + mem.kind + ' sov-' + size + poke + ' tone-' + mem.tone + '"><span class="sov-body">' + body + '</span>' + cap + '</span>';
+  }
+  function motionNodes(sov) {
+    return sov.querySelectorAll('.sov-body,.charmart,.emaart,.sealart,.pinart,.bp,.mcard-stamp');
+  }
+  function settleSouvenir(sov) {
+    if (!sov) return;
+    sov.classList.remove('sov-poke');
+    motionNodes(sov).forEach(function (el) {
+      el.style.animation = 'none';
+      el.style.transform = 'none';
+    });
+  }
+  function pokeSouvenir(el) {
+    const root = el && el.querySelector ? el : null;
+    const sov = root && (root.classList && root.classList.contains('sov') ? root : root.querySelector('.sov'));
+    if (!sov || reduced()) return;
+    sov.classList.remove('sov-poke');
+    motionNodes(sov).forEach(function (node) {
+      node.style.animation = '';
+      node.style.transform = '';
+    });
+    void sov.offsetWidth;
+    sov.classList.add('sov-poke');
+    clearTimeout(sov._settle);
+    sov._settle = setTimeout(function () { settleSouvenir(sov); }, 900);
+    try { haptic(12); } catch (e) {}
+  }
+  function watchPoke(scope) {
+    if (!scope || scope._poke) return;
+    scope._poke = true;
+    scope.addEventListener('animationend', function (e) {
+      const name = e.animationName || '';
+      if (!/poke|stampdown/.test(name)) return;
+      const sov = e.target && e.target.closest ? e.target.closest('.sov') : null;
+      settleSouvenir(sov);
+    });
+    scope.querySelectorAll('.sov-poke').forEach(function (sov) {
+      clearTimeout(sov._settle);
+      sov._settle = setTimeout(function () { settleSouvenir(sov); }, 900);
+    });
+  }
+  function safeTid(id) { return /^[A-Za-z0-9_-]+$/.test(String(id || '')) ? String(id) : ''; }
+  function archivedTrips(list) {
+    return (list || []).filter(t => t && t.archived).slice().sort((a, b) => (+b.archivedAt || 0) - (+a.archivedAt || 0));
+  }
+  function souvenirHit(t, diary) {
+    const id = safeTid(t && t.id);
+    if (!id) return '';
+    const mem = memoryOf(t, diary);
+    return '<button type="button" class="sovhit" onclick="Journey.openSouvenir(\'' + id + '\')" aria-label="' + esc(mem.dest + '的' + mem.label) + '">' + souvenirMarkup(t, diary, { size: 'mini', mem: mem }) + '</button>';
+  }
+  function shelfHtml(list) {
+    const arch = archivedTrips(list || tripsNow());
+    if (!arch.length) return '';
+    const diary = diaryNow();
+    return '<section class="sovshelf"><div class="sovhead"><h3>收藏</h3><button type="button" class="textbtn" onclick="Journey.openKeepsakes()">打開收藏</button></div><p class="mut sovlead">封存之後收在這裡。點一下，就是那趟帶回來的紀念品。</p><div class="sovwall">' + arch.map(t => souvenirHit(t, diary)).join('') + '</div></section>';
+  }
+
   function kmBetween(aLat, aLng, bLat, bLng) {
     const R = 6371, rad = Math.PI / 180;
     const dLat = (bLat - aLat) * rad, dLng = (bLng - aLng) * rad;
@@ -1353,27 +1935,108 @@
   }
 
   function spendLine(sum) { return sum.spend; }
+  function closeSheetQuiet() {
+    try {
+      const sheet = document.querySelector('#sheet');
+      if (sheet && sheet.classList.contains('on') && TM.closeSheet) TM.closeSheet();
+    } catch (e) {}
+  }
+  function chipList(title, names) {
+    if (!names || !names.length) return '';
+    return '<div class="sovsec"><b>' + esc(title) + '</b><div class="sovchips">' + names.map(n => '<span>' + esc(n) + '</span>').join('') + '</div></div>';
+  }
+  function openKeepsakes() {
+    if (typeof document === 'undefined') return;
+    closeSheetQuiet();
+    const arch = archivedTrips(tripsNow());
+    const diary = diaryNow();
+    const wall = arch.length
+      ? '<div class="sovwall">' + arch.map(t => souvenirHit(t, diary)).join('') + '</div>'
+      : '<div class="card"><b>還沒有收藏</b><p class="mut">走完一段行程後，在行程的 ⋯ 裡封存。它會變成登機證、紀念卡、印章、護符、徽章或木牌。</p></div>';
+    const layer = layerEl();
+    layer.innerHTML = '<div class="achpage sovpage"><div class="row" style="align-items:center"><h2 style="margin:0">旅途收藏</h2><button type="button" class="btn ghost sm" style="flex:0" onclick="Journey.closeLayer()">關閉</button></div><p class="mut achhint">封存之後，收成想再打開看看的紀念品。</p>' + wall + '</div>';
+    layer.hidden = false;
+    watchPoke(layer);
+  }
+  function openSouvenir(id) {
+    if (typeof document === 'undefined') return;
+    const sid = safeTid(id);
+    const t = tripsNow().find(x => x && x.id === sid);
+    if (!t || !t.archived) return;
+    closeSheetQuiet();
+    const diary = diaryNow();
+    const mem = memoryOf(t, diary);
+    const route = mem.flew && mem.kind !== 'pass' && mem.route ? '<p class="sovroute">' + esc(mem.route) + '</p>' : '';
+    const places = chipList('去過', mem.spots) + chipList('吃過', mem.eats);
+    const empty = !mem.spots.length && !mem.eats.length ? '<p class="mut">這趟還沒寫下景點。目的地和日期先留在這件紀念品上。</p>' : '';
+    const pick = '<p class="sovpicklab">想換成別的樣子</p><div class="seg sovpick" role="group" aria-label="紀念品形態">' + SOUVENIRS.map(([k, lab]) => '<button type="button" class="' + (k === mem.kind ? 'on' : '') + '" onclick="Journey.setSouvenir(\'' + sid + '\',\'' + k + '\')">' + lab + '</button>').join('') + '</div>';
+    const layer = layerEl();
+    layer.innerHTML = '<div class="achpage sovpage"><button type="button" class="btn ghost sm" onclick="Journey.openKeepsakes()">返回收藏</button><div class="sovstage"><button type="button" class="sovplay" onclick="Journey.pokeSouvenir(this)" aria-label="再看一次這件' + esc(mem.label) + '">' + souvenirMarkup(t, diary, { size: 'lg', cap: false, mem: mem }) + '</button><p class="sovhint">點一下，再看一次。</p></div><article class="sovstory"><p class="sovkicker">還想再打開看看</p><h2>' + esc(mem.dest) + '</h2><p class="sovwhen">' + esc(mem.when) + '</p>' + route + '<p class="sovline">' + esc(mem.line) + '</p>' + places + empty + pick + '<div class="row"><button type="button" class="btn" onclick="Journey.openKeptTrip(\'' + sid + '\')">翻開行程</button><button type="button" class="btn ghost" onclick="Journey.releaseSouvenir(\'' + sid + '\')">解除封存</button></div><p class="sovdrop"><button type="button" class="textbtn" onclick="Journey.dropSouvenir(\'' + sid + '\')">刪除這趟</button></p></article></div>';
+    layer.hidden = false;
+    watchPoke(layer);
+  }
+  function setSouvenir(id, kind) {
+    const sid = safeTid(id);
+    if (!sid || !kindOk(kind)) return;
+    const t = tripsNow().find(x => x && x.id === sid);
+    if (!t || !t.archived) return;
+    t.souvenir = kind;
+    t.metaRev = Date.now();
+    try { TM.save(); } catch (e) {}
+    const shelf = typeof document !== 'undefined' && document.querySelector('.sovshelf');
+    if (shelf) {
+      const html = shelfHtml(archivedTrips(tripsNow()));
+      if (html) shelf.outerHTML = html;
+    }
+    openSouvenir(sid);
+  }
+  function openKeptTrip(id) {
+    const sid = safeTid(id);
+    if (!sid) return;
+    closeLayer();
+    if (typeof TM.focus === 'function' && TM.focus(sid) && TM.go) {
+      try { TM.save(); } catch (e) {}
+      TM.go('edit');
+    }
+  }
+  function releaseSouvenir(id) {
+    const sid = safeTid(id);
+    if (!sid) return;
+    if (typeof TM.focus === 'function' && !TM.focus(sid)) return;
+    closeLayer();
+    unarchive();
+  }
+  function dropSouvenir(id) {
+    const sid = safeTid(id);
+    if (!sid || typeof delTrip !== 'function') return;
+    delTrip(sid);
+    if (!tripsNow().some(t => t && t.id === sid)) closeLayer();
+  }
   function askArchive() {
     const t = TM.T();
     if (!t) return;
     if (t.archived) { unarchive(); return; }
     const sum = summarize(t, diaryNow());
-    document.querySelector('#sheetBody').innerHTML = `<h2>封存行程</h2><p>把「${esc(t.dest)}」收成一本可以再翻開的冊子。封存後只能看，可以隨時解除。</p><p class="mut">${sum.days} 天 · 去過 ${sum.visited} 個景點 · 美食日記 ${sum.diary} 則 · ${esc(sum.spend)}</p><div class="row"><button type="button" class="btn ghost" onclick="Journey.dismissArchive()">先不要</button><button type="button" class="btn" onclick="Journey.startArchive()">封存行程</button></div>`;
+    const kind = kindOk(t.souvenir) ? t.souvenir : suggestSouvenir(t, diaryNow());
+    document.querySelector('#sheetBody').innerHTML = `<h2>收成紀念品</h2><p>把「${esc(t.dest)}」收成一件${esc(kindLabel(kind))}。封存後只能看，也可以再換成登機證、紀念卡、印章、護符、徽章或木牌。</p><p class="mut">${sum.days} 天 · 去過 ${sum.visited} 個景點 · 美食日記 ${sum.diary} 則 · ${esc(sum.spend)}</p><div class="row"><button type="button" class="btn ghost" onclick="Journey.dismissArchive()">先不要</button><button type="button" class="btn" onclick="Journey.startArchive()">收成紀念品</button></div>`;
     TM.openSheet();
   }
   function dismissArchive() { TM.closeSheet(); }
   function startArchive() {
     const t = TM.T();
     if (!t || t.archived) return;
+    if (!kindOk(t.souvenir)) t.souvenir = suggestSouvenir(t, diaryNow());
+    const label = kindLabel(t.souvenir);
     TM.closeSheet();
     play(t, () => {
       t.archived = true;
       t.archivedAt = Date.now();
       t.archiveAsked = true;
       t.metaRev = Date.now();
-      if (TM.getTab && TM.getTab() === 'edit') TM.go('list');
-      else TM.save();
-      try { TM.toast('已收進封存'); } catch (e) {}
+      try { TM.save(); } catch (e) {}
+      if (TM.getTab && TM.getTab() === 'edit' && TM.go) TM.go('list');
+      else if (TM.render) TM.render();
+      try { TM.toast('已收成' + label); } catch (e) {}
     });
   }
   function unarchive() {
@@ -1388,7 +2051,9 @@
     try { TM.toast('已解除封存，可以再改'); } catch (e) {}
   }
   function play(t, done) {
-    const sum = summarize(t, diaryNow());
+    const diary = diaryNow();
+    const preview = Object.assign({}, t, { souvenir: kindOk(t.souvenir) ? t.souvenir : suggestSouvenir(t, diary) });
+    const mem = memoryOf(preview, diary);
     let el = document.querySelector('#archveil');
     if (!el) {
       el = document.createElement('div');
@@ -1396,21 +2061,19 @@
       el.className = 'archveil';
       document.body.appendChild(el);
     }
+    if (el._t) el._t.forEach(clearTimeout);
     el.className = 'archveil';
     el.hidden = false;
-    el.innerHTML = `<div class="archstage"><div class="journal"><div class="journal-spine"></div><b>${esc(t.dest)}</b><small>${esc(t.dep)} – ${esc(t.ret)}</small><span class="jstamp"><b>${esc(t.dest)}</b><small>${esc(String(t.dep).slice(5))}–${esc(String(t.ret).slice(5))}</small></span></div><div class="archsum"><p>${sum.days} 天</p><p>去過 ${sum.visited} 個景點</p><p>美食日記 ${sum.diary} 則</p><p>總花費 ${esc(sum.spend)}</p></div><div class="shelfmini">封存</div></div>`;
-    if (reduced()) {
-      el.querySelector('.jstamp').classList.add('in');
-      el.querySelector('.archsum').classList.add('in');
-      setTimeout(() => { el.hidden = true; done(); }, 700);
-      return;
+    el.innerHTML = `<div class="archstage"><div class="sov-arrive">${souvenirMarkup(preview, diary, { size: 'lg', cap: false, mem })}</div><div class="archsum in"><p>收成一件${esc(mem.label)}</p><p>${esc(mem.when)}</p></div></div>`;
+    watchPoke(el);
+    const timers = [];
+    el._t = timers;
+    const later = (ms, fn) => { timers.push(setTimeout(fn, ms)); };
+    if (!reduced()) {
+      later(160, () => haptic(18));
+      later(1200, () => el.classList.add('leave'));
     }
-    const stamp = el.querySelector('.jstamp');
-    const summary = el.querySelector('.archsum');
-    setTimeout(() => { stamp.classList.add('thump'); haptic(18); }, 420);
-    setTimeout(() => summary.classList.add('in'), 980);
-    setTimeout(() => el.classList.add('leave'), 2100);
-    setTimeout(() => { el.hidden = true; done(); }, 2800);
+    later(reduced() ? 700 : 1900, () => { el.hidden = true; el.className = 'archveil'; done(); });
   }
   function todayStr() {
     const d = new Date();
@@ -1430,7 +2093,7 @@
     const was = TM.getTab && TM.getTab();
     if (TM.trips) {
       const curId = t.id;
-      document.querySelector('#sheetBody').innerHTML = `<h2>這趟走完了</h2><p>「${esc(t.dest)}」在 ${esc(t.ret)} 結束了。要封存起來嗎？之後還是可以打開來看。</p><div class="row"><button type="button" class="btn ghost" onclick="closeSheet()">先不要</button><button type="button" class="btn" onclick="Journey.promptArchive('${esc(curId)}')">封存行程</button></div>`;
+      document.querySelector('#sheetBody').innerHTML = `<h2>這趟走完了</h2><p>「${esc(t.dest)}」在 ${esc(t.ret)} 結束了。要收成一件紀念品嗎？之後還是可以打開來看。</p><div class="row"><button type="button" class="btn ghost" onclick="closeSheet()">先不要</button><button type="button" class="btn" onclick="Journey.promptArchive('${esc(curId)}')">收成紀念品</button></div>`;
       TM.openSheet();
     }
     void was;
@@ -1451,6 +2114,8 @@
     apply, afterPaint, exportState, importState, setGlobalStyle, globalStyle,
     openAchieve, peek, closeLayer, celebrate, doneCelebrate, openVisitMap, openCityMap, focusVisit, openMappedTrip,
     focusSpot, clearSpot, resetMap, zoomMap,
-    themeSheet, setTripStyle, askArchive, dismissArchive, startArchive, unarchive, promptArchive, maybePrompt
+    themeSheet, setTripStyle, askArchive, dismissArchive, startArchive, unarchive, promptArchive, maybePrompt,
+    SOUVENIRS, AIR_ZH, suggestSouvenir, souvenirOf, memoryOf, souvenirMarkup, shelfHtml, motifOf,
+    openKeepsakes, openSouvenir, setSouvenir, openKeptTrip, releaseSouvenir, dropSouvenir, pokeSouvenir
   };
 });
