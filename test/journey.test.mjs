@@ -279,9 +279,9 @@ assert.match(page, /theme-tw/);
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v73/);
+assert.match(sw, /tripmate-v74/);
 assert.match(sw, /journey\.js/);
-assert.match(page, /v2\.26\.0/);
+assert.match(page, /v2\.26\.1/);
 assert.match(page, /controllerchange/);
 assert.match(page, /發現新版本/);
 assert.match(page, /SKIP_WAITING/);
@@ -694,6 +694,33 @@ assert.match(hulCard, />花</);
 assert.match(hulCard, />蓮</);
 assert.match(J.memoryOf(nature, []).line, /花蓮/);
 assert.match(J.memoryOf(nature, []).line, /太魯閣/);
+const hulLand = trip({ dest: '花蓮', orig: 'TPE', souvenir: 'pass', days: [[{ name: '太魯閣', icon: 'nature', visited: true }]] });
+const hulMem = J.memoryOf(hulLand, []);
+assert.equal(hulMem.by, 'land');
+assert.equal(hulMem.route, '台北 → 花蓮');
+assert.equal(hulMem.backRoute, '花蓮 → 台北');
+assert.equal(/桃園|TPE|HUN|登機證|起飛/.test(hulMem.route + hulMem.line), false);
+const hulPass = J.souvenirMarkup(hulLand, [], { size: 'lg' });
+assert.match(hulPass, /台北/);
+assert.match(hulPass, /花蓮/);
+assert.match(hulPass, /路程/);
+assert.match(hulPass, /車站/);
+assert.equal(/桃園|TPE|HUN|登機證|起飛/.test(hulPass), false);
+const hulSong = J.memoryOf(trip({ dest: '花蓮', orig: 'TSA', souvenir: 'pass' }), []);
+assert.equal(hulSong.route, '松山 → 花蓮');
+assert.equal(hulSong.backRoute, '花蓮 → 松山');
+const hulFly = J.memoryOf(trip({
+  dest: '花蓮', orig: 'TPE', souvenir: 'pass',
+  days: [[{ kind: 'flight', from: 'TPE', to: 'HUN', name: 'AE391 TPE→HUN', leg: 'out' }]]
+}), []);
+assert.equal(hulFly.by, 'land');
+assert.equal(hulFly.route, '台北 → 花蓮');
+assert.equal(/桃園|TPE|HUN/.test(hulFly.route), false);
+const hulRecap = J.recapMarkup(hulMem, { places: 1, eats: 0 }, 'hul');
+assert.match(hulRecap, /台北 → 花蓮/);
+assert.match(hulRecap, /<small>路程<\/small>/);
+assert.match(hulRecap, /face-rail/);
+assert.equal(/桃園|TPE|HUN/.test(hulRecap), false);
 assert.equal(/繪馬|御守/.test(hulCard), false);
 const see = trip({ dest: '京都', days: [[{ name: '清水寺', icon: 'sightseeing', visited: true }, { name: '伏見稻荷', visited: true }]] });
 assert.equal(J.suggestSouvenir(see, []), 'card');

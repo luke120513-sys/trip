@@ -252,10 +252,27 @@
     if (!s || s.kind === 'flight' || s.kind === 'hotel' || isHop(s) || isEat(s) || isShop(s)) return false;
     return !!String(s.name || '').trim();
   }
+  const HOME_CITY = {
+    TPE: '台北', TSA: '松山', KHH: '高雄', RMQ: '台中', TNN: '台南', HUN: '花蓮', TTT: '台東', CYI: '嘉義', PIF: '屏東',
+    KNH: '金門', LZN: '南竿', MFK: '北竿', KYD: '蘭嶼', GNI: '綠島'
+  };
+  function taiwanPlace(text) {
+    const raw = String(text || '').trim();
+    if (!raw) return '';
+    const code = raw.toUpperCase();
+    if (HOME_CITY[code]) return HOME_CITY[code];
+    if (raw === '台灣' || raw === '臺灣') return '台北';
+    const id = cityFromText(raw);
+    const city = id && CITIES.find(function (c) { return c.id === id; });
+    return city && city.country === 'tw' ? city.name : '';
+  }
   function impliedHop(trip) {
     const orig = String(trip && trip.orig || '').toUpperCase();
     const destAir = DEST_AIR[String(trip && trip.dest || '').trim()] || '';
     return !!(destAir && orig && destAir !== orig);
+  }
+  function abroadLeg(leg) {
+    return !!((leg && leg.from && !HOME[leg.from]) || (leg && leg.to && !HOME[leg.to]));
   }
   function suggestSouvenir(trip, diary) {
     if (!trip) return 'card';
@@ -298,6 +315,11 @@
     const eat = mem.eats[0] || '';
     const dest = mem.dest || '這趟';
     if (mem.kind === 'pass') {
+      if (mem.by === 'land') {
+        if (mem.route && spot) return mem.route + '。這段路程裡的' + spot + '，還想再走一次。';
+        if (mem.route) return mem.route + '。這張車票還留著那幾天的光。';
+        return '這張' + dest + '的路程，還留著那幾天的光。';
+      }
       if (mem.route && spot && eat) return mem.route + '。下了飛機，' + spot + '和' + eat + '都還在。';
       if (mem.route && spot) return mem.route + '。下了飛機去的' + spot + '，還想再走一次。';
       if (mem.route) return mem.route + '。這張登機證還留著那幾天的光。';
@@ -336,8 +358,13 @@
     const flights = flightLegs(t);
     const go = flights.find(f => f.leg !== 'return' && (f.from || f.to)) || flights.find(f => f.from || f.to) || null;
     const back = go ? flights.find(f => f !== go && f.leg === 'return' && (f.from || f.to)) : null;
-    let from = '', to = '', no = '';
-    if (go) {
+    const destCity = taiwanPlace(t.dest);
+    const fromCity = taiwanPlace(String(t.orig || '').trim() || 'TPE');
+    const domestic = !!(destCity && fromCity);
+    const abroad = flights.some(abroadLeg);
+    let from = '', to = '', no = '', by = 'air';
+    if (domestic && !abroad) by = 'land';
+    else if (go) {
       from = go.from;
       to = go.to;
       no = go.no;
@@ -346,8 +373,12 @@
       to = DEST_AIR[String(t.dest || '').trim()] || '';
     }
     const dest = String(t.dest || '這趟').trim() || '這趟';
-    const route = routeText(from, to, to ? '' : dest);
-    const backRoute = back ? routeText(back.from, back.to, '') : '';
+    const route = by === 'land'
+      ? (fromCity !== destCity ? fromCity + ' → ' + destCity : destCity)
+      : routeText(from, to, to ? '' : dest);
+    const backRoute = by === 'land'
+      ? (fromCity !== destCity ? destCity + ' → ' + fromCity : '')
+      : (back ? routeText(back.from, back.to, '') : '');
     const spots = [], eats = [];
     const all = [];
     (t.days || []).forEach(d => (d || []).forEach(s => { if (s) all.push(s); }));
@@ -377,9 +408,10 @@
     const voice = VOICE[motif.country] || VOICE.plain;
     const year = (/^(\d{4})/.exec(String(t.dep || '')) || [])[1] || '';
     const mem = {
-      kind, label: faceLabel(kind, voice), dest, when, days, pax: +t.pax || 1,
+      kind, label: (by === 'land' && kind === 'pass') ? '路程' : faceLabel(kind, voice), dest, when, days, pax: +t.pax || 1,
       from, to, fromName: from ? airName(from) : '', toName: to ? airName(to) : '',
-      no, route, backRoute, flew: flights.length > 0,
+      no, route, backRoute, by, landFrom: by === 'land' ? fromCity : '', landTo: by === 'land' ? destCity : '',
+      flew: by === 'air' && flights.length > 0,
       spots, eats, inside: (eats.length ? eats : spots).slice(0, 2), tone: toneOf(t),
       year, motif, voice, look: lookIndex(t)
     };
@@ -395,13 +427,12 @@
   function passHtml(mem) {
     const meta = [mem.when.split(' · ')[0] || '', mem.no || '', mem.pax ? mem.pax + ' 人' : ''].filter(Boolean);
     const back = mem.backRoute ? '<span class="bp-back">回程 ' + esc(mem.backRoute) + '</span>' : '';
-    const route = mem.from || mem.to
-      ? '<span class="bp-route">' + airEnd(mem.from, mem.fromName) + '<span class="bp-go" aria-hidden="true">→</span>' + airEnd(mem.to, mem.toName) + '</span>'
-      : '<span class="bp-route"><span class="bp-end"><b>' + esc(mem.dest) + '</b></span></span>';
+    const route = passRoute(mem);
+    const head = mem.by === 'land' ? '路程' : '登機證';
     const b = motifBits(mem);
     const chip = b.known ? '<span class="bp-land">' + esc(b.city) + ' · ' + esc(b.land) + '</span>' : '';
     const art = b.known ? '<span class="bp-art">' + sceneSvg(b.scene) + '<small>' + esc(b.land) + '</small></span>' : '';
-    return '<span class="bp"><span class="bp-top"><span>旅伴</span><b>登機證</b></span>' + route + '<span class="bp-meta">' + meta.map(x => '<span>' + esc(x) + '</span>').join('') + '</span>' + art + chip + back + '<span class="bp-bar" aria-hidden="true"></span></span>';
+    return '<span class="bp"><span class="bp-top"><span>旅伴</span><b>' + head + '</b></span>' + route + '<span class="bp-meta">' + meta.map(x => '<span>' + esc(x) + '</span>').join('') + '</span>' + art + chip + back + '<span class="bp-bar" aria-hidden="true"></span></span>';
   }
   function cardHtml(mem) {
     const faceWhen = (mem.when || '').split(' · ')[0] || '這幾天';
@@ -799,7 +830,16 @@
     }
     return '<svg class="qrart" viewBox="0 0 55 55" aria-hidden="true">' + rects + '</svg>';
   }
+  function landEnd(name) {
+    return '<span class="bp-end bp-city"><b>' + esc(name) + '</b><small>車站</small></span>';
+  }
   function passRoute(mem) {
+    if (mem.by === 'land' && mem.landFrom && mem.landTo && mem.landFrom !== mem.landTo) {
+      return '<span class="bp-route bp-landroute">' + landEnd(mem.landFrom) + '<span class="bp-go" aria-hidden="true">→</span>' + landEnd(mem.landTo) + '</span>';
+    }
+    if (mem.by === 'land') {
+      return '<span class="bp-route"><span class="bp-end bp-city"><b>' + esc(mem.landTo || mem.dest) + '</b><small>這趟</small></span></span>';
+    }
     if (mem.from || mem.to) {
       return '<span class="bp-route">' + airEnd(mem.from, mem.fromName) + '<span class="bp-go" aria-hidden="true">→</span>' + airEnd(mem.to, mem.toName) + '</span>';
     }
@@ -814,11 +854,14 @@
     const route = passRoute(mem);
     const metaHtml = '<span class="bp-meta">' + meta.map(x => '<span>' + esc(x) + '</span>').join('') + '</span>';
     const scene = sceneSvg(b.scene);
+    const land = mem.by === 'land';
+    const head = land ? '路程' : '登機證';
+    const chip = land ? '去程' : 'ONE-WAY';
     if (look === 1) {
-      return '<span class="foldpass"><span class="fold-left"><span class="bp-top"><span>旅伴</span><b>登機證</b></span>' + route + metaHtml + '<span class="bp-land">' + esc(b.city) + ' · ' + esc(b.land) + '</span>' + barcodeSvg(mem.no || b.city) + '<span class="fold-chip">ONE-WAY</span></span><span class="fold-right">' + scene + '<b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small><em>' + esc(b.en) + '</em></span></span>';
+      return '<span class="foldpass"><span class="fold-left"><span class="bp-top"><span>旅伴</span><b>' + head + '</b></span>' + route + metaHtml + '<span class="bp-land">' + esc(b.city) + ' · ' + esc(b.land) + '</span>' + barcodeSvg(mem.no || b.city) + '<span class="fold-chip">' + chip + '</span></span><span class="fold-right">' + scene + '<b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small><em>' + esc(b.en) + '</em></span></span>';
     }
     if (look === 2) {
-      return '<span class="phone"><span class="phone-notch" aria-hidden="true"></span><span class="phone-top"><b>09:41</b><span>電子登機證</span></span><span class="phone-city"><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span>' + route + metaHtml + '<span class="phone-qr">' + qrSvg(b.city + (mem.no || '')) + '</span><span class="phone-tip">請於起飛前 40 分鐘完成登機</span></span>';
+      return '<span class="phone"><span class="phone-notch" aria-hidden="true"></span><span class="phone-top"><b>09:41</b><span>' + (land ? '電子車票' : '電子登機證') + '</span></span><span class="phone-city"><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span>' + route + metaHtml + '<span class="phone-qr">' + qrSvg(b.city + (mem.no || '')) + '</span><span class="phone-tip">' + (land ? '到車站再出發就好' : '請於起飛前 40 分鐘完成登機') + '</span></span>';
     }
     if (look === 3) {
       return '<span class="booklet"><span class="book-cover"><span class="book-plane" aria-hidden="true"></span><b>旅伴</b><span>我的旅行日記</span><small>收集每一段旅程</small><i></i></span><span class="book-pocket"><span class="book-card"><b>' + esc(b.city) + '旅程</b>' + route + scene + '<small>' + esc(b.land) + '</small></span><span class="book-dots" aria-hidden="true"><i></i><i></i><i></i></span></span></span>';
@@ -1115,6 +1158,7 @@
     const route = mem.route
       ? esc(mem.route) + (mem.backRoute ? ' · 回程 ' + esc(mem.backRoute) : '')
       : '這趟沒有留下航線，人還是到了。';
+    const routeLab = mem.by === 'land' ? '路程' : '航線';
     const spotNames = mem.spots || [];
     const eatNames = mem.eats || [];
     const places = chipList('去過', spotNames) + chipList('吃過', eatNames);
@@ -1129,7 +1173,7 @@
       return '<button type="button" class="' + (i === (mem.look || 0) ? 'on' : '') + '" onclick="Journey.setLook(\'' + id + '\',' + i + ')">' + esc(lookTitle(mem.kind, i, mem)) + '</button>';
     }).join('') + '</div>' : '';
     const actions = '<div class="row"><button type="button" class="btn" onclick="Journey.replaySouvenir()">再看一次</button><button type="button" class="btn ghost" onclick="Journey.openKeepsakes()">返回收藏</button></div>' + (id ? '<div class="row"><button type="button" class="btn ghost" onclick="Journey.openKeptTrip(\'' + id + '\')">翻開行程</button><button type="button" class="btn ghost" onclick="Journey.releaseSouvenir(\'' + id + '\')">解除封存</button></div><p class="sovdrop"><button type="button" class="textbtn" onclick="Journey.dropSouvenir(\'' + id + '\')">刪除這趟</button></p>' : '');
-    return '<article class="sovrecap" hidden aria-live="polite">' + settleHtml(mem) + '<p class="sovkicker">這趟的小結算</p><h2>' + esc(mem.dest || '') + '</h2><p class="sovwhen">' + esc(mem.when || '') + '</p><p class="sovroute"><span>航線</span>' + route + '</p><div class="sovstats"><p class="sovstat"><b>' + counts.places + '</b><span>去過的景點</span></p><p class="sovstat"><b>' + counts.eats + '</b><span>吃過的店</span></p></div><p class="sovline">' + esc(mem.line || '') + '</p>' + places + empty + pick + lookPick + actions + '</article>';
+    return '<article class="sovrecap" hidden aria-live="polite">' + settleHtml(mem) + '<p class="sovkicker">這趟的小結算</p><h2>' + esc(mem.dest || '') + '</h2><p class="sovwhen">' + esc(mem.when || '') + '</p><p class="sovroute"><span>' + routeLab + '</span>' + route + '</p><div class="sovstats"><p class="sovstat"><b>' + counts.places + '</b><span>去過的景點</span></p><p class="sovstat"><b>' + counts.eats + '</b><span>吃過的店</span></p></div><p class="sovline">' + esc(mem.line || '') + '</p>' + places + empty + pick + lookPick + actions + '</article>';
   }
   function settleItems(mem) {
     const out = [];
@@ -1177,6 +1221,9 @@
     if (kind === 'pack') {
       return '<span class="face face-pack tone-' + tone + '"><span class="pack-rim">' + scene + '<span class="face-mark">' + markSvg(b.mark, ink.main) + '</span><b>' + esc(title) + '</b><small>' + esc(kicker) + (detail ? ' · ' + esc(detail) : '') + '</small><i>' + esc(b.city) + ' · ' + esc(b.land) + '</i></span></span>';
     }
+    if (kind === 'pass' && mem.by === 'land') {
+      return '<span class="face face-pass face-rail"><span class="ticket-main"><small>路程</small><b>' + esc(title) + '</b><em>' + esc(detail || (mem.landFrom && mem.landTo ? mem.landFrom + ' → ' + mem.landTo : b.land)) + '</em>' + scene + '</span><span class="rail-stub"><i>' + esc(mem.landTo || b.city) + '</i><span class="rail-line" aria-hidden="true"></span></span></span>';
+    }
     if (kind === 'pass') {
       return '<span class="face face-pass"><span class="ticket-main"><small>' + esc(kicker) + '</small><b>' + esc(title) + '</b><em>' + esc(detail || b.land) + '</em>' + scene + '</span><span class="face-perf" aria-hidden="true"></span><span class="ticket-stub"><i>' + esc(b.city) + '</i>' + barcodeSvg(title + (b.city || '')) + '</span></span>';
     }
@@ -1205,7 +1252,8 @@
     return '<span class="foil"><span class="foil-top"><small>CARD PACK</small><b>' + esc(mem.dest || '這趟') + '</b></span><span class="foil-rip"></span><span class="foil-bot"><b>卡包</b><small>撕開來抽</small></span></span>';
   }
   function passStage(mem) {
-    return '<span class="stubcard"><span class="stubmain"><small>登機證</small><b>' + esc(mem.route || mem.dest || '這趟') + '</b></span><span class="stubperf"></span><span class="stubbit">存根</span></span>';
+    const land = mem.by === 'land';
+    return '<span class="stubcard"><span class="stubmain"><small>' + (land ? '路程' : '登機證') + '</small><b>' + esc(mem.route || mem.dest || '這趟') + '</b></span><span class="stubperf"></span><span class="stubbit">' + (land ? '票根' : '存根') + '</span></span>';
   }
   function cardStage(mem) {
     return '<span class="foilcard"><span class="foilskin"></span><span class="foilface"><small>紀念卡</small><b>' + esc(mem.dest || '') + '</b></span></span>';
@@ -1227,7 +1275,7 @@
       return '<div class="sovset sovset-plaque" data-kind="plaque">' + emaVariants(mem) + '<p class="sethint" data-idle="小牌、大牌單掛，或掛上一排">小牌、大牌單掛，或掛上一排</p><button type="button" class="btn ghost sm setgo" onclick="Journey.settleAct(this)">看下一掛</button>' + settlePile(mem) + '</div>';
     }
     const idle = kind === 'pack' ? '點一下，撕開卡包'
-      : kind === 'pass' ? '點一下，撕下存根'
+      : kind === 'pass' ? (mem.by === 'land' ? '點一下，沿這段路程看' : '點一下，撕下存根')
       : kind === 'stamp' ? '點一下，翻開印章冊'
       : kind === 'charm' ? '點一下，抽出一支籤'
       : '點一下，刮開紀念卡';
@@ -1240,7 +1288,7 @@
   }
   function tearHint(kind) {
     if (kind === 'pack') return '撕開了。再點一下，抽一張。';
-    if (kind === 'pass') return '存根撕下了。再點一下，翻開一段。';
+    if (kind === 'pass') return '票根撕下了。再點一下，翻開一段。';
     if (kind === 'stamp') return '冊子開了。再點一下，蓋一頁。';
     if (kind === 'charm') return '再點一下，抽出一支籤。';
     return '刮開了。再點一下，看一條。';
