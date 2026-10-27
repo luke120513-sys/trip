@@ -1,4 +1,4 @@
-const C='tripmate-v71',A=['./','index.html','manifest.json','planner.js','placeq.js','placeurl.js','legs.js','journey.js','extras.js','food.js','fx.js','share.js','tickets.js','notify.js','visitgeo.js','spotlore.js','vendor/lz-string.min.js','sync.js','collab.js','live.js','importer.js','urlimport.js','data/local-food.json','icons/icon.svg','icons/icon-192.png','icons/ui-spot.svg','icons/ui-fly.svg','icons/ui-hotel.svg','icons/ui-suitcase.svg','icons/coffee-trip.svg','icons/share-trip.svg','icons/fly-fly.svg','icons/hotel-fan.svg','icons/cat-food.svg','icons/cat-sightseeing.svg','icons/cat-shopping.svg','icons/cat-hotel.svg','icons/cat-transport.svg','icons/cat-cafe.svg','icons/cat-nature.svg','icons/cat-museum.svg','icons/cat-nightlife.svg','icons/cat-custom.svg'];
+const C='tripmate-v72',A=['./','index.html','manifest.json','planner.js','placeq.js','placeurl.js','legs.js','journey.js','extras.js','food.js','fx.js','share.js','tickets.js','notify.js','visitgeo.js','spotlore.js','vendor/lz-string.min.js','sync.js','collab.js','live.js','importer.js','urlimport.js','data/local-food.json','icons/icon.svg','icons/icon-192.png','icons/ui-spot.svg','icons/ui-fly.svg','icons/ui-hotel.svg','icons/ui-suitcase.svg','icons/coffee-trip.svg','icons/share-trip.svg','icons/fly-fly.svg','icons/hotel-fan.svg','icons/cat-food.svg','icons/cat-sightseeing.svg','icons/cat-shopping.svg','icons/cat-hotel.svg','icons/cat-transport.svg','icons/cat-cafe.svg','icons/cat-nature.svg','icons/cat-museum.svg','icons/cat-nightlife.svg','icons/cat-custom.svg'];
 // 繞過 GitHub Pages 的 max-age，避免新快取被 HTTP 快取塞進舊的 index.html
 async function putFresh(cache,url){
   const res=await fetch(new Request(url,{cache:'reload'}));
@@ -33,6 +33,7 @@ self.addEventListener('activate',e=>{
     }));
   })());
 });
+
 // stale-while-revalidate：先回快取（秒開），背景更新；只處理 /trip/ 自己的檔案
 self.addEventListener('fetch',e=>{const r=e.request,u=new URL(r.url);
 if(u.pathname.indexOf('/__/auth/')>=0||u.pathname.indexOf('/__/firebase/')>=0)return;

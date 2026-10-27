@@ -172,7 +172,15 @@
 
   /* 封存後的紀念品。純函式，畫面只負責把結果畫出來。 */
   const SOUVENIRS = [['pass', '登機證'], ['card', '紀念卡'], ['stamp', '印章'], ['charm', '護符'], ['badge', '徽章'], ['plaque', '木牌'], ['pack', '卡包']];
-  const AIR_ZH = {
+  const LOOKS = {
+    pass: [['stub', '撕票根'], ['fold', '對折機票'], ['phone', '電子條碼票'], ['book', '旅程貼紙冊'], ['sleeve', '紀念票卡套']],
+    card: [['gloss', '亮面明信片'], ['foil', '箔燙卡'], ['scratch', '刮刮隱藏卡'], ['popup', '立體摺卡'], ['frame', '相框收藏卡']],
+    stamp: [['round', '圓印蓋面'], ['square', '方印朱泥'], ['passport', '護照蓋頁'], ['pad', '印泥台展示'], ['foil', '箔燙紀念印']],
+    charm: [['pouch', '經典袋裝'], ['envelope', '扁封套'], ['rack', '神社掛排'], ['blister', '展示卡'], ['local', '在地造型']],
+    badge: [['round', '卡紙圓形'], ['shield', '毛氈盾形'], ['hex', '吸塑六角'], ['board', '別針絨板'], ['tin', '金屬盒裝']],
+    plaque: [['small', '小五角牌'], ['large', '大牌單掛'], ['wall', '神社掛牆'], ['wish', '台灣許願牌'], ['pray', '韓國祈福牌']],
+    pack: [['soft', '撕口軟包'], ['box', '硬盒卡匣'], ['drawer', '抽屜紙盒'], ['blister', '透明展示包'], ['city', '城市限定封']]
+  };  const AIR_ZH = {
     TPE: '桃園', TSA: '松山', KHH: '高雄', RMQ: '台中', TNN: '台南', HUN: '花蓮', TTT: '台東', CYI: '嘉義', PIF: '屏東',
     KNH: '金門', LZN: '南竿', MFK: '北竿', KYD: '蘭嶼', GNI: '綠島',
     NRT: '成田', HND: '羽田', KIX: '關西', ITM: '伊丹', UKB: '神戶', NGO: '中部', CTS: '新千歲', FUK: '福岡', OKA: '那霸',
@@ -314,9 +322,9 @@
       return '這面' + dest + '的' + voice.plaque + '，先把城名留在木牌上。';
     }
     if (mem.kind === 'pack') {
-      if (spot && eat) return '這包' + dest + '的卡，裡面有' + spot + '和' + eat + '。撕開來一張一張抽。';
-      if (spot) return '這包' + dest + '的卡，第一張是' + spot + '。';
-      return '這包' + dest + '的卡，撕開來一張一張抽。';
+      if (motif.known) return '這包' + dest + '的卡包，封面留著' + motif.land + '和' + motif.food + '。撕開來一張一張抽。';
+      if (spot) return '這包' + dest + '的卡包，第一張是' + spot + '。';
+      return '這包' + dest + '的卡包，撕開來一張一張抽。';
     }
     if (spot && eat) return dest + '的' + spot + '，還有' + eat + '。翻開這張卡就回去了。';
     if (spot) return '翻開這張卡，' + dest + '的' + spot + '還在。';
@@ -373,7 +381,7 @@
       from, to, fromName: from ? airName(from) : '', toName: to ? airName(to) : '',
       no, route, backRoute, flew: flights.length > 0,
       spots, eats, inside: (eats.length ? eats : spots).slice(0, 2), tone: toneOf(t),
-      year, motif, voice
+      year, motif, voice, look: lookIndex(t)
     };
     mem.line = memoryLine(mem);
     return mem;
@@ -390,11 +398,15 @@
     const route = mem.from || mem.to
       ? '<span class="bp-route">' + airEnd(mem.from, mem.fromName) + '<span class="bp-go" aria-hidden="true">→</span>' + airEnd(mem.to, mem.toName) + '</span>'
       : '<span class="bp-route"><span class="bp-end"><b>' + esc(mem.dest) + '</b></span></span>';
-    return '<span class="bp"><span class="bp-top"><span>旅伴</span><b>登機證</b></span>' + route + '<span class="bp-meta">' + meta.map(x => '<span>' + esc(x) + '</span>').join('') + '</span>' + back + '<span class="bp-bar" aria-hidden="true"></span></span>';
+    const b = motifBits(mem);
+    const chip = b.known ? '<span class="bp-land">' + esc(b.city) + ' · ' + esc(b.land) + '</span>' : '';
+    return '<span class="bp"><span class="bp-top"><span>旅伴</span><b>登機證</b></span>' + route + '<span class="bp-meta">' + meta.map(x => '<span>' + esc(x) + '</span>').join('') + '</span>' + chip + back + '<span class="bp-bar" aria-hidden="true"></span></span>';
   }
   function cardHtml(mem) {
     const faceWhen = (mem.when || '').split(' · ')[0] || '這幾天';
-    return '<span class="mcard mcard-' + mem.tone + '"><span class="mcard-shine" aria-hidden="true"></span><span class="mcard-top"><span>收藏卡</span><span>旅伴</span></span><b class="mcard-dest">' + esc(mem.dest) + '</b><span class="mcard-foot"><span class="mcard-sub">' + esc(faceWhen) + '</span><span class="mcard-stamp">到此<br>一遊</span></span></span>';
+    const b = motifBits(mem);
+    const scene = '<span class="mcard-scene" aria-hidden="true">' + sceneSvg(b.scene) + '</span>';
+    return '<span class="mcard mcard-' + mem.tone + '">' + scene + '<span class="mcard-shine" aria-hidden="true"></span><span class="mcard-top"><span>明信片</span><span>旅伴</span></span><b class="mcard-dest">' + esc(mem.dest) + '</b><span class="mcard-foot"><span class="mcard-sub">' + esc(b.known ? b.land : faceWhen) + '</span><span class="mcard-stamp">到此<br>一遊</span></span></span>';
   }
   /* 台、韓、日城市各自的地標、名產、風景。其他國家只用城名後備，不套晴空塔。 */
   const VOICE = {
@@ -553,6 +565,7 @@
     if (kind === 'charm') return v.charm;
     if (kind === 'badge') return '特色徽章';
     if (kind === 'plaque') return v.plaque;
+    if (kind === 'pack') return '卡包';
     return kindLabel(kind);
   }
   function markIcon(name) {
@@ -650,18 +663,18 @@
   }
   function charmHtml(mem) {
     const voice = mem.voice || VOICE.plain;
-    return '<span class="charmcard papercard"><svg class="charmart" viewBox="0 0 140 214" preserveAspectRatio="xMidYMid meet" aria-hidden="true">' + charmSvg(mem) + '</svg><span class="paper-foot charm-foot"><b>' + esc(voice.charm) + '</b><i></i></span></span>';
+    const b = motifBits(mem);
+    const land = b.known ? '<small>' + esc(b.land) + '</small>' : '';
+    return '<span class="charmcard papercard"><svg class="charmart" viewBox="0 0 140 214" preserveAspectRatio="xMidYMid meet" aria-hidden="true">' + charmSvg(mem) + '</svg><span class="paper-foot charm-foot"><b>' + esc(voice.charm) + '</b>' + land + '<i></i></span></span>';
   }
   function pinSvg(dish, banner) {
     return '<svg class="pinart" viewBox="0 0 80 86" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><circle cx="40" cy="36" r="28" fill="#fffdf8" stroke="#c6a36a" stroke-width="3"/><g transform="translate(16,12) scale(.72)">' + (DISH[dish] || DISH.case) + '</g><ellipse cx="40" cy="66" rx="13" ry="8" fill="#2c241c" stroke="#c6a36a" stroke-width="1.4"/><text x="40" y="69" text-anchor="middle" fill="#f6e7c4" font-size="9" font-weight="800">' + esc(banner) + '</text></svg>';
   }
   function badgeHtml(mem) {
-    const m = mem.motif || {};
-    const title = m.known ? ((mem.dest || '') + '・' + m.food) : (mem.dest || '');
-    const en = m.known ? (((m.en || '') + '  ' + (m.foodEn || '')).trim()) : 'TRAVEL KEEPSAKE';
-    const banner = Array.from(mem.dest || '旅')[0] || '旅';
-    const note = m.blurb || ((mem.dest || '') + '・這趟先收在這裡');
-    return '<span class="badgecard papercard"><span class="badge-top paper-extra"><i></i><span>TRAVEL KEEPSAKE</span><b></b></span><b class="badge-title">' + esc(title) + '</b><span class="badge-en paper-extra">' + esc(en) + '</span><span class="badge-case">' + pinSvg(m.dish, banner) + '</span><b class="badge-kind paper-extra">當地特色徽章</b><span class="badge-en paper-extra">LOCAL SPECIALTY BADGE</span><span class="badge-note paper-extra">✿ ' + esc(note) + '</span></span>';
+    const b = motifBits(mem);
+    const title = b.known ? ((mem.dest || '') + '・' + b.food) : (mem.dest || '');
+    const en = b.known ? (b.foodEn || '') : '';
+    return '<span class="badgecard papercard"><span class="taghole" aria-hidden="true"></span><b class="badge-title">' + esc(title) + '</b><span class="badge-disc">' + dishSvg(b.dish) + '<b>' + esc(mem.dest || '') + '</b>' + (en ? '<small>' + esc(en) + '</small>' : '') + '</span><span class="badge-note paper-extra">' + esc(b.land) + ' · ' + esc(b.blurb) + '</span></span>';
   }
   function plaqueName(name) {
     const chars = Array.from(String(name || '這趟')).slice(0, 6);
@@ -676,18 +689,249 @@
   function plaqueHtml(mem) {
     const m = mem.motif || {};
     const voice = mem.voice || VOICE.plain;
+    const b = motifBits(mem);
     const clip = sovId('wood');
     const scene = SCENE[m.scene] || SCENE.hills;
     const chars = Array.from(String(mem.dest || ''));
     const seal = chars.length > 0 && chars.length <= 3
       ? '<rect x="124" y="72" width="16" height="16" fill="#b4332a"/><text x="132" y="84" text-anchor="middle" fill="#f6e0c0" font-size="10" font-weight="800">旅</text>'
       : '';
-    return '<span class="emacard papercard"><svg class="emaart" viewBox="0 0 200 228" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path class="ema-cord" d="M100 6 C118 16 124 32 100 42 C76 32 82 16 100 6" fill="none" stroke="#b4332a" stroke-width="3.2" stroke-linecap="round"/><circle cx="100" cy="24" r="5" fill="none" stroke="#b4332a" stroke-width="2.2"/><rect x="46" y="50" width="108" height="156" rx="8" fill="#e7c99a" stroke="#c4a36e" stroke-width="2"/><rect x="54" y="58" width="92" height="140" rx="4" fill="#f0dcb4"/><circle cx="100" cy="70" r="3.4" fill="#f6f1e7"/>' + plaqueName(mem.dest) + seal + '<clipPath id="' + clip + '"><rect x="54" y="58" width="92" height="140" rx="4"/></clipPath><g clip-path="url(#' + clip + ')"><g transform="translate(54,146) scale(.71875)">' + scene + '</g></g></svg><span class="paper-foot ema-foot"><span class="ema-pill">' + esc(voice.plaque) + '</span></span></span>';
+    const land = b.known ? '<small class="ema-land">' + esc(b.land) + '</small>' : '';
+    return '<span class="emacard papercard"><svg class="emaart" viewBox="0 0 200 228" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path class="ema-cord" d="M100 6 C118 16 124 32 100 42 C76 32 82 16 100 6" fill="none" stroke="#b4332a" stroke-width="3.2" stroke-linecap="round"/><circle cx="100" cy="24" r="5" fill="none" stroke="#b4332a" stroke-width="2.2"/><rect x="46" y="50" width="108" height="156" rx="8" fill="#e7c99a" stroke="#c4a36e" stroke-width="2"/><rect x="54" y="58" width="92" height="140" rx="4" fill="#f0dcb4"/><circle cx="100" cy="70" r="3.4" fill="#f6f1e7"/>' + plaqueName(mem.dest) + seal + '<clipPath id="' + clip + '"><rect x="54" y="58" width="92" height="140" rx="4"/></clipPath><g clip-path="url(#' + clip + ')"><g transform="translate(54,146) scale(.71875)">' + scene + '</g></g></svg><span class="paper-foot ema-foot"><span class="ema-pill">' + esc(voice.plaque) + '</span>' + land + '</span></span>';
   }
-  function packHtml(mem) {
-    const city = Array.from(String(mem.dest || '這趟')).slice(0, 6).join('');
-    const size = city.length > 4 ? 20 : city.length > 2 ? 26 : 32;
-    return '<span class="packcard papercard"><svg class="packart" viewBox="0 0 200 250" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><rect x="46" y="16" width="108" height="12" rx="3" fill="#c6a36a"/><rect x="28" y="30" width="144" height="192" rx="14" fill="#1e3a5f"/><rect x="40" y="42" width="120" height="168" rx="8" fill="#2a4f7a"/><rect x="40" y="108" width="120" height="10" fill="#e7b15a"/><path d="M40 113 H160" fill="none" stroke="#fffdf8" stroke-width="1.2" stroke-dasharray="5 4"/><circle cx="28" cy="113" r="7" fill="#f6f1e7"/><circle cx="172" cy="113" r="7" fill="#f6f1e7"/><text x="100" y="84" text-anchor="middle" fill="#e7b15a" font-size="12" font-weight="800" letter-spacing="2">CARD PACK</text><text x="100" y="164" text-anchor="middle" fill="#fffdf8" font-size="' + size + '" font-weight="800">' + esc(city) + '</text><text x="100" y="198" text-anchor="middle" fill="#e7b15a" font-size="18" font-weight="800" letter-spacing="4">卡包</text></svg><span class="paper-foot"><span>卡包</span></span></span>';
+  function lookIndex(trip) {
+    const n = trip && +trip.sovLook;
+    if (trip && trip.sovLook != null && trip.sovLook !== '' && n >= 0 && n <= 4) return n | 0;
+    return 0;
+  }
+  function lookKey(kind, i) {
+    const rows = LOOKS[kind] || LOOKS.card;
+    return (rows[i] || rows[0])[0];
+  }
+  function lookTitle(kind, i, mem) {
+    const country = (mem && mem.motif && mem.motif.country) || '';
+    const row = (LOOKS[kind] || LOOKS.card)[i] || ['', '呈現'];
+    if (kind === 'charm' && row[0] === 'rack' && country !== 'jp') return '木架掛排';
+    if (kind === 'charm' && row[0] === 'pouch' && country === 'tw') return '平安袋';
+    if (kind === 'charm' && row[0] === 'pouch' && country === 'kr') return '護身袋';
+    if (kind === 'charm' && row[0] === 'pouch' && country !== 'jp') return '祈福袋';
+    if (kind === 'charm' && row[0] === 'local') {
+      if (country === 'tw') return '平安符';
+      if (country === 'kr') return '護身符牌';
+      if (country === 'jp') return '金繡御守';
+      return '祈福牌';
+    }
+    if (kind === 'plaque' && row[0] === 'wall' && country !== 'jp') return '木架掛牆';
+    return row[1];
+  }
+  function motifBits(mem) {
+    const m = mem.motif || {};
+    return {
+      city: mem.dest || '這趟',
+      en: m.en || '',
+      land: m.known ? m.land : (mem.dest || ''),
+      food: m.known ? m.food : '旅途紀念',
+      foodEn: m.foodEn || '',
+      mark: m.mark || 'pin',
+      dish: m.dish || 'case',
+      scene: m.scene || 'hills',
+      blurb: m.blurb || ((mem.dest || '') + '・這趟先收在這裡'),
+      known: !!m.known,
+      country: m.country || ''
+    };
+  }
+  function inkOf(mem) {
+    const c = mem && mem.motif && mem.motif.country;
+    if (c === 'jp') return { main: '#c43737', gold: '#e6c98a', deep: '#8c3030', soft: '#fdeef2', line: '#c4785a' };
+    if (c === 'kr') return { main: '#8e2438', gold: '#d4b483', deep: '#6b1d32', soft: '#e7f0ea', line: '#3d6b56' };
+    if (c === 'tw') return { main: '#b4332a', gold: '#e0b15e', deep: '#8d312c', soft: '#f8efe6', line: '#c4785a' };
+    return { main: '#8a7564', gold: '#c6a36a', deep: '#6e5344', soft: '#f6f1e7', line: '#8a7564' };
+  }
+  function hashStr(s) {
+    let h = 2166136261;
+    const str = String(s || '');
+    for (let i = 0; i < str.length; i++) h = Math.imul(h ^ str.charCodeAt(i), 16777619);
+    return h >>> 0;
+  }
+  function sceneSvg(scene) {
+    return '<svg class="sceneart" viewBox="0 0 128 72" preserveAspectRatio="xMidYMid slice" aria-hidden="true">' + (SCENE[scene] || SCENE.hills) + '</svg>';
+  }
+  function markSvg(name, color) {
+    return '<svg class="markart" viewBox="0 0 64 64" aria-hidden="true" style="color:' + (color || 'currentColor') + '">' + markIcon(name) + '</svg>';
+  }
+  function dishSvg(name) {
+    return '<svg class="dishart" viewBox="0 0 64 64" aria-hidden="true">' + (DISH[name] || DISH.case) + '</svg>';
+  }
+  function cityLine(name, x, y, size, fill) {
+    const chars = Array.from(String(name || ''));
+    const fs = chars.length > 4 ? Math.max(13, size - 10) : chars.length > 2 ? size - 6 : size;
+    return '<text x="' + x + '" y="' + y + '" text-anchor="middle" fill="' + fill + '" font-size="' + fs + '" font-weight="800">' + esc(chars.slice(0, 6).join('')) + '</text>';
+  }
+  function barcodeSvg(seed) {
+    let h = hashStr(seed);
+    let x = 0;
+    let bars = '';
+    for (let i = 0; i < 34; i++) {
+      const w = (h & 3) === 0 ? 3 : ((h & 1) ? 2 : 1);
+      bars += '<rect x="' + x + '" y="0" width="' + w + '" height="26"/>';
+      x += w + 1;
+      h = (h >>> 1) | ((h & 1) << 31);
+    }
+    return '<svg class="barcode" viewBox="0 0 ' + x + ' 26" preserveAspectRatio="none" aria-hidden="true">' + bars + '</svg>';
+  }
+  function qrSvg(seed) {
+    let h = hashStr(seed || 'trip');
+    let rects = '';
+    for (let y = 0; y < 11; y++) {
+      for (let x = 0; x < 11; x++) {
+        const finder = (x < 3 && y < 3) || (x > 7 && y < 3) || (x < 3 && y > 7);
+        if (finder || ((h >>> ((x + y * 3) % 24)) & 1)) rects += '<rect x="' + (x * 5) + '" y="' + (y * 5) + '" width="4" height="4"/>';
+        if ((x + y) % 4 === 0) h = Math.imul(h ^ (x * 13 + y * 7), 16777619) >>> 0;
+      }
+    }
+    return '<svg class="qrart" viewBox="0 0 55 55" aria-hidden="true">' + rects + '</svg>';
+  }
+  function passRoute(mem) {
+    if (mem.from || mem.to) {
+      return '<span class="bp-route">' + airEnd(mem.from, mem.fromName) + '<span class="bp-go" aria-hidden="true">→</span>' + airEnd(mem.to, mem.toName) + '</span>';
+    }
+    return '<span class="bp-route"><span class="bp-end"><b>' + esc(mem.dest) + '</b></span></span>';
+  }
+  function passMetaLine(mem) {
+    return [mem.when.split(' · ')[0] || '', mem.no || '', mem.pax ? mem.pax + ' 人' : ''].filter(Boolean);
+  }
+  function passLook(mem, look) {
+    const b = motifBits(mem);
+    const meta = passMetaLine(mem);
+    const route = passRoute(mem);
+    const metaHtml = '<span class="bp-meta">' + meta.map(x => '<span>' + esc(x) + '</span>').join('') + '</span>';
+    if (look === 1) {
+      return '<span class="foldpass"><span class="fold-left"><span class="bp-top"><span>旅伴</span><b>登機證</b></span>' + route + metaHtml + barcodeSvg(mem.no || b.city) + '</span><span class="fold-right">' + sceneSvg(b.scene) + '<b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span></span>';
+    }
+    if (look === 2) {
+      return '<span class="phone"><span class="phone-top"><b>旅伴</b><span>電子登機證</span></span><span class="phone-city"><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span>' + route + metaHtml + '<span class="phone-qr">' + qrSvg(b.city + (mem.no || '')) + '</span><span class="phone-tip">請於起飛前完成登機</span></span>';
+    }
+    if (look === 3) {
+      return '<span class="booklet"><span class="book-cover"><b>旅伴</b><span>我的旅行日記</span><small>收集每一段旅程</small><i></i></span><span class="book-card"><b>' + esc(b.city) + '旅程</b>' + route + sceneSvg(b.scene) + '<small>' + esc(b.land) + '</small></span></span>';
+    }
+    return '<span class="sleeve"><span class="sleeve-hole" aria-hidden="true"></span><span class="sleeve-card">' + route + sceneSvg(b.scene) + '<b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small><em>紀念票卡</em></span></span>';
+  }
+  function stampLook(mem, look) {
+    const b = motifBits(mem);
+    const ink = '#c4473c';
+    if (look === 1) {
+      return '<span class="sqseal"><svg viewBox="0 0 200 200" aria-hidden="true"><rect x="16" y="16" width="168" height="168" fill="none" stroke="' + ink + '" stroke-width="7"/><rect x="28" y="28" width="144" height="144" fill="none" stroke="' + ink + '" stroke-width="2"/><g transform="translate(68,40) scale(.9)" style="color:' + ink + '">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 100, 128, 28, ink) + '<text x="100" y="156" text-anchor="middle" fill="' + ink + '" font-size="13" font-weight="700">' + esc(b.land) + '</text></svg></span>';
+    }
+    if (look === 2) {
+      return '<span class="passpage"><span class="passpage-top"><b>旅伴</b><span>TripMate</span></span><span class="mini-seal" style="color:' + ink + '">' + markSvg(b.mark, ink) + '<b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span><span class="passpage-note">這趟的地標印記</span></span>';
+    }
+    if (look === 3) {
+      return '<span class="inkset"><span class="ink-wood"><span class="ink-pad" aria-hidden="true"></span><span class="ink-tool"><i></i><span>' + markSvg(b.mark, '#6b4630') + '</span></span></span><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span>';
+    }
+    return '<span class="foilseal"><svg viewBox="0 0 200 200" aria-hidden="true"><path d="M18 36 V18 H36 M164 18 H182 V36 M18 164 V182 H36 M164 182 H182 V164" fill="none" stroke="#c6a15a" stroke-width="2"/><g transform="translate(68,36) scale(.95)" style="color:#b0893e">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 100, 132, 28, '#8a6a32') + '<text x="100" y="162" text-anchor="middle" fill="#b0893e" font-size="13" font-weight="700">' + esc(b.land) + '</text></svg></span>';
+  }
+  function charmArt(mem) {
+    return '<svg class="charmart" viewBox="0 0 140 214" preserveAspectRatio="xMidYMid meet" aria-hidden="true">' + charmSvg(mem) + '</svg>';
+  }
+  function charmLook(mem, look) {
+    const b = motifBits(mem);
+    const voice = mem.voice || VOICE.plain;
+    const ink = inkOf(mem);
+    const cap = '<span class="paper-extra charm-cap">' + esc(voice.charm) + '</span>';
+    if (look === 1) {
+      return '<span class="envcard"><svg viewBox="0 0 240 168" aria-hidden="true"><rect x="14" y="28" width="212" height="124" rx="10" fill="' + ink.soft + '" stroke="' + ink.line + '" stroke-width="2"/><path d="M14 36 L120 104 L226 36" fill="#fffdf8" stroke="' + ink.line + '" stroke-width="2"/><circle cx="120" cy="78" r="16" fill="' + ink.gold + '" stroke="' + ink.deep + '" stroke-width="2"/><g transform="translate(104,62) scale(.42)" style="color:' + ink.deep + '">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 120, 132, 22, ink.deep) + '<text x="120" y="148" text-anchor="middle" fill="' + ink.line + '" font-size="11" font-weight="800" letter-spacing="1">' + esc(b.land) + '</text></svg>' + cap + '</span>';
+    }
+    if (look === 2) {
+      const rackName = b.country === 'jp' ? '神社掛排' : '木架掛排';
+      return '<span class="rackcard"><span class="rack-bar" aria-hidden="true"></span><span class="rack-hook">' + charmArt(mem) + '<b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span><span class="paper-extra">' + esc(rackName) + '・' + esc(voice.charm) + '</span></span>';
+    }
+    if (look === 3) {
+      return '<span class="showcard"><span class="show-hole" aria-hidden="true"></span><span class="show-row"><span class="show-bubble">' + charmArt(mem) + '</span><span class="show-side">' + sceneSvg(b.scene) + '<b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span></span><span class="show-foot">✿ ' + esc(voice.charm) + ' · 旅伴</span></span>';
+    }
+    if (b.country === 'tw') {
+      return '<span class="fancard"><svg viewBox="0 0 220 196" aria-hidden="true"><path d="M28 86 Q36 34 110 26 Q184 34 192 86 Q206 124 168 142 H52 Q14 124 28 86 Z" fill="#c4473c"/><path d="M46 90 Q58 52 110 46 Q162 52 174 90 Q184 116 156 130 H64 Q36 116 46 90 Z" fill="#b4332a"/><path d="M78 58 q8 6 0 12 M110 48 q8 8 0 14 M142 58 q8 6 0 12" fill="none" stroke="' + ink.gold + '" stroke-width="2"/><g transform="translate(86,70) scale(.7)" style="color:' + ink.gold + '">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 110, 132, 26, '#fff6e4') + '<text x="110" y="150" text-anchor="middle" fill="' + ink.gold + '" font-size="11" font-weight="800">' + esc(b.land) + '</text><path d="M110 142 v18" stroke="' + ink.gold + '" stroke-width="2"/><path d="M100 168 h20 l-4 16 h-12 z" fill="' + ink.gold + '"/></svg><span class="paper-extra">' + esc(voice.charm) + '・' + esc(b.land) + '</span></span>';
+    }
+    if (b.country === 'kr') {
+      return '<span class="kcharm"><svg viewBox="0 0 160 210" aria-hidden="true"><rect x="28" y="16" width="104" height="160" rx="8" fill="#fbf6ee" stroke="' + ink.main + '" stroke-width="3"/><circle cx="80" cy="52" r="16" fill="#f4efe6"/><path d="M80 36 a16 16 0 0 1 0 32 a8 8 0 0 1 0-16 a8 8 0 0 0 0-16" fill="' + ink.main + '"/><circle cx="80" cy="46" r="2.2" fill="' + ink.main + '"/><circle cx="80" cy="58" r="2.2" fill="#f4efe6"/>' + cityLine(b.city, 80, 100, 22, ink.deep) + '<text x="80" y="124" text-anchor="middle" fill="' + ink.main + '" font-size="13" font-weight="800">' + esc(voice.word) + '</text><text x="80" y="146" text-anchor="middle" fill="#8a7564" font-size="12" font-weight="700">' + esc(b.land) + '</text><path d="M80 176 v16" stroke="' + ink.main + '" stroke-width="2"/><path d="M68 196 h24 l-6 10 h-12 z" fill="' + ink.main + '"/></svg>' + cap + '</span>';
+    }
+    if (b.country === 'jp') {
+      return '<span class="goldcharm"><svg viewBox="0 0 160 210" aria-hidden="true"><path d="M80 8 C70 8 58 18 60 28 C62 38 70 44 80 44 C90 44 98 38 100 28 C102 18 90 8 80 8 Z" fill="none" stroke="' + ink.main + '" stroke-width="3"/><path d="M36 70 L80 52 L124 70 V168 H36 Z" fill="#fbf6ee" stroke="' + ink.gold + '" stroke-width="3"/><g transform="translate(48,78) scale(.55)" style="color:' + ink.main + '">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 80, 128, 18, ink.deep) + '<text x="80" y="150" text-anchor="middle" fill="' + ink.main + '" font-size="13" font-weight="800">' + esc(b.land) + '</text></svg>' + cap + '</span>';
+    }
+    return '<span class="plaincharm"><svg viewBox="0 0 160 200" aria-hidden="true"><rect x="36" y="28" width="88" height="140" rx="12" fill="#f6f1e7" stroke="#b0893e" stroke-width="2"/><g transform="translate(48,48) scale(.55)" style="color:#8a7564">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 80, 116, 18, '#3a2a22') + '<text x="80" y="140" text-anchor="middle" fill="#8a7564" font-size="13" font-weight="800">' + esc(b.land) + '</text></svg>' + cap + '</span>';
+  }
+  function cardLook(mem, look) {
+    const b = motifBits(mem);
+    const ink = inkOf(mem);
+    if (look === 1) {
+      return '<span class="foilpost"><svg viewBox="0 0 240 168" aria-hidden="true"><rect width="240" height="168" rx="16" fill="#fbf6ee"/><g transform="translate(88,18) scale(1)" style="color:#b0893e">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 120, 108, 26, '#8a6a32') + '<text x="120" y="132" text-anchor="middle" fill="#b0893e" font-size="13" font-weight="700">' + esc(b.land) + '</text><text x="120" y="152" text-anchor="middle" fill="#c6a15a" font-size="11" font-weight="800" letter-spacing="1">' + esc(b.en) + '</text></svg></span>';
+    }
+    if (look === 2) {
+      return '<span class="scratchcard"><b>' + esc(b.city) + '</b><span class="scratch-win">' + sceneSvg(b.scene) + '<span class="scratch-flake">刮開看看</span></span><small>' + esc(b.land) + '</small></span>';
+    }
+    if (look === 3) {
+      return '<span class="popupcard"><span class="pop-side"></span><span class="pop-mid">' + markSvg(b.mark, ink.main) + '<b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span><span class="pop-side"></span></span>';
+    }
+    return '<span class="framecard"><span class="frame-wood"><span class="frame-inner">' + sceneSvg(b.scene) + '</span><i aria-hidden="true"></i></span><span class="frame-stand" aria-hidden="true"></span><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span>';
+  }
+  function badgeLook(mem, look) {
+    const b = motifBits(mem);
+    const ink = inkOf(mem);
+    if (look === 1) {
+      return '<span class="shieldbadge"><svg viewBox="0 0 180 200" aria-hidden="true"><path d="M90 12 L156 36 V96 C156 140 126 170 90 188 C54 170 24 140 24 96 V36 Z" fill="' + (b.country === 'kr' ? '#1f6b45' : '#2f6a4a') + '"/><path d="M90 28 L140 46 V96 C140 128 116 152 90 168 C64 152 40 128 40 96 V46 Z" fill="#f4efe4"/><g transform="translate(58,52) scale(.95)" style="color:' + ink.deep + '">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 90, 148, 18, '#1c140f') + '<text x="90" y="168" text-anchor="middle" fill="' + ink.line + '" font-size="11" font-weight="800">' + esc(b.land) + '</text></svg><small class="paper-extra">' + esc(b.land) + '</small></span>';
+    }
+    if (look === 2) {
+      return '<span class="hexbadge"><span class="hex-shell"><span class="hex-face">' + sceneSvg(b.scene) + '<span class="hex-dish">' + dishSvg(b.dish) + '</span><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span></span></span>';
+    }
+    if (look === 3) {
+      return '<span class="pinboard"><span class="pin-oval">' + markSvg(b.mark, ink.main) + '<b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span><span class="paper-extra">別針收藏・' + esc(b.food) + '</span></span>';
+    }
+    return '<span class="tinbadge"><span class="tin-lid">' + dishSvg(b.dish) + '<b>' + esc(b.city) + '</b><small>' + esc(b.food) + '</small></span><span class="tin-side">' + esc(b.land) + '</span></span>';
+  }
+  function plaqueSmall(mem) {
+    const b = motifBits(mem);
+    const voice = mem.voice || VOICE.plain;
+    const land = b.known ? '<text x="100" y="176" text-anchor="middle" fill="#8a5a3c" font-size="12" font-weight="700">' + esc(b.land) + '</text>' : '';
+    return '<span class="emacard papercard"><svg class="emaart" viewBox="0 0 200 228" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path class="ema-cord" d="M100 6 C116 16 122 30 100 38 C78 30 84 16 100 6" fill="none" stroke="#b4332a" stroke-width="3" stroke-linecap="round"/><circle cx="100" cy="20" r="4.2" fill="none" stroke="#b4332a" stroke-width="2"/><path d="M100 40 L178 96 L154 200 L46 200 L22 96 Z" fill="#e7c99a" stroke="#c4a36e" stroke-width="2"/><path d="M100 54 L164 102 L146 188 L54 188 L36 102 Z" fill="#f3e0c4"/>' + plaqueName(mem.dest) + land + '</svg><span class="paper-foot ema-foot"><span class="ema-pill">' + esc(voice.plaque) + '</span></span></span>';
+  }
+  function plaqueLook(mem, look) {
+    const b = motifBits(mem);
+    const voice = mem.voice || VOICE.plain;
+    const ink = inkOf(mem);
+    if (look === 2) {
+      const rack = b.country === 'jp' ? '神社掛牆' : '木架掛牆';
+      return '<span class="emawall"><span class="ema-rail" aria-hidden="true"></span><span class="ema-hang"><svg viewBox="0 0 120 150" aria-hidden="true"><path d="M60 4 v16" stroke="#b4332a" stroke-width="2"/><circle cx="60" cy="8" r="4" fill="none" stroke="#b4332a"/><rect x="18" y="22" width="84" height="112" rx="8" fill="#f0dcb4" stroke="#c4a36e" stroke-width="2"/><g transform="translate(28,36) scale(.7)" style="color:' + ink.deep + '">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 60, 112, 16, '#2a2118') + '</svg><small>' + esc(b.land) + '</small></span><span class="paper-extra">' + esc(rack) + '・' + esc(voice.plaque) + '</span></span>';
+    }
+    if (look === 3) {
+      return '<span class="wishtag"><svg viewBox="0 0 220 200" aria-hidden="true"><path d="M18 70 Q28 24 110 16 Q192 24 202 70 L184 150 H36 Z" fill="#e7a0a8"/><path d="M40 74 Q52 40 110 34 Q168 40 180 74 L168 136 H52 Z" fill="#f6d5d8"/><g transform="translate(78,58) scale(.7)" style="color:#8d312c">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 110, 122, 22, '#8d312c') + '<text x="110" y="146" text-anchor="middle" fill="#a85a4c" font-size="12" font-weight="800">心想事成</text><text x="110" y="184" text-anchor="middle" fill="#8a7564" font-size="12" font-weight="700">' + esc(b.land) + '</text></svg><span class="paper-extra">許願牌</span></span>';
+    }
+    return '<span class="praytag"><svg viewBox="0 0 180 220" aria-hidden="true"><path d="M90 8 C78 8 70 20 74 30 C78 40 90 46 90 46 C90 46 102 40 106 30 C110 20 102 8 90 8 Z" fill="none" stroke="#c4785a" stroke-width="3"/><rect x="28" y="40" width="124" height="140" rx="16" fill="#f3e0c0" stroke="#c4a36e" stroke-width="2"/><g transform="translate(58,52) scale(.85)" style="color:#8c3030">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 90, 130, 20, '#3a2a22') + '<text x="90" y="156" text-anchor="middle" fill="#8c3030" font-size="14" font-weight="800">祈福</text><path d="M90 180 v14" stroke="#3d6b8a" stroke-width="2"/><path d="M78 198 h24 l-6 12 h-12 z" fill="#c45b73"/></svg><span class="paper-extra">' + esc(b.land) + '</span></span>';
+  }
+  function packLook(mem, look) {
+    const b = motifBits(mem);
+    const ink = inkOf(mem);
+    if (look === 1) {
+      return '<span class="rigidbox"><span class="rigid-win"><span class="rigid-card">旅伴</span><span class="rigid-card">旅伴</span><span class="rigid-card on">' + esc(b.city) + '</span></span><b>旅伴 TripMate</b><small>' + esc(b.land) + '</small></span>';
+    }
+    if (look === 2) {
+      return '<span class="drawerbox"><span class="drawer-tray"><span>旅伴</span><span>' + esc(b.city) + '</span></span><span class="drawer-face">' + sceneSvg(b.scene) + '</span><small>' + esc(b.land) + '</small></span>';
+    }
+    if (look === 3) {
+      return '<span class="clearpack"><span class="clear-card"><b>旅伴</b><small>TripMate</small></span><span class="clear-card on">' + markSvg(b.mark, ink.main) + '<b>' + esc(b.city) + '</b></span><small>' + esc(b.land) + '</small></span>';
+    }
+    if (look === 4) {
+      return '<span class="citypack">' + sceneSvg(b.scene) + '<b>' + esc(b.city) + '</b><small>' + esc(b.en) + '</small><em>城市限定封</em><i>' + esc(b.land) + '</i></span>';
+    }
+    return '<span class="softpack"><span class="soft-notch" aria-hidden="true"></span><b>' + esc(b.city) + '</b><small>' + esc(b.en) + '</small>' + dishSvg(b.dish) + '<em>' + esc(b.food) + '</em><span>卡包</span><i>' + esc(b.land) + '</i></span>';
+  }
+  function souvenirBody(mem) {
+    const look = mem.look || 0;
+    if (mem.kind === 'pass') return look === 0 ? passHtml(mem) : passLook(mem, look);
+    if (mem.kind === 'stamp') return look === 0 ? stampHtml(mem) : stampLook(mem, look);
+    if (mem.kind === 'charm') return look === 0 ? charmHtml(mem) : charmLook(mem, look);
+    if (mem.kind === 'badge') return look === 0 ? badgeHtml(mem) : badgeLook(mem, look);
+    if (mem.kind === 'plaque') return look === 0 ? plaqueSmall(mem) : (look === 1 ? plaqueHtml(mem) : plaqueLook(mem, look));
+    if (mem.kind === 'pack') return packLook(mem, look);
+    return look === 0 ? cardHtml(mem) : cardLook(mem, look);
   }
   function badgeShape(kind, dish) {
     const icon = '<g transform="translate(16,16) scale(.5)">' + (DISH[dish] || DISH.case) + '</g>';
@@ -722,29 +966,21 @@
     const pen = emaPenSvg(land);
     return '<span class="ema-vars"><span class="ema-pair"><span class="bvar ema-sm" data-lab="小的單掛">' + pen + '<small>小</small></span><span class="bvar ema-lgv" data-lab="大的單掛">' + pen + '<small>大 · 單掛</small></span></span>' + emaRackSvg(mem) + '<small class="ema-racklab">掛牆</small></span>';
   }
-  function withTail(html, tail) {
-    if (!tail) return html;
-    const i = html.lastIndexOf('</span>');
-    return i < 0 ? html + tail : html.slice(0, i) + tail + html.slice(i);
-  }
   function souvenirMarkup(trip, diary, opt) {
     opt = opt || {};
     const mem = opt.mem || memoryOf(trip, diary);
+    if (opt.look != null && opt.look !== '') {
+      const n = +opt.look;
+      if (n >= 0 && n <= 4) mem.look = n | 0;
+    } else if (!(mem.look >= 0)) mem.look = lookIndex(trip);
+    mem.lookKey = lookKey(mem.kind, mem.look || 0);
     const size = opt.size === 'lg' ? 'lg' : 'mini';
-    let body = mem.kind === 'pass' ? passHtml(mem)
-      : mem.kind === 'stamp' ? stampHtml(mem)
-      : mem.kind === 'charm' ? charmHtml(mem)
-      : mem.kind === 'badge' ? badgeHtml(mem)
-      : mem.kind === 'plaque' ? plaqueHtml(mem)
-      : mem.kind === 'pack' ? packHtml(mem)
-      : cardHtml(mem);
-    if (size === 'lg' && mem.kind === 'badge') body = withTail(body, badgeVariants(mem));
-    if (size === 'lg' && mem.kind === 'plaque') body = withTail(body, emaVariants(mem));
+    const body = souvenirBody(mem);
     const cap = opt.cap === false ? '' : (mem.kind === 'pass'
       ? '<span class="sovcap"><b>' + esc(mem.dest) + '</b><small>' + esc(mem.label) + '</small></span>'
       : '<span class="sovcap"><small>' + esc(mem.label) + '</small></span>');
     const poke = size === 'lg' ? ' sov-poke' : '';
-    return '<span class="sov sov-' + mem.kind + ' sov-' + size + poke + ' tone-' + mem.tone + '"><span class="sov-hold"><span class="sov-body">' + body + '</span></span>' + cap + '</span>';
+    return '<span class="sov sov-' + mem.kind + ' sov-' + size + poke + ' tone-' + mem.tone + ' look-' + mem.lookKey + '" data-look="' + mem.lookKey + '" aria-label="' + esc((mem.dest || '') + '的' + (mem.label || '紀念品')) + '"><span class="sov-hold"><span class="sov-body">' + body + '</span></span>' + cap + '</span>';
   }
   const POKE_MS = { pass: 1400, card: 1360, stamp: 1480, charm: 1460, badge: 1400, plaque: 1460, pack: 1320 };
   let holdTilt = null;
@@ -840,8 +1076,13 @@
       const k = pair[0], lab = pair[1];
       return '<button type="button" class="' + (k === mem.kind ? 'on' : '') + '" onclick="Journey.setSouvenir(\'' + id + '\',\'' + k + '\')">' + lab + '</button>';
     }).join('') + '</div>' : '';
+    const lookLab = (mem.kind === 'charm' || mem.kind === 'plaque') ? '換一種掛法' : '換一種呈現';
+    const lookRows = LOOKS[mem.kind] || [];
+    const lookPick = id ? '<p class="sovpicklab">' + lookLab + '</p><div class="seg sovpick sovlook" role="group" aria-label="' + lookLab + '">' + lookRows.map(function (row, i) {
+      return '<button type="button" class="' + (i === (mem.look || 0) ? 'on' : '') + '" onclick="Journey.setLook(\'' + id + '\',' + i + ')">' + esc(lookTitle(mem.kind, i, mem)) + '</button>';
+    }).join('') + '</div>' : '';
     const actions = '<div class="row"><button type="button" class="btn" onclick="Journey.replaySouvenir()">再看一次</button><button type="button" class="btn ghost" onclick="Journey.openKeepsakes()">返回收藏</button></div>' + (id ? '<div class="row"><button type="button" class="btn ghost" onclick="Journey.openKeptTrip(\'' + id + '\')">翻開行程</button><button type="button" class="btn ghost" onclick="Journey.releaseSouvenir(\'' + id + '\')">解除封存</button></div><p class="sovdrop"><button type="button" class="textbtn" onclick="Journey.dropSouvenir(\'' + id + '\')">刪除這趟</button></p>' : '');
-    return '<article class="sovrecap" hidden aria-live="polite">' + settleHtml(mem) + '<p class="sovkicker">這趟的小結算</p><h2>' + esc(mem.dest || '') + '</h2><p class="sovwhen">' + esc(mem.when || '') + '</p><p class="sovroute"><span>航線</span>' + route + '</p><div class="sovstats"><p class="sovstat"><b>' + counts.places + '</b><span>去過的景點</span></p><p class="sovstat"><b>' + counts.eats + '</b><span>吃過的店</span></p></div><p class="sovline">' + esc(mem.line || '') + '</p>' + places + empty + pick + actions + '</article>';
+    return '<article class="sovrecap" hidden aria-live="polite">' + settleHtml(mem) + '<p class="sovkicker">這趟的小結算</p><h2>' + esc(mem.dest || '') + '</h2><p class="sovwhen">' + esc(mem.when || '') + '</p><p class="sovroute"><span>航線</span>' + route + '</p><div class="sovstats"><p class="sovstat"><b>' + counts.places + '</b><span>去過的景點</span></p><p class="sovstat"><b>' + counts.eats + '</b><span>吃過的店</span></p></div><p class="sovline">' + esc(mem.line || '') + '</p>' + places + empty + pick + lookPick + actions + '</article>';
   }
   function settleItems(mem) {
     const out = [];
@@ -2271,8 +2512,7 @@
     const layer = layerEl();
     layer.classList.remove('sov-settled');
     layer.classList.add('sov-playing');
-    layer.innerHTML = '<div class="achpage sovpage"><button type="button" class="btn ghost sm" onclick="Journey.openKeepsakes()">返回收藏</button><div class="sovstage"><button type="button" class="sovplay" onclick="Journey.replaySouvenir()" aria-label="再看一次這件' + esc(mem.label) + '">' + souvenirMarkup(t, diary, { size: 'lg', cap: false, mem: mem }) + '</button></div>' + recapMarkup(mem, tallyTrip(t, diary), sid) + '</div>';
-    layer.hidden = false;
+    layer.innerHTML = '<div class="achpage sovpage"><button type="button" class="btn ghost sm" onclick="Journey.openKeepsakes()">返回收藏</button><div class="sovstage"><button type="button" class="sovplay" onclick="Journey.replaySouvenir()" aria-label="再看一次這件' + esc(mem.label) + '">' + souvenirMarkup(t, diary, { size: 'lg', cap: false, mem: mem }) + '</button></div>' + recapMarkup(mem, tallyTrip(t, diary), sid) + '</div>';    layer.hidden = false;
     armTilt(layer);
     playSouvenir(layer.querySelector('.sov'), function () { revealRecap(layer); });
   }
@@ -2282,6 +2522,22 @@
     const t = tripsNow().find(x => x && x.id === sid);
     if (!t || !t.archived) return;
     t.souvenir = kind;
+    t.metaRev = Date.now();
+    try { TM.save(); } catch (e) {}
+    const shelf = typeof document !== 'undefined' && document.querySelector('.sovshelf');
+    if (shelf) {
+      const html = shelfHtml(archivedTrips(tripsNow()));
+      if (html) shelf.outerHTML = html;
+    }
+    openSouvenir(sid);
+  }
+  function setLook(id, look) {
+    const sid = safeTid(id);
+    const n = +look;
+    if (!sid || !(n >= 0 && n <= 4)) return;
+    const t = tripsNow().find(x => x && x.id === sid);
+    if (!t || !t.archived) return;
+    t.sovLook = n | 0;
     t.metaRev = Date.now();
     try { TM.save(); } catch (e) {}
     const shelf = typeof document !== 'undefined' && document.querySelector('.sovshelf');
@@ -2319,8 +2575,7 @@
     if (t.archived) { unarchive(); return; }
     const sum = summarize(t, diaryNow());
     const kind = kindOk(t.souvenir) ? t.souvenir : suggestSouvenir(t, diaryNow());
-    document.querySelector('#sheetBody').innerHTML = `<h2>收成紀念品</h2><p>把「${esc(t.dest)}」收成一件${esc(kindLabel(kind))}。封存後只能看，也可以再換成登機證、紀念卡、印章、護符、徽章、木牌或卡包。</p><p class="mut">${sum.days} 天 · 去過 ${sum.visited} 個景點 · 美食日記 ${sum.diary} 則 · ${esc(sum.spend)}</p><div class="row"><button type="button" class="btn ghost" onclick="Journey.dismissArchive()">先不要</button><button type="button" class="btn" onclick="Journey.startArchive()">收成紀念品</button></div>`;
-    TM.openSheet();
+    document.querySelector('#sheetBody').innerHTML = `<h2>收成紀念品</h2><p>把「${esc(t.dest)}」收成一件${esc(kindLabel(kind))}。封存後只能看，也可以再換成登機證、紀念卡、印章、護符、徽章、木牌或卡包，每一種都有五種呈現。</p><p class="mut">${sum.days} 天 · 去過 ${sum.visited} 個景點 · 美食日記 ${sum.diary} 則 · ${esc(sum.spend)}</p><div class="row"><button type="button" class="btn ghost" onclick="Journey.dismissArchive()">先不要</button><button type="button" class="btn" onclick="Journey.startArchive()">收成紀念品</button></div>`;    TM.openSheet();
   }
   function dismissArchive() { TM.closeSheet(); }
   function startArchive() {
@@ -2416,7 +2671,7 @@
     openAchieve, peek, closeLayer, celebrate, doneCelebrate, openVisitMap, openCityMap, focusVisit, openMappedTrip,
     focusSpot, clearSpot, resetMap, zoomMap,
     themeSheet, setTripStyle, askArchive, dismissArchive, startArchive, unarchive, promptArchive, maybePrompt,
-    SOUVENIRS, AIR_ZH, suggestSouvenir, souvenirOf, memoryOf, souvenirMarkup, shelfHtml, motifOf,
-    openKeepsakes, openSouvenir, setSouvenir, openKeptTrip, releaseSouvenir, dropSouvenir, pokeSouvenir, replaySouvenir, recapMarkup, tallyTrip, settleAct
+    SOUVENIRS, LOOKS, AIR_ZH, suggestSouvenir, souvenirOf, memoryOf, souvenirMarkup, shelfHtml, motifOf, lookTitle,
+    openKeepsakes, openSouvenir, setSouvenir, setLook, openKeptTrip, releaseSouvenir, dropSouvenir, pokeSouvenir, replaySouvenir, recapMarkup, tallyTrip, settleAct
   };
 });
