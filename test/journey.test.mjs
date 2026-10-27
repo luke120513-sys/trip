@@ -279,7 +279,7 @@ assert.match(page, /theme-tw/);
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v69/);
+assert.match(sw, /tripmate-v70/);
 assert.match(sw, /journey\.js/);
 assert.match(page, /v2\.24\.2/);
 assert.match(page, /openVisitMap/);
