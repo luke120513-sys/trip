@@ -237,8 +237,58 @@ assert.match(page, /theme-tw/);
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v56/);
+assert.match(sw, /tripmate-v57/);
 assert.match(sw, /journey\.js/);
+assert.match(page, /v2\.14\.0/);
+assert.match(page, /openVisitMap/);
+assert.match(page, /class="vmap-entry"/);
+assert.match(page, /\.ach-q/);
+
+const locked = J.achMarkup('tyo-senso', {});
+assert.match(locked, /class="ach-q"/);
+assert.match(locked, /aria-label="如何完成：淺草寺參拜"/);
+assert.match(locked, /Journey\.howTo\('tyo-senso'\)/);
+assert.match(locked, /在淺草寺蓋上到此一遊/);
+assert.equal(locked.startsWith('<div'), true);
+const earnedCard = J.achMarkup('tyo-senso', { 'tyo-senso': 1712000000000 });
+assert.equal(earnedCard.startsWith('<button'), true);
+assert.equal(earnedCard.includes('ach-q'), false);
+J.CARDS.forEach(c => {
+  assert.equal(J.howTo(c.id), c.hint);
+  assert.match(c.hint, /[\u4e00-\u9fff]/);
+});
+assert.equal(J.howTo('missing-card'), '');
+
+const seenTrips = [
+  trip({ id: 'tokyo-1', dest: '東京', archived: true, days: [[{ name: '伏見稻荷大社', visited: true }]] }),
+  trip({ id: 'nrt-1', dest: 'NRT', days: [[]] }),
+  trip({ id: 'tpe-1', dest: '台北', days: [[{ name: '故宮博物院' }]] }),
+  trip({ id: 'pus-1', dest: '釜山', archived: true, days: [[]] }),
+  trip({ id: 'hul-1', dest: '花蓮', days: [[{ name: '太魯閣', from: 'TSA', to: 'HUN' }]] })
+];
+const places = J.visitedPlaces(seenTrips);
+const by = Object.fromEntries(places.map(p => [p.id, p]));
+assert.equal(by.tyo.on, true);
+assert.equal(by.kyo.on, true);
+assert.equal(by.osa.on, false);
+assert.equal(by.tpe.on, true);
+assert.equal(by.pus.on, true);
+assert.equal(by.sel.on, false);
+assert.equal(by.hul.on, true);
+assert.equal(by.tyo.trips.length, 2);
+assert.equal(by.tyo.trips.some(t => t.archived), true);
+assert.equal(J.visitBrief(seenTrips), '日本 2 · 韓國 1 · 台灣 2');
+assert.equal(J.visitBrief([]), '還沒有點亮的城市');
+const jpMap = J.visitMapMarkup('jp', places);
+assert.match(jpMap, /aria-label="日本地圖"/);
+assert.match(jpMap, /data-city="tyo"/);
+assert.match(jpMap, /class="pin on"/);
+assert.match(jpMap, /data-city="osa"[^>]*>[\s\S]*?<circle class="pin"/);
+const twMap = J.visitMapMarkup('tw', places);
+assert.match(twMap, /data-city="tpe"/);
+assert.match(twMap, /data-city="hul"/);
+assert.match(twMap, /台灣地圖/);
+assert.equal(J.visitMapMarkup('nope', places), '');
 
 const store = {};
 globalThis.TM = {
