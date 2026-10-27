@@ -677,7 +677,7 @@
     const seal = chars.length > 0 && chars.length <= 3
       ? '<rect x="124" y="72" width="16" height="16" fill="#b4332a"/><text x="132" y="84" text-anchor="middle" fill="#f6e0c0" font-size="10" font-weight="800">旅</text>'
       : '';
-    return '<span class="emacard papercard"><svg class="emaart" viewBox="0 0 200 228" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M100 6 C118 16 124 32 100 42 C76 32 82 16 100 6" fill="none" stroke="#b4332a" stroke-width="3.2" stroke-linecap="round"/><circle cx="100" cy="24" r="5" fill="none" stroke="#b4332a" stroke-width="2.2"/><rect x="46" y="50" width="108" height="156" rx="8" fill="#e7c99a" stroke="#c4a36e" stroke-width="2"/><rect x="54" y="58" width="92" height="140" rx="4" fill="#f0dcb4"/><circle cx="100" cy="70" r="3.4" fill="#f6f1e7"/>' + plaqueName(mem.dest) + seal + '<clipPath id="' + clip + '"><rect x="54" y="58" width="92" height="140" rx="4"/></clipPath><g clip-path="url(#' + clip + ')" transform="translate(54,146) scale(.71875)">' + scene + '</g></svg><span class="paper-foot ema-foot"><span class="ema-pill">' + esc(voice.plaque) + '</span></span></span>';
+    return '<span class="emacard papercard"><svg class="emaart" viewBox="0 0 200 228" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path class="ema-cord" d="M100 6 C118 16 124 32 100 42 C76 32 82 16 100 6" fill="none" stroke="#b4332a" stroke-width="3.2" stroke-linecap="round"/><circle cx="100" cy="24" r="5" fill="none" stroke="#b4332a" stroke-width="2.2"/><rect x="46" y="50" width="108" height="156" rx="8" fill="#e7c99a" stroke="#c4a36e" stroke-width="2"/><rect x="54" y="58" width="92" height="140" rx="4" fill="#f0dcb4"/><circle cx="100" cy="70" r="3.4" fill="#f6f1e7"/>' + plaqueName(mem.dest) + seal + '<clipPath id="' + clip + '"><rect x="54" y="58" width="92" height="140" rx="4"/></clipPath><g clip-path="url(#' + clip + ')" transform="translate(54,146) scale(.71875)">' + scene + '</g></svg><span class="paper-foot ema-foot"><span class="ema-pill">' + esc(voice.plaque) + '</span></span></span>';
   }
   function souvenirMarkup(trip, diary, opt) {
     opt = opt || {};
@@ -695,45 +695,122 @@
     const poke = size === 'lg' ? ' sov-poke' : '';
     return '<span class="sov sov-' + mem.kind + ' sov-' + size + poke + ' tone-' + mem.tone + '"><span class="sov-body">' + body + '</span>' + cap + '</span>';
   }
+  const POKE_MS = { pass: 1120, card: 1080, stamp: 1160, charm: 1160, badge: 1120, plaque: 1160 };
   function motionNodes(sov) {
-    return sov.querySelectorAll('.sov-body,.charmart,.emaart,.sealart,.pinart,.bp,.mcard-stamp');
+    return sov.querySelectorAll('.sov-body,.charmart,.emaart,.sealart,.pinart,.bp,.mcard-stamp,.badge-case,.charm-foot i');
   }
   function settleSouvenir(sov) {
     if (!sov) return;
     sov.classList.remove('sov-poke');
+    sov.classList.add('sov-rest');
     motionNodes(sov).forEach(function (el) {
       el.style.animation = 'none';
       el.style.transform = 'none';
+      el.style.filter = 'none';
     });
   }
-  function pokeSouvenir(el) {
-    const root = el && el.querySelector ? el : null;
-    const sov = root && (root.classList && root.classList.contains('sov') ? root : root.querySelector('.sov'));
-    if (!sov || reduced()) return;
+  function playSouvenir(sov, done) {
+    if (!sov || reduced()) {
+      if (sov) settleSouvenir(sov);
+      if (done) done();
+      return;
+    }
+    const token = {};
+    sov._play = token;
+    clearTimeout(sov._settle);
+    sov.classList.remove('sov-rest');
     sov.classList.remove('sov-poke');
     motionNodes(sov).forEach(function (node) {
       node.style.animation = '';
       node.style.transform = '';
+      node.style.filter = '';
     });
     void sov.offsetWidth;
     sov.classList.add('sov-poke');
-    clearTimeout(sov._settle);
-    sov._settle = setTimeout(function () { settleSouvenir(sov); }, 900);
+    const kind = (sov.className.match(/sov-(pass|card|stamp|charm|badge|plaque)/) || [])[1];
     try { haptic(12); } catch (e) {}
+    sov._settle = setTimeout(function () {
+      if (sov._play !== token) return;
+      settleSouvenir(sov);
+      if (done) done();
+    }, POKE_MS[kind] || 1120);
+  }
+  function pokeSouvenir(el) {
+    const layer = el && el.closest ? el.closest('#jlayer') : null;
+    if (layer && layer.querySelector('.sovrecap')) { replaySouvenir(); return; }
+    const root = el && el.querySelector ? el : null;
+    const sov = root && (root.classList && root.classList.contains('sov') ? root : root && root.querySelector('.sov'));
+    playSouvenir(sov);
   }
   function watchPoke(scope) {
     if (!scope || scope._poke) return;
     scope._poke = true;
     scope.addEventListener('animationend', function (e) {
       const name = e.animationName || '';
-      if (!/poke|stampdown/.test(name)) return;
+      if (!/^(passpoke|cardpoke|stampdown|charmpoke|badgepoke|emapoke)$/.test(name)) return;
       const sov = e.target && e.target.closest ? e.target.closest('.sov') : null;
+      if (!sov || sov.closest('.sovrecap') || (sov.closest('#jlayer') && sov.closest('#jlayer').querySelector('.sovrecap'))) return;
       settleSouvenir(sov);
     });
     scope.querySelectorAll('.sov-poke').forEach(function (sov) {
+      if (sov.closest('#jlayer') && sov.closest('#jlayer').querySelector('.sovrecap')) return;
       clearTimeout(sov._settle);
-      sov._settle = setTimeout(function () { settleSouvenir(sov); }, 900);
+      sov._settle = setTimeout(function () { settleSouvenir(sov); }, 1300);
     });
+  }
+  function tallyTrip(trip, diary) {
+    const named = [];
+    spotsOf(trip || {}).forEach(function (x) { if (x.s && x.s.name) named.push(x.s); });
+    const seen = named.filter(function (s) { return s.visited === true; });
+    const pool = seen.length ? seen : named;
+    const places = pool.filter(function (s) { return isSight(s) || isShop(s) || isNature(s); }).length;
+    const eats = new Set();
+    pool.filter(isEat).forEach(function (s) { eats.add(String(s.name).trim()); });
+    (diary || []).forEach(function (d) {
+      if (!inRange(d && d.date, trip)) return;
+      const n = String(d && d.placeName || '').trim();
+      if (n) eats.add(n);
+    });
+    return { places: places, eats: eats.size };
+  }
+  function recapMarkup(mem, counts, sid) {
+    mem = mem || {};
+    counts = counts || { places: 0, eats: 0 };
+    const id = safeTid(sid);
+    const route = mem.route
+      ? esc(mem.route) + (mem.backRoute ? ' · 回程 ' + esc(mem.backRoute) : '')
+      : '這趟沒有留下航線，人還是到了。';
+    const spotNames = mem.spots || [];
+    const eatNames = mem.eats || [];
+    const places = chipList('去過', spotNames) + chipList('吃過', eatNames);
+    const empty = !spotNames.length && !eatNames.length ? '<p class="mut">這趟還沒寫下景點。目的地和日期先留在這件紀念品上。</p>' : '';
+    const pick = id ? '<p class="sovpicklab">想換成別的樣子</p><div class="seg sovpick" role="group" aria-label="紀念品形態">' + SOUVENIRS.map(function (pair) {
+      const k = pair[0], lab = pair[1];
+      return '<button type="button" class="' + (k === mem.kind ? 'on' : '') + '" onclick="Journey.setSouvenir(\'' + id + '\',\'' + k + '\')">' + lab + '</button>';
+    }).join('') + '</div>' : '';
+    const actions = '<div class="row"><button type="button" class="btn" onclick="Journey.replaySouvenir()">再看一次</button><button type="button" class="btn ghost" onclick="Journey.openKeepsakes()">返回收藏</button></div>' + (id ? '<div class="row"><button type="button" class="btn ghost" onclick="Journey.openKeptTrip(\'' + id + '\')">翻開行程</button><button type="button" class="btn ghost" onclick="Journey.releaseSouvenir(\'' + id + '\')">解除封存</button></div><p class="sovdrop"><button type="button" class="textbtn" onclick="Journey.dropSouvenir(\'' + id + '\')">刪除這趟</button></p>' : '');
+    return '<article class="sovrecap" hidden aria-live="polite"><p class="sovkicker">這趟的小結算</p><h2>' + esc(mem.dest || '') + '</h2><p class="sovwhen">' + esc(mem.when || '') + '</p><p class="sovroute"><span>航線</span>' + route + '</p><div class="sovstats"><p class="sovstat"><b>' + counts.places + '</b><span>去過的景點</span></p><p class="sovstat"><b>' + counts.eats + '</b><span>吃過的店</span></p></div><p class="sovline">' + esc(mem.line || '') + '</p>' + places + empty + pick + actions + '</article>';
+  }
+  function revealRecap(layer) {
+    if (!layer || !layer.isConnected || !layer.querySelector('.sovrecap')) return;
+    layer.classList.remove('sov-playing');
+    layer.classList.add('sov-settled');
+    const recap = layer.querySelector('.sovrecap');
+    recap.hidden = false;
+    try { recap.scrollIntoView({ block: 'nearest', behavior: reduced() ? 'auto' : 'smooth' }); } catch (e) {}
+  }
+  function replaySouvenir() {
+    if (typeof document === 'undefined') return;
+    const layer = document.querySelector('#jlayer');
+    if (!layer) return;
+    const sov = layer.querySelector('.sov');
+    const recap = layer.querySelector('.sovrecap');
+    if (!reduced()) {
+      layer.classList.add('sov-playing');
+      layer.classList.remove('sov-settled');
+      if (recap) recap.hidden = true;
+    }
+    playSouvenir(sov, function () { revealRecap(layer); });
   }
   function safeTid(id) { return /^[A-Za-z0-9_-]+$/.test(String(id || '')) ? String(id) : ''; }
   function archivedTrips(list) {
@@ -1966,14 +2043,12 @@
     closeSheetQuiet();
     const diary = diaryNow();
     const mem = memoryOf(t, diary);
-    const route = mem.flew && mem.kind !== 'pass' && mem.route ? '<p class="sovroute">' + esc(mem.route) + '</p>' : '';
-    const places = chipList('去過', mem.spots) + chipList('吃過', mem.eats);
-    const empty = !mem.spots.length && !mem.eats.length ? '<p class="mut">這趟還沒寫下景點。目的地和日期先留在這件紀念品上。</p>' : '';
-    const pick = '<p class="sovpicklab">想換成別的樣子</p><div class="seg sovpick" role="group" aria-label="紀念品形態">' + SOUVENIRS.map(([k, lab]) => '<button type="button" class="' + (k === mem.kind ? 'on' : '') + '" onclick="Journey.setSouvenir(\'' + sid + '\',\'' + k + '\')">' + lab + '</button>').join('') + '</div>';
     const layer = layerEl();
-    layer.innerHTML = '<div class="achpage sovpage"><button type="button" class="btn ghost sm" onclick="Journey.openKeepsakes()">返回收藏</button><div class="sovstage"><button type="button" class="sovplay" onclick="Journey.pokeSouvenir(this)" aria-label="再看一次這件' + esc(mem.label) + '">' + souvenirMarkup(t, diary, { size: 'lg', cap: false, mem: mem }) + '</button><p class="sovhint">點一下，再看一次。</p></div><article class="sovstory"><p class="sovkicker">還想再打開看看</p><h2>' + esc(mem.dest) + '</h2><p class="sovwhen">' + esc(mem.when) + '</p>' + route + '<p class="sovline">' + esc(mem.line) + '</p>' + places + empty + pick + '<div class="row"><button type="button" class="btn" onclick="Journey.openKeptTrip(\'' + sid + '\')">翻開行程</button><button type="button" class="btn ghost" onclick="Journey.releaseSouvenir(\'' + sid + '\')">解除封存</button></div><p class="sovdrop"><button type="button" class="textbtn" onclick="Journey.dropSouvenir(\'' + sid + '\')">刪除這趟</button></p></article></div>';
+    layer.classList.remove('sov-settled');
+    layer.classList.add('sov-playing');
+    layer.innerHTML = '<div class="achpage sovpage"><button type="button" class="btn ghost sm" onclick="Journey.openKeepsakes()">返回收藏</button><div class="sovstage"><button type="button" class="sovplay" onclick="Journey.replaySouvenir()" aria-label="再看一次這件' + esc(mem.label) + '">' + souvenirMarkup(t, diary, { size: 'lg', cap: false, mem: mem }) + '</button></div>' + recapMarkup(mem, tallyTrip(t, diary), sid) + '</div>';
     layer.hidden = false;
-    watchPoke(layer);
+    playSouvenir(layer.querySelector('.sov'), function () { revealRecap(layer); });
   }
   function setSouvenir(id, kind) {
     const sid = safeTid(id);
@@ -2116,6 +2191,6 @@
     focusSpot, clearSpot, resetMap, zoomMap,
     themeSheet, setTripStyle, askArchive, dismissArchive, startArchive, unarchive, promptArchive, maybePrompt,
     SOUVENIRS, AIR_ZH, suggestSouvenir, souvenirOf, memoryOf, souvenirMarkup, shelfHtml, motifOf,
-    openKeepsakes, openSouvenir, setSouvenir, openKeptTrip, releaseSouvenir, dropSouvenir, pokeSouvenir
+    openKeepsakes, openSouvenir, setSouvenir, openKeptTrip, releaseSouvenir, dropSouvenir, pokeSouvenir, replaySouvenir, recapMarkup, tallyTrip
   };
 });

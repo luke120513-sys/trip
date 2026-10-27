@@ -771,6 +771,46 @@ const sixWall = J.shelfHtml(six);
 assert.equal(/sov-pack|sov-figure|禮包|手辦/.test(sixWall), false);
 const sovCss = page.slice(page.indexOf('.sovshelf'), page.indexOf('@media (prefers-reduced-motion'));
 assert.equal(/rotate\(/.test(sovCss), false);
+assert.match(page, /translateY\(-40px\)/);
+assert.match(page, /translateX\(-52px\)/);
+assert.match(page, /translateX\(-18px\)/);
+assert.match(page, /metalflash/);
+assert.match(page, /perftear/);
+assert.match(page, /cardstamp/);
+assert.match(page, /inkhit/);
+assert.match(page, /sovrecap/);
+assert.match(page, /ema-cord/);
+const osa = trip({
+  id: 'osa1', dest: '大阪', dep: '2026-04-01', ret: '2026-04-05', pax: 2, orig: 'TPE', souvenir: 'stamp',
+  days: [[
+    { kind: 'flight', name: 'TPE → KIX', from: 'TPE', to: 'KIX' },
+    { name: '通天閣', icon: 'sightseeing', visited: true },
+    { name: '道頓堀', icon: 'food', visited: true }
+  ], [
+    { name: '心齋橋', icon: 'shopping', visited: true },
+    { name: '一蘭', icon: 'food', visited: true }
+  ]]
+});
+const osaDiary = [{ date: '2026-04-02', placeName: '一蘭' }];
+const osaMem = J.memoryOf(osa, osaDiary);
+const osaTally = J.tallyTrip(osa, osaDiary);
+assert.equal(osaTally.places, 2);
+assert.equal(osaTally.eats, 2);
+const recap = J.recapMarkup(osaMem, osaTally, 'osa1');
+assert.match(recap, /這趟的小結算/);
+assert.match(recap, /大阪/);
+assert.match(recap, /5 天/);
+assert.match(recap, /2 人/);
+assert.match(recap, /桃園 → 關西/);
+assert.match(recap, /去過的景點/);
+assert.match(recap, /吃過的店/);
+assert.match(recap, /<b>2<\/b><span>去過的景點/);
+assert.match(recap, /<b>2<\/b><span>吃過的店/);
+assert.match(recap, /再看一次/);
+assert.match(recap, /返回收藏/);
+assert.match(recap, /hidden/);
+assert.match(recap, /地標印章/);
+assert.match(J.souvenirMarkup(trip({ dest: '花蓮', souvenir: 'plaque' }), [], { size: 'lg' }), /ema-cord/);
 [['pass', '東京'], ['card', '京都'], ['stamp', '大阪'], ['charm', '首爾'], ['badge', '台北'], ['plaque', '花蓮']].forEach(([kind, dest]) => {
   const html = J.souvenirMarkup(trip({ dest, souvenir: kind }), [], { size: 'lg' });
   assert.equal(/rotate\(|skew[XY]?\(/.test(html), false, kind);
