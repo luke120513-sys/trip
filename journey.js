@@ -677,14 +677,112 @@
       const fill = lit ? p.color : mixHex(p.color, '#F7F9FC', tracked ? 0.72 : 0.34);
       const cls = 'vreg' + (lit ? ' on' : '') + (tracked ? '' : ' quiet');
       const idAttr = tracked ? ` data-id="${p.id}"` : '';
-      const click = tracked ? ` onclick="Journey.focusVisit('${p.id}')"` : '';
+      const click = tracked ? ` onclick="Journey.openCityMap('${p.id}')"` : '';
       return `<path class="${cls}"${idAttr} fill="${fill}" d="${p.d}"${click}/>`;
     }).join('');
-    const labels = (pack.labels || []).map(l => {
-      const lit = !!on[l.id];
-      return `<text class="rlab${lit ? ' on' : ''}" x="${l.x}" y="${l.y}" text-anchor="middle">${esc(l.name)}</text>`;
-    }).join('');
+    const labels = labelChips(pack.labels, on, true);
     return `<svg class="vmap" viewBox="${pack.view}" role="img" aria-label="${MAP_LABEL[countryId]}地圖">${sea}${parts}${labels}</svg>`;
+  }
+  function labelChips(labels, on, clickable) {
+    return (labels || []).map(l => {
+      const name = String(l.name || '');
+      if (!name) return '';
+      const lit = !!(l.id && on && on[l.id]);
+      const n = [...name].length;
+      const fs = l.small ? 11 : (lit ? 15 : 13);
+      const go = clickable && l.id && /^[a-z]+$/.test(l.id) ? ` onclick="Journey.openCityMap('${l.id}')"` : '';
+      if (l.small) {
+        return `<text class="wlab" x="${l.x}" y="${l.y}" text-anchor="middle" fill="#142033" font-size="${fs}" font-weight="800" stroke="#fff" stroke-width="2.4" paint-order="stroke fill">${esc(name)}</text>`;
+      }
+      const w = n * fs * 0.96 + 12;
+      const h = fs + 8;
+      const x = Math.round((l.x - w / 2) * 10) / 10;
+      const y = Math.round((l.y - fs * 0.86) * 10) / 10;
+      return `<g class="rlab${lit ? ' on' : ''}"${go}><rect x="${x}" y="${y}" width="${w.toFixed(1)}" height="${h}" rx="7" fill="#fff" fill-opacity="${lit ? '0.97' : '0.92'}"/><text x="${l.x}" y="${l.y}" text-anchor="middle" fill="${lit ? '#102033' : '#2C3A4A'}" font-size="${fs}" font-weight="${lit ? 900 : 800}">${esc(name)}</text></g>`;
+    }).join('');
+  }
+  function projectPt(proj, lat, lng) {
+    const yN = Math.log(Math.tan(Math.PI / 4 + proj.n * Math.PI / 360));
+    const yS = Math.log(Math.tan(Math.PI / 4 + proj.s * Math.PI / 360));
+    const y = Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360));
+    return [
+      proj.x + (lng - proj.w) / (proj.e - proj.w) * proj.bw,
+      proj.y + (yN - y) / (yN - yS) * proj.bh
+    ];
+  }
+  function pinMarkup(proj, spots) {
+    if (!proj) return '';
+    return (spots || []).map(s => {
+      const lat = +s.lat, lng = +s.lng;
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return '';
+      const pt = projectPt(proj, lat, lng);
+      if (!Number.isFinite(pt[0]) || !Number.isFinite(pt[1])) return '';
+      const name = esc(s.name || '');
+      return `<g class="spotpin"><circle cx="${pt[0].toFixed(1)}" cy="${pt[1].toFixed(1)}" r="6.5" fill="#E53935" stroke="#fff" stroke-width="2"/><text x="${(pt[0] + 10).toFixed(1)}" y="${(pt[1] + 4).toFixed(1)}" text-anchor="start" fill="#142033" font-size="12" font-weight="800" stroke="#fff" stroke-width="3" paint-order="stroke fill">${name}</text></g>`;
+    }).join('');
+  }
+  function citySpots(cityId) {
+    const city = CITIES.find(c => c.id === cityId);
+    if (!city) return [];
+    const out = [];
+    const seen = new Set();
+    tripsNow().forEach(trip => {
+      if (!trip || !citiesTouched(trip).has(cityId)) return;
+      (trip.days || []).forEach(day => (day || []).forEach(s => {
+        if (!s || isHop(s)) return;
+        const sid = spotCity(s);
+        if (sid && sid !== cityId) return;
+        const lat = +s.lat, lng = +s.lng;
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+        if (sid !== cityId && !inBox(lat, lng, city.box)) return;
+        const key = String(s.name || '') + '@' + lat.toFixed(3) + ',' + lng.toFixed(3);
+        if (seen.has(key)) return;
+        seen.add(key);
+        out.push({ name: String(s.name || city.name), lat, lng });
+      }));
+    });
+    return out.slice(0, 20);
+  }
+  function cityMapMarkup(cityId, spots) {
+    const geo = typeof globalThis !== 'undefined' ? globalThis.VISIT_GEO : null;
+    if (!geo) return '';
+    if (cityId === 'tyo' && geo.tyo23) {
+      const pack = geo.tyo23;
+      const sea = `<rect class="sea" width="100%" height="100%" fill="${pack.sea}"/>`;
+      const parts = pack.parts.map(p => `<path class="vreg quiet" fill="${p.color}" d="${p.d}"/>`).join('');
+      return `<svg class="vmap vmap-detail" viewBox="${pack.view}" role="img" aria-label="東京分區地圖">${sea}${parts}${labelChips(pack.labels, {}, false)}${pinMarkup(pack.proj, spots)}</svg>`;
+    }
+    const city = CITIES.find(c => c.id === cityId);
+    if (!city) return '';
+    const pack = geo[city.country];
+    const frame = pack && pack.frames && pack.frames[cityId];
+    if (pack && pack.proj && frame) {
+      const pad = 26;
+      const vb = [frame[0] - pad, frame[1] - pad, frame[2] - frame[0] + pad * 2, frame[3] - frame[1] + pad * 2];
+      const sea = `<rect class="sea" x="${vb[0]}" y="${vb[1]}" width="${vb[2]}" height="${vb[3]}" fill="${pack.sea}"/>`;
+      const parts = pack.parts.map(p => `<path class="vreg quiet" fill="${p.id === cityId ? p.color : mixHex(p.color, '#F7F9FC', 0.5)}" d="${p.d}"/>`).join('');
+      const labels = labelChips((pack.labels || []).filter(l => l.x >= vb[0] && l.x <= vb[0] + vb[2] && l.y >= vb[1] && l.y <= vb[1] + vb[3]), { [cityId]: true }, false);
+      return `<svg class="vmap vmap-detail" viewBox="${vb.map(n => Math.round(n * 10) / 10).join(' ')}" role="img" aria-label="${esc(city.name)}地圖">${sea}${parts}${labels}${pinMarkup(pack.proj, spots)}</svg>`;
+    }
+    const box = city.box;
+    const proj = { s: box[0] - 0.08, w: box[1] - 0.08, n: box[2] + 0.08, e: box[3] + 0.08, x: 28, y: 36, bw: 284, bh: 320 };
+    return `<svg class="vmap vmap-detail" viewBox="0 0 340 380" role="img" aria-label="${esc(city.name)}地圖"><rect width="100%" height="100%" fill="#E7F4FB"/><text x="170" y="26" text-anchor="middle" fill="#142033" font-size="18" font-weight="800">${esc(city.name)}</text>${pinMarkup(proj, spots)}</svg>`;
+  }
+  function openCityMap(id) {
+    if (!/^[a-z0-9]+$/.test(String(id || ''))) return;
+    const places = visitedPlaces(tripsNow());
+    const city = places.find(p => p.id === id);
+    if (!city || !city.on) { focusVisit(id); return; }
+    const spots = citySpots(id);
+    if (typeof document === 'undefined') return spots;
+    const rows = spots.length
+      ? spots.map(s => `<div class="vtrip"><b>${esc(s.name)}</b></div>`).join('')
+      : '<div class="vempty"><b>這座城市還沒有帶座標的景點</b><p>行程裡的景點若有位置，會標在地圖上。</p></div>';
+    const hint = id === 'tyo' ? '東京 23 區。這幾趟行程的景點會標在區上。' : '放大這個城市。有座標的景點會標出來。';
+    const layer = layerEl();
+    layer.innerHTML = `<div class="achpage vmap-page"><div class="row" style="align-items:center"><button type="button" class="btn ghost sm" style="flex:0" onclick="Journey.openVisitMap('${city.country}')">返回</button><h2 style="margin:0">${esc(city.name)}</h2></div><p class="mut achhint">${hint}</p><div class="vmap-card">${cityMapMarkup(id, spots)}</div><div class="vlist"><div class="cityhead"><h3>景點</h3><span>${spots.length}</span></div>${rows}</div></div>`;
+    layer.hidden = false;
+    return spots;
   }
   function visitListHtml(places) {
     const on = (places || []).filter(p => p.on);
@@ -716,7 +814,7 @@
     const lit = mine.filter(p => p.on).length;
     const tabs = `<div class="seg achtabs">${COUNTRIES.map(c => `<button type="button" class="${c.id === country ? 'on' : ''}" onclick="Journey.openVisitMap('${c.id}')">${c.name}${count(c.id) ? ' ' + count(c.id) : ''}</button>`).join('')}</div>`;
     const layer = layerEl();
-    layer.innerHTML = `<div class="achpage vmap-page"><div class="row" style="align-items:center"><h2 style="margin:0">去過的地方</h2><button type="button" class="btn ghost sm" style="flex:0" onclick="Journey.closeLayer()">關閉</button></div><p class="mut achhint">有寫進行程的城市會亮起來，封存的也算。</p>${tabs}<div class="vmap-layout"><div class="vmap-card">${visitMapMarkup(country, mine)}</div><div class="vlist"><div class="cityhead"><h3>去過</h3><span>${lit}/${mine.length}</span></div>${visitListHtml(mine)}</div></div></div>`;
+    layer.innerHTML = `<div class="achpage vmap-page"><div class="row" style="align-items:center"><h2 style="margin:0">去過的地方</h2><button type="button" class="btn ghost sm" style="flex:0" onclick="Journey.closeLayer()">關閉</button></div><p class="mut achhint">有寫進行程的城市會亮起來，封存的也算。點亮的城市可以再點開。</p>${tabs}<div class="vmap-layout"><div class="vmap-card">${visitMapMarkup(country, mine)}</div><div class="vlist"><div class="cityhead"><h3>去過</h3><span>${lit}/${mine.length}</span></div>${visitListHtml(mine)}</div></div></div>`;
     layer.hidden = false;
     try { if (TM.closeSheet) TM.closeSheet(); } catch (e) {}
     return places;
@@ -914,9 +1012,9 @@
   return {
     STYLES, COUNTRIES, CITIES, CARDS, ALIAS, HOME, JP_AIR, KR_AIR,
     detectCountry, detectCity, resolveTheme, summarize, evaluate, cardById, migrateBadges, progressBrief, shortStyle, transitLegs, dayCount,
-    visitedPlaces, visitBrief, visitMapMarkup, mapPins, achMarkup, howTo,
+    visitedPlaces, visitBrief, visitMapMarkup, mapPins, cityMapMarkup, citySpots, achMarkup, howTo,
     apply, afterPaint, exportState, importState, setGlobalStyle, globalStyle,
-    openAchieve, peek, closeLayer, celebrate, doneCelebrate, openVisitMap, focusVisit, openMappedTrip,
+    openAchieve, peek, closeLayer, celebrate, doneCelebrate, openVisitMap, openCityMap, focusVisit, openMappedTrip,
     themeSheet, setTripStyle, askArchive, dismissArchive, startArchive, unarchive, promptArchive, maybePrompt
   };
 });

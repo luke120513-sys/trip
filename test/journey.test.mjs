@@ -238,9 +238,9 @@ assert.match(page, /theme-tw/);
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v60/);
+assert.match(sw, /tripmate-v61/);
 assert.match(sw, /journey\.js/);
-assert.match(page, /v2\.17\.0/);
+assert.match(page, /v2\.18\.0/);
 assert.match(page, /openVisitMap/);
 assert.match(page, /class="vmap-entry"/);
 assert.match(page, /\.ach-q/);
@@ -305,6 +305,17 @@ assert.match(twMap, /台灣地圖/);
 assert.match(twMap, /class="vreg on" data-id="tpe"/);
 assert.match(twMap, /class="vreg on" data-id="hul"/);
 assert.match(twMap, /class="vreg" data-id="khh"/);
+['台北', '台中', '台南', '高雄', '花蓮', '台東', '嘉義', '墾丁', '宜蘭', '南投', '桃園', '新竹', '苗栗', '彰化', '雲林', '澎湖'].forEach(name => {
+  assert.match(twMap, new RegExp('>' + name + '<'));
+});
+assert.equal(/<text\b[^>]*>\s*<\/text>/.test(twMap), false);
+assert.equal(/<text\b[^>]*>\s*<\/text>/.test(jpMap), false);
+const tokyoDetail = J.cityMapMarkup('tyo', [{ name: '淺草寺', lat: 35.7148, lng: 139.7967 }, { name: '澀谷十字路口', lat: 35.6595, lng: 139.7004 }]);
+assert.match(tokyoDetail, /東京分區地圖/);
+['世田谷區', '新宿區', '澀谷區', '江戶川區', '千代田區', '練馬區'].forEach(name => assert.match(tokyoDetail, new RegExp(name)));
+assert.match(tokyoDetail, /淺草寺/);
+assert.match(tokyoDetail, /澀谷十字路口/);
+assert.equal(/<text\b[^>]*>\s*<\/text>/.test(tokyoDetail), false);
 assert.equal(J.visitMapMarkup('nope', places), '');
 assert.equal(J.mapPins('nope', places).length, 0);
 J.CITIES.forEach(c => {
