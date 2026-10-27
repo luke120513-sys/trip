@@ -1070,15 +1070,39 @@
     }
     return '<span class="softpack"><span class="soft-notch" aria-hidden="true"></span><span class="soft-crinkle" aria-hidden="true"></span><b>' + esc(b.city) + '</b><small>' + esc(b.en) + '</small><span class="soft-scene">' + scene + '</span>' + dishSvg(b.dish) + '<em>' + esc(b.food) + '</em><span>卡包</span><i>' + esc(b.land) + '｜' + esc(b.food) + '</i></span>';
   }
-  function souvenirBody(mem) {
+  function boardSrc(kind, look) {
+    const name = kind === 'plaque' ? 'ema' : kind;
+    const i = look >= 0 && look <= 4 ? look : 0;
+    return 'assets/keepsakes/' + name + '-' + i + '.webp';
+  }
+  function boardFace(mem) {
     const look = mem.look || 0;
-    if (mem.kind === 'pass') return look === 0 ? passHtml(mem) : passLook(mem, look);
-    if (mem.kind === 'stamp') return look === 0 ? stampHtml(mem) : stampLook(mem, look);
-    if (mem.kind === 'charm') return look === 0 ? charmHtml(mem) : charmLook(mem, look);
-    if (mem.kind === 'badge') return look === 0 ? badgeHtml(mem) : badgeLook(mem, look);
-    if (mem.kind === 'plaque') return look === 0 ? plaqueSmall(mem) : (look === 1 ? plaqueHtml(mem) : plaqueLook(mem, look));
-    if (mem.kind === 'pack') return packLook(mem, look);
-    return look === 0 ? cardHtml(mem) : cardLook(mem, look);
+    const b = motifBits(mem);
+    const voice = mem.voice || VOICE.plain;
+    const img = '<img class="boardimg" src="' + boardSrc(mem.kind, look) + '" alt="" draggable="false">';
+    let plate = '<span class="boardplate"><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span>';
+    let cord = '';
+    if (mem.kind === 'pass') {
+      plate = '<span class="boardplate boardplate-pass">' + passRoute(mem) + '<small class="boardsub">' + esc(b.city) + ' · ' + esc(b.land) + '</small></span>';
+    } else if (mem.kind === 'charm') {
+      plate = '<span class="boardplate"><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small><em>' + esc(voice.charm) + '</em></span>';
+    } else if (mem.kind === 'pack') {
+      const faces = packFaces(mem);
+      plate = '<span class="boardplate"><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small><span class="boardpack">卡包</span><i>' + esc(b.food) + '</i><i class="boardspot">' + esc(faces[2] || '') + '</i></span>';
+    } else if (mem.kind === 'badge') {
+      plate = '<span class="boardplate"><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small><i>' + esc(b.food) + '</i></span>';
+    } else if (mem.kind === 'plaque') {
+      if (look === 0) {
+        cord = '<svg class="boardcord" viewBox="0 0 40 16" aria-hidden="true"><path class="ema-cord" d="M20 2 C28 6 30 12 20 14 C10 12 12 6 20 2" fill="none" stroke="#b4332a" stroke-width="1.4" stroke-linecap="round"/></svg><svg class="boardname" viewBox="0 0 200 228" aria-hidden="true">' + plaqueName(mem.dest) + '</svg>';
+      }
+      plate = '<span class="boardplate"><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small><em class="ema-pill">' + esc(voice.plaque) + '</em></span>';
+    } else if (mem.kind === 'card' && look === 0) {
+      plate = '<span class="mcard-shine" aria-hidden="true"></span>' + plate;
+    }
+    return '<span class="boardface">' + img + cord + plate + '</span>';
+  }
+  function souvenirBody(mem) {
+    return boardFace(mem);
   }
   function badgeShape(kind, dish, city) {
     const icon = '<g transform="translate(16,12) scale(.48)">' + (DISH[dish] || DISH.case) + '</g>';

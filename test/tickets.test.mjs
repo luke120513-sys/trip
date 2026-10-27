@@ -152,7 +152,7 @@ const freshBak = Share.validateTrips({ v: 1, trips: [{ ...usedTrip, tickets: [{ 
 assert.equal(freshBak.trips[0].tickets[0].used, undefined);
 
 const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v75/);
+assert.match(sw, /tripmate-v76/);
 assert.match(sw, /tickets\.js/);
 const collab = readFileSync(new URL('../collab.js', import.meta.url), 'utf8');
 assert.match(collab, /const tickets = t\.tickets/);

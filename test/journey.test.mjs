@@ -279,9 +279,9 @@ assert.match(page, /theme-tw/);
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v75/);
+assert.match(sw, /tripmate-v76/);
 assert.match(sw, /journey\.js/);
-assert.match(page, /v2\.26\.2/);
+assert.match(page, /v2\.26\.3/);
 assert.match(page, /controllerchange/);
 assert.match(page, /發現新版本/);
 assert.match(page, /SKIP_WAITING/);
@@ -732,12 +732,10 @@ const tokyoStamp = J.souvenirMarkup(trip({ dest: '東京', souvenir: 'stamp' }),
 assert.match(tokyoStamp, /晴空塔/);
 assert.match(tokyoStamp, /sov-poke/);
 assert.equal(/textPath|<textPath|A78,78/.test(tokyoStamp), false);
-assert.match(tokyoStamp, /translate\(100,65\.28\) scale\(\.54\) translate\(-32,-32\)/);
+assert.match(tokyoStamp, /assets\/keepsakes\/stamp-0\.webp/);
 const tokyoPlaque = J.souvenirMarkup(trip({ dest: '東京', souvenir: 'plaque', sovLook: 1 }), [], { size: 'lg', look: 1 });
-assert.match(tokyoPlaque, /M78 50 L82\.5 6 H85\.5 L90 50 Z/);
-assert.equal(/M78 50 84 6/.test(tokyoPlaque), false);
-assert.equal(/clip-path="url\(#[^"]+\)" transform=/.test(tokyoPlaque), false);
-assert.match(tokyoPlaque, /clip-path="url\(#[^"]+\)"><g transform="translate\(54,146\) scale\(\.71875\)">/);
+assert.match(tokyoPlaque, /assets\/keepsakes\/ema-1\.webp/);
+assert.match(tokyoPlaque, /晴空塔/);
 J.CITIES.forEach(c => {
   const stamp = J.souvenirMarkup(trip({ dest: c.name, souvenir: 'stamp' }), [], { size: 'mini' });
   assert.equal(/textPath/.test(stamp), false, c.name);
