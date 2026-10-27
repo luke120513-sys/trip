@@ -580,7 +580,7 @@
     const arc = m.known ? m.land : '到此一遊';
     const flowerY = mem.year ? 148 : 158;
     const year = mem.year ? '<text x="100" y="170" text-anchor="middle" fill="#c17a6e" font-size="11" font-weight="700" letter-spacing="2.4">' + esc(mem.year) + '</text>' : '';
-    return '<span class="sealcard papercard"><svg class="sealart" viewBox="0 0 200 200" aria-hidden="true" style="color:#c17a6e"><circle cx="100" cy="100" r="92" fill="none" stroke="#c17a6e" stroke-width="1.15"/><circle cx="100" cy="100" r="84" fill="none" stroke="#c17a6e" stroke-width="2.1" stroke-dasharray="1.15 3.3" stroke-linecap="round"/>' + arcText(arc) + '<g transform="translate(82,48) scale(.54)">' + markIcon(m.mark || 'pin') + '</g><text x="100" y="' + lay.y + '" text-anchor="middle" fill="#a85a4c" font-size="' + lay.size + '" font-weight="800" letter-spacing="' + lay.spacing + '">' + esc(mem.dest || '') + '</text><g transform="translate(100 ' + flowerY + ')">' + sealFlower(m.country) + '</g>' + year + '</svg><span class="paper-foot seal-foot"><svg viewBox="0 0 12 14" width="11" height="13" aria-hidden="true"><path d="M6 1.2C3.8 1.2 2.3 3 2.3 5c0 2.6 3.7 7.2 3.7 7.2S9.7 7.6 9.7 5C9.7 3 8.2 1.2 6 1.2z" fill="none" stroke="currentColor" stroke-width="1.1"/><circle cx="6" cy="5" r="1.15" fill="currentColor"/></svg><span>地標印章</span></span></span>';
+    return '<span class="sealcard papercard"><svg class="sealart" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet" aria-hidden="true" style="color:#c17a6e"><circle cx="100" cy="100" r="92" fill="none" stroke="#c17a6e" stroke-width="1.15"/><circle cx="100" cy="100" r="84" fill="none" stroke="#c17a6e" stroke-width="2.1" stroke-dasharray="1.15 3.3" stroke-linecap="round"/>' + arcText(arc) + '<g transform="translate(82,48) scale(.54)">' + markIcon(m.mark || 'pin') + '</g><text x="100" y="' + lay.y + '" text-anchor="middle" fill="#a85a4c" font-size="' + lay.size + '" font-weight="800" letter-spacing="' + lay.spacing + '">' + esc(mem.dest || '') + '</text><g transform="translate(100 ' + flowerY + ')">' + sealFlower(m.country) + '</g>' + year + '</svg><span class="paper-foot seal-foot"><svg viewBox="0 0 12 14" width="11" height="13" aria-hidden="true"><path d="M6 1.2C3.8 1.2 2.3 3 2.3 5c0 2.6 3.7 7.2 3.7 7.2S9.7 7.6 9.7 5C9.7 3 8.2 1.2 6 1.2z" fill="none" stroke="currentColor" stroke-width="1.1"/><circle cx="6" cy="5" r="1.15" fill="currentColor"/></svg><span>地標印章</span></span></span>';
   }
   function cityPlate(city, stroke, fill) {
     const chars = Array.from(String(city || ''));
@@ -645,10 +645,10 @@
   }
   function charmHtml(mem) {
     const voice = mem.voice || VOICE.plain;
-    return '<span class="charmcard papercard"><svg class="charmart" viewBox="0 0 140 214" aria-hidden="true">' + charmSvg(mem) + '</svg><span class="paper-foot charm-foot"><b>' + esc(voice.charm) + '</b><i></i></span></span>';
+    return '<span class="charmcard papercard"><svg class="charmart" viewBox="0 0 140 214" preserveAspectRatio="xMidYMid meet" aria-hidden="true">' + charmSvg(mem) + '</svg><span class="paper-foot charm-foot"><b>' + esc(voice.charm) + '</b><i></i></span></span>';
   }
   function pinSvg(dish, banner) {
-    return '<svg class="pinart" viewBox="0 0 80 86" aria-hidden="true"><circle cx="40" cy="36" r="28" fill="#fffdf8" stroke="#c6a36a" stroke-width="3"/><g transform="translate(16,12) scale(.72)">' + (DISH[dish] || DISH.case) + '</g><ellipse cx="40" cy="66" rx="13" ry="8" fill="#2c241c" stroke="#c6a36a" stroke-width="1.4"/><text x="40" y="69" text-anchor="middle" fill="#f6e7c4" font-size="9" font-weight="800">' + esc(banner) + '</text></svg>';
+    return '<svg class="pinart" viewBox="0 0 80 86" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><circle cx="40" cy="36" r="28" fill="#fffdf8" stroke="#c6a36a" stroke-width="3"/><g transform="translate(16,12) scale(.72)">' + (DISH[dish] || DISH.case) + '</g><ellipse cx="40" cy="66" rx="13" ry="8" fill="#2c241c" stroke="#c6a36a" stroke-width="1.4"/><text x="40" y="69" text-anchor="middle" fill="#f6e7c4" font-size="9" font-weight="800">' + esc(banner) + '</text></svg>';
   }
   function badgeHtml(mem) {
     const m = mem.motif || {};
@@ -677,7 +677,7 @@
     const seal = chars.length > 0 && chars.length <= 3
       ? '<rect x="124" y="72" width="16" height="16" fill="#b4332a"/><text x="132" y="84" text-anchor="middle" fill="#f6e0c0" font-size="10" font-weight="800">旅</text>'
       : '';
-    return '<span class="emacard papercard"><svg class="emaart" viewBox="0 0 200 228" aria-hidden="true"><path d="M100 6 C118 16 124 32 100 42 C76 32 82 16 100 6" fill="none" stroke="#b4332a" stroke-width="3.2" stroke-linecap="round"/><path d="M94 20 c6 5 6 12 0 16" fill="none" stroke="#b4332a" stroke-width="2.3"/><path d="M64 46 H136 L170 206 H30 Z" fill="#e7c99a" stroke="#c4a36e" stroke-width="2"/><path d="M70 54 H130 L160 198 H40 Z" fill="#f0dcb4"/><circle cx="100" cy="62" r="3.4" fill="#f6f1e7"/>' + plaqueName(mem.dest) + seal + '<clipPath id="' + clip + '"><path d="M70 54 H130 L160 198 H40 Z"/></clipPath><g clip-path="url(#' + clip + ')" transform="translate(52,126) scale(.74)">' + scene + '</g></svg><span class="paper-foot ema-foot"><span class="ema-pill">' + esc(voice.plaque) + '</span></span></span>';
+    return '<span class="emacard papercard"><svg class="emaart" viewBox="0 0 200 228" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M100 6 C118 16 124 32 100 42 C76 32 82 16 100 6" fill="none" stroke="#b4332a" stroke-width="3.2" stroke-linecap="round"/><path d="M94 20 c6 5 6 12 0 16" fill="none" stroke="#b4332a" stroke-width="2.3"/><path d="M64 46 H136 L170 206 H30 Z" fill="#e7c99a" stroke="#c4a36e" stroke-width="2"/><path d="M70 54 H130 L160 198 H40 Z" fill="#f0dcb4"/><circle cx="100" cy="62" r="3.4" fill="#f6f1e7"/>' + plaqueName(mem.dest) + seal + '<clipPath id="' + clip + '"><path d="M70 54 H130 L160 198 H40 Z"/></clipPath><g clip-path="url(#' + clip + ')" transform="translate(52,126) scale(.74)">' + scene + '</g></svg><span class="paper-foot ema-foot"><span class="ema-pill">' + esc(voice.plaque) + '</span></span></span>';
   }
   function souvenirMarkup(trip, diary, opt) {
     opt = opt || {};
@@ -695,13 +695,28 @@
     const poke = size === 'lg' ? ' sov-poke' : '';
     return '<span class="sov sov-' + mem.kind + ' sov-' + size + poke + ' tone-' + mem.tone + '"><span class="sov-body">' + body + '</span>' + cap + '</span>';
   }
+  function settleSouvenir(sov) {
+    if (!sov) return;
+    sov.classList.remove('sov-poke');
+    const body = sov.querySelector('.sov-body');
+    if (!body) return;
+    body.style.animation = 'none';
+    body.style.transform = 'none';
+  }
   function pokeSouvenir(el) {
     const root = el && el.querySelector ? el : null;
     const sov = root && (root.classList && root.classList.contains('sov') ? root : root.querySelector('.sov'));
     if (!sov || reduced()) return;
+    const body = sov.querySelector('.sov-body');
     sov.classList.remove('sov-poke');
+    if (body) {
+      body.style.animation = '';
+      body.style.transform = '';
+    }
     void sov.offsetWidth;
     sov.classList.add('sov-poke');
+    clearTimeout(sov._settle);
+    sov._settle = setTimeout(function () { settleSouvenir(sov); }, 900);
     try { haptic(12); } catch (e) {}
   }
   function watchPoke(scope) {
@@ -711,7 +726,11 @@
       const name = e.animationName || '';
       if (!/poke|stampdown/.test(name)) return;
       const sov = e.target && e.target.closest ? e.target.closest('.sov') : null;
-      if (sov) sov.classList.remove('sov-poke');
+      settleSouvenir(sov);
+    });
+    scope.querySelectorAll('.sov-poke').forEach(function (sov) {
+      clearTimeout(sov._settle);
+      sov._settle = setTimeout(function () { settleSouvenir(sov); }, 900);
     });
   }
   function safeTid(id) { return /^[A-Za-z0-9_-]+$/.test(String(id || '')) ? String(id) : ''; }
