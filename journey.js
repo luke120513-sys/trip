@@ -783,9 +783,12 @@
       let text = '';
       if (chosen && label) {
         placed.push(chosen.box);
-        text = `<text x="${chosen.tx.toFixed(1)}" y="${chosen.ty.toFixed(1)}" text-anchor="${chosen.anchor}" fill="#142033" font-size="${fs}" font-weight="800" stroke="#fff" stroke-width="3" paint-order="stroke fill">${esc(label)}</text>`;
+        text = `<text class="spotpin-lab" x="${chosen.tx.toFixed(1)}" y="${chosen.ty.toFixed(1)}" text-anchor="${chosen.anchor}" fill="#142033" font-size="${fs}" font-weight="800" stroke="#fff" stroke-width="3" paint-order="stroke fill">${esc(label)}</text>`;
       }
-      return `<g class="spotpin" data-i="${s.i}" data-x="${s.x.toFixed(1)}" data-y="${s.y.toFixed(1)}" style="--i:${order}" tabindex="0" role="button" aria-label="${esc(s.name)}"><circle class="spotpin-dot" cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="6.5" fill="#E53935" stroke="#fff" stroke-width="2"/>${text}</g>`;
+      const n = s.i + 1;
+      const cx = s.x.toFixed(1);
+      const cy = s.y.toFixed(1);
+      return `<g class="spotpin" data-i="${s.i}" data-n="${n}" data-x="${cx}" data-y="${cy}" style="--i:${order}" tabindex="0" role="button" aria-label="${esc(s.name)}"><circle class="spotpin-dot" cx="${cx}" cy="${cy}" r="6.5" fill="#E53935" stroke="#fff" stroke-width="2"/><circle class="spotpin-face" cx="${cx}" cy="${cy}" r="4.6" fill="#fff"/><circle class="spotpin-ring" cx="${cx}" cy="${cy}" r="11" fill="none" stroke="#102033" stroke-width="2.4"/><circle class="spotpin-hit" cx="${cx}" cy="${cy}" r="16" fill="transparent"/>${text}<text class="spotpin-num" x="${cx}" y="${(s.y + 2.6).toFixed(1)}" text-anchor="middle" fill="#9f1239" font-size="8" font-weight="800">${n}</text></g>`;
     }).join('');
   }
   function citySpots(cityId) {
@@ -846,18 +849,62 @@
     if (api) return api.story(spot || {});
     return { name: String(spot && spot.name || '景點'), intro: '', trivia: [], rating: '' };
   }
-  function spotCardHtml(st) { const api = loreApi(); return api ? api.cardHtml(st) : ''; }
+  function spotCardHtml(st) {
+    const api = loreApi();
+    const html = api && typeof api.cardHtml === 'function' ? api.cardHtml(st) : '';
+    if (html) return html;
+    const story = st || { name: '景點', intro: '', trivia: [] };
+    const name = esc(story.name || '景點');
+    const intro = story.intro ? esc(story.intro) : '這站還沒有收進小檔案。';
+    const trivia = (story.trivia || []).filter(Boolean).map(esc).join('<br>');
+    const bits = ['<button type="button" class="spotcard-x" aria-label="關閉" onclick="Journey.clearSpot()">×</button>', '<b class="spotcard-name">' + name + '</b>', '<p class="spotcard-k">簡介</p><p>' + intro + '</p>'];
+    if (trivia) bits.push('<p class="spotcard-k trivia">冷知識</p><p>' + trivia + '</p>');
+    return '<aside class="spotcard" role="dialog" aria-label="' + name + '">' + bits.join('') + '</aside>';
+  }
+  function nearestPin(points, x, y, radius) {
+    let best = null, bestD = radius == null ? 26 : radius;
+    (points || []).forEach(p => {
+      if (!p || !Number.isFinite(+p.x) || !Number.isFinite(+p.y)) return;
+      const d = Math.hypot(+p.x - x, +p.y - y);
+      if (d <= bestD + 0.001) { bestD = d; best = p; }
+    });
+    return best;
+  }
   function focusView(pin, vb, box, scale, anchor) {
     const api = loreApi();
-    return api ? api.focusView(pin, vb, box, scale, anchor) : { s: 1, x: 0, y: 0 };
+    if (api && typeof api.focusView === 'function') {
+      try { return api.focusView(pin, vb, box, scale, anchor); } catch (e) {}
+    }
+    const s = scale > 0 ? scale : 1;
+    const px = (pin.x - vb.x) / vb.w * box.w;
+    const py = (pin.y - vb.y) / vb.h * box.h;
+    const ax = (anchor && anchor.x != null ? anchor.x : 0.34) * box.w;
+    const ay = (anchor && anchor.y != null ? anchor.y : 0.46) * box.h;
+    return { s: s, x: ax - px * s, y: ay - py * s };
   }
   function clampMapView(view, w, h) {
     const api = loreApi();
-    return api ? api.clampMapView(view, w, h) : { s: 1, x: 0, y: 0 };
+    if (api && typeof api.clampMapView === 'function') {
+      try { return api.clampMapView(view, w, h); } catch (e) {}
+    }
+    const s = Math.min(3.6, Math.max(1, view && view.s || 1));
+    const x0 = view && view.x || 0, y0 = view && view.y || 0;
+    if (!w || !h) return { s: s, x: x0, y: y0 };
+    return {
+      s: s,
+      x: Math.min(0, Math.max(Math.min(0, w - w * s), x0)),
+      y: Math.min(0, Math.max(Math.min(0, h - h * s), y0))
+    };
   }
   function placeCard(pin, stage, card) {
     const api = loreApi();
-    return api ? api.placeCard(pin, stage, card) : { left: 8, top: 46 };
+    if (api && typeof api.placeCard === 'function') {
+      try { return api.placeCard(pin, stage, card); } catch (e) {}
+    }
+    const m = 8, topMin = 46;
+    const left = Math.max(m, Math.min(pin.x + 28, Math.max(m, stage.w - card.w - m)));
+    const top = Math.max(topMin, Math.min(pin.y + 16, Math.max(topMin, stage.h - card.h - m)));
+    return { left: Math.round(left), top: Math.round(top) };
   }
   function focusAnchor(w) {
     const api = loreApi();
@@ -891,11 +938,67 @@
     const card = stage.querySelector('.spotcard');
     const pin = stage.querySelector('.spotpin.is-on');
     if (!card || !pin) return;
+    const room = Math.max(112, (stage.clientHeight || 0) - 58);
+    card.style.maxHeight = room + 'px';
     const pt = pinPoint(stage, pin);
-    if (!pt) return;
-    const pos = placeCard(pt, { w: stage.clientWidth, h: stage.clientHeight }, { w: card.offsetWidth, h: card.offsetHeight });
+    if (!pt) {
+      card.style.left = '8px';
+      card.style.top = '48px';
+      return;
+    }
+    const pos = placeCard(pt, { w: stage.clientWidth, h: stage.clientHeight }, { w: card.offsetWidth || 180, h: card.offsetHeight || 120 });
     card.style.left = pos.left + 'px';
     card.style.top = pos.top + 'px';
+    const box = stage.getBoundingClientRect();
+    const rect = card.getBoundingClientRect();
+    if (rect.width < 8 || rect.bottom < box.top + 24 || rect.top > box.bottom - 24) {
+      card.style.left = '8px';
+      card.style.top = '48px';
+    }
+  }
+  function aimedPin(target) {
+    if (!target || !target.closest) return null;
+    if (target.closest('.spotpin-hit')) return null;
+    const mark = target.closest('.spotpin-lab, .spotpin-dot, .spotpin-num, .spotpin-ring');
+    return mark ? mark.closest('.spotpin') : null;
+  }
+  function pinFromTap(stage, clientX, clientY, aimed) {
+    if (aimed && stage.contains(aimed)) return aimed;
+    const origin = stage.getBoundingClientRect();
+    const points = [...stage.querySelectorAll('.spotpin')].map(pin => {
+      const pt = pinPoint(stage, pin);
+      return pt ? { el: pin, x: pt.x, y: pt.y } : null;
+    }).filter(Boolean);
+    const hit = nearestPin(points, clientX - origin.left, clientY - origin.top, 26);
+    return hit ? hit.el : null;
+  }
+  function ensurePinLabel(pin) {
+    if (!pin || pin.querySelector('.spotpin-lab')) return;
+    const name = pin.getAttribute('aria-label') || '';
+    if (!name) return;
+    const chars = Array.from(name);
+    const label = chars.length > 8 ? chars.slice(0, 7).join('') + '…' : name;
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('class', 'spotpin-lab is-added');
+    text.setAttribute('x', pin.getAttribute('data-x'));
+    text.setAttribute('y', ((+pin.getAttribute('data-y') || 0) - 18).toFixed(1));
+    text.setAttribute('text-anchor', 'middle');
+    text.setAttribute('fill', '#102033');
+    text.setAttribute('font-size', '13');
+    text.setAttribute('font-weight', '900');
+    text.setAttribute('stroke', '#fff');
+    text.setAttribute('stroke-width', '4');
+    text.setAttribute('paint-order', 'stroke');
+    text.textContent = label;
+    pin.appendChild(text);
+  }
+  function showSpotCard(stage, spot) {
+    const html = spotCardHtml(spotStory(spot));
+    if (!html) return;
+    const prev = stage.querySelector('.spotcard');
+    if (prev) prev.outerHTML = html;
+    else stage.insertAdjacentHTML('beforeend', html);
+    moveCard(stage);
   }
   function focusSpot(i) {
     if (typeof document === 'undefined') return;
@@ -914,25 +1017,25 @@
       else el.removeAttribute('aria-pressed');
     });
     stage.classList.add('is-focus');
+    if (pin.parentNode) pin.parentNode.appendChild(pin);
+    ensurePinLabel(pin);
     layer.querySelectorAll('.vlist .vtrip').forEach((el, n) => el.classList.toggle('on', n === +i));
+    const row = layer.querySelectorAll('.vlist .vtrip')[+i];
+    if (row && row.scrollIntoView) row.scrollIntoView({ block: 'nearest' });
     const run = () => {
       const vb = parseView(svg.getAttribute('viewBox'));
       const box = { w: svg.clientWidth, h: svg.clientHeight };
-      if (!vb || !box.w || !box.h) return;
+      if (!vb || !box.w || !box.h) return false;
       const raw = focusView(
         { x: +pin.getAttribute('data-x'), y: +pin.getAttribute('data-y') },
         vb, box, 1.9, focusAnchor(stage.clientWidth)
       );
       stage._view = clampMapView(raw, box.w, box.h);
       applyMap(stage);
-      const html = spotCardHtml(spotStory(spot));
-      const card = stage.querySelector('.spotcard');
-      if (card) card.outerHTML = html;
-      else stage.insertAdjacentHTML('beforeend', html);
-      moveCard(stage);
+      showSpotCard(stage, spot);
+      return true;
     };
-    if (svg.clientWidth) run();
-    else requestAnimationFrame(run);
+    if (!run()) requestAnimationFrame(() => { if (!run()) requestAnimationFrame(run); });
     if (stage.scrollIntoView) stage.scrollIntoView({ block: 'nearest' });
   }
   function clearSpot() {
@@ -995,14 +1098,17 @@
       applyMap(stage);
       moveCard(stage);
     }, { passive: false });
+    const TAP = 18;
     const capture = id => { try { stage.setPointerCapture(id); } catch (err) {} };
     stage.addEventListener('pointerdown', e => {
       if (e.button > 0) return;
       if (e.target.closest && e.target.closest('.spotcard, .vmap-tools')) return;
+      stage._swallow = false;
       pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       const view = stage._view || { s: 1, x: 0, y: 0 };
       if (pointers.size === 1) {
-        drag = { id: e.pointerId, x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, s: view.s, moved: 0, pinch: false };
+        const aimed = aimedPin(e.target);
+        drag = { id: e.pointerId, x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, s: view.s, moved: 0, pinch: false, pin: aimed && stage.contains(aimed) ? aimed : null };
       } else if (pointers.size === 2) {
         const pts = [...pointers.values()];
         pinch = { dist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1, s: view.s, x: view.x, y: view.y };
@@ -1029,45 +1135,48 @@
         moveCard(stage);
         return;
       }
-      if (!drag || drag.pinch) return;
+      if (!drag || drag.pinch || e.pointerId !== drag.id) return;
       const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
       drag.moved = Math.max(drag.moved, Math.hypot(dx, dy));
-      if (drag.moved < 3) return;
+      if (drag.moved < TAP) return;
       if (!stage.classList.contains('is-drag')) {
         capture(drag.id);
         stage.classList.add('is-drag');
       }
       stage._view = clampMapView({ s: drag.s, x: drag.vx + dx, y: drag.vy + dy }, box.w, box.h);
       applyMap(stage);
+      moveCard(stage);
     });
-    const endPointer = e => {
-      const info = drag;
+    const endPointer = (e, cancelled) => {
+      const info = drag && drag.id === e.pointerId ? drag : null;
       pointers.delete(e.pointerId);
       if (pointers.size < 2) pinch = null;
+      if (info && info.pinch) info.pinch = pointers.size >= 2;
       if (pointers.size > 0) return;
       stage.classList.remove('is-drag');
       drag = null;
-      if (!info || info.pinch) return;
-      if (info.moved >= 8 && stage._view && stage._view.s > 1.01) { stage._swallow = true; return; }
-      if (info.moved >= 8) return;
-      const el = document.elementFromPoint(e.clientX, e.clientY);
+      if (cancelled || !info || info.pinch) return;
+      if (info.moved >= TAP) { stage._swallow = true; return; }
+      stage._swallow = true;
       if (stage.dataset.kind !== 'city') {
+        const el = document.elementFromPoint(info.x, info.y);
         const hit = el && el.closest && el.closest('.vreg[data-id], .rlab[data-id]');
         if (hit && stage.contains(hit)) openCityMap(hit.getAttribute('data-id'));
         return;
       }
-      const pin = el && el.closest && el.closest('.spotpin');
+      const pin = pinFromTap(stage, info.x, info.y, info.pin);
+      const el = document.elementFromPoint(info.x, info.y);
       const ui = el && el.closest && el.closest('.spotcard, .vmap-tools');
-      if (pin && stage.contains(pin)) focusSpot(+pin.getAttribute('data-i'));
+      if (pin) focusSpot(+pin.getAttribute('data-i'));
       else if (!ui && stage.classList.contains('is-focus')) clearSpot();
     };
-    stage.addEventListener('pointerup', endPointer);
-    stage.addEventListener('pointercancel', endPointer);
+    stage.addEventListener('pointerup', e => endPointer(e, false));
+    stage.addEventListener('pointercancel', e => endPointer(e, true));
     stage.addEventListener('click', e => {
-      if (!stage._swallow) return;
-      stage._swallow = false;
-      e.preventDefault();
-      e.stopPropagation();
+      if (stage._swallow) { stage._swallow = false; e.preventDefault(); e.stopPropagation(); return; }
+      if (stage.dataset.kind !== 'city') return;
+      const pin = pinFromTap(stage, e.clientX, e.clientY, aimedPin(e.target));
+      if (pin) { e.preventDefault(); e.stopPropagation(); focusSpot(+pin.getAttribute('data-i')); }
     }, true);
     stage.addEventListener('keydown', e => {
       const pin = e.target.closest && e.target.closest('.spotpin');
@@ -1086,7 +1195,7 @@
     const spots = citySpots(id);
     if (typeof document === 'undefined') return spots;
     const rows = spots.length
-      ? spots.map((s, i) => `<button type="button" class="vtrip" onclick="Journey.focusSpot(${i})"><b>${esc(s.name)}</b></button>`).join('')
+      ? spots.map((s, i) => `<button type="button" class="vtrip" onclick="Journey.focusSpot(${i})"><b><span class="vno">${i + 1}</span>${esc(s.name)}</b></button>`).join('')
       : '<div class="vempty"><b>這座城市還沒有帶座標的景點</b><p>行程裡的景點若有位置，會標在地圖上。</p></div>';
     const hint = '點景點會放大，旁邊有簡介和冷知識。點空白或關閉就回到城市全圖。';
     const layer = layerEl();
@@ -1334,7 +1443,7 @@
     STYLES, COUNTRIES, CITIES, CARDS, ALIAS, HOME, JP_AIR, KR_AIR,
     detectCountry, detectCity, resolveTheme, summarize, evaluate, cardById, migrateBadges, progressBrief, shortStyle, transitLegs, dayCount,
     visitedPlaces, visitBrief, visitMapMarkup, mapPins, cityMapMarkup, citySpots, achMarkup, howTo,
-    spotStory, spotCardHtml, focusView, clampMapView, placeCard, focusAnchor, mapStage,
+    spotStory, spotCardHtml, focusView, clampMapView, placeCard, focusAnchor, mapStage, nearestPin,
     apply, afterPaint, exportState, importState, setGlobalStyle, globalStyle,
     openAchieve, peek, closeLayer, celebrate, doneCelebrate, openVisitMap, openCityMap, focusVisit, openMappedTrip,
     focusSpot, clearSpot, resetMap, zoomMap,
