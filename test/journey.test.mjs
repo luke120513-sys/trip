@@ -279,9 +279,16 @@ assert.match(page, /theme-tw/);
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v69/);
+assert.match(sw, /tripmate-v70/);
 assert.match(sw, /journey\.js/);
-assert.match(page, /v2\.24\.2/);
+assert.match(page, /v2\.24\.3/);
+assert.match(page, /controllerchange/);
+assert.match(page, /發現新版本/);
+assert.match(page, /SKIP_WAITING/);
+assert.match(sw, /skipWaiting\(\)/);
+assert.match(sw, /clients\.claim\(\)/);
+assert.match(sw, /SW_UPDATED/);
+assert.match(sw, /navigate/);
 assert.match(page, /openVisitMap/);
 assert.match(page, /class="vmap-entry"/);
 assert.match(page, /\.ach-q/);
