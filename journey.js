@@ -212,17 +212,28 @@
     }
     return ids;
   }
+  function isHop(s) {
+    if (!s) return false;
+    if (s.kind === 'flight' || s.leg === 'out' || s.leg === 'return') return true;
+    return /\b[A-Z]{3}\s*(?:→|->|–|-|~)\s*[A-Z]{3}\b/.test(String(s.name || ''));
+  }
+  function spotCity(s) {
+    if (!s || isHop(s)) return '';
+    const lat = +s.lat, lng = +s.lng;
+    if (Number.isFinite(lat) && Number.isFinite(lng)) {
+      const hit = CITIES.find(c => inBox(lat, lng, c.box));
+      if (hit) return hit.id;
+    }
+    return cityFromText(blob(s));
+  }
+  /* 只算行程目的地，以及日子裡的景點。出發機場、回程航班不算去過。 */
   function citiesTouched(trip) {
     const ids = new Set();
     if (!trip) return ids;
     const add = id => { if (id) ids.add(id); };
     add(cityFromText(trip.dest));
     airCities(trip.dest).forEach(add);
-    (trip.days || []).forEach(d => (d || []).forEach(s => {
-      if (!s) return;
-      add(detectCity(s, trip));
-      airCities([s.from, s.to, s.name].filter(Boolean).join(' ')).forEach(add);
-    }));
+    (trip.days || []).forEach(d => (d || []).forEach(s => add(spotCity(s))));
     return ids;
   }
   function visitedPlaces(trips) {
@@ -627,52 +638,53 @@
   }
   const MAPS = {
     jp: {
-      label: '日本', vb: '0 0 220 340',
+      label: '日本', vb: '0 0 360 520',
       land: [
-        'M132,16 C158,6 198,14 204,40 C210,64 186,84 158,78 C132,72 110,56 118,34 C122,22 124,18 132,16 Z',
-        'M150,82 C168,96 186,118 192,142 C196,158 184,170 170,174 C156,180 148,192 136,200 C120,210 104,216 90,228 C76,240 64,244 58,232 C54,220 68,212 84,204 C100,196 114,184 122,168 C130,152 128,132 136,114 C142,98 146,88 150,82 Z',
-        'M92,232 C110,224 122,238 114,252 C104,262 90,252 92,232 Z',
-        'M46,234 C66,224 84,242 78,266 C70,288 48,290 38,270 C32,252 36,238 46,234 Z',
-        'M56,308 C66,302 76,312 70,322 C62,330 52,320 56,308 Z',
-        'M78,320 C86,316 94,324 88,332 C80,338 72,328 78,320 Z'
+        'M188,42 C220,18 286,22 310,54 C328,78 312,112 266,122 C232,130 204,114 192,94 C178,108 160,98 164,74 C168,52 174,46 188,42Z',
+        'M214,132 C232,150 250,174 256,202 C264,230 284,244 276,264 C266,282 238,274 220,286 C200,300 186,320 166,334 C144,350 120,350 100,340 C82,330 68,340 64,324 C60,308 78,296 98,294 C122,292 144,274 160,256 C176,238 172,212 180,188 C188,162 196,144 210,134 C212,132 213,132 214,132Z',
+        'M136,348 C162,336 184,354 172,372 C158,388 132,376 136,348Z',
+        'M72,356 C104,338 136,362 128,400 C120,438 86,454 58,428 C36,408 44,368 72,356Z',
+        'M118,478 C132,468 146,482 136,496 C124,508 108,496 118,478Z',
+        'M150,490 C162,482 174,494 164,506 C152,516 140,504 150,490Z'
       ],
       pins: [
-        { id: 'spk', x: 158, y: 46, anchor: 'start' },
-        { id: 'tyo', x: 176, y: 150, anchor: 'end' },
-        { id: 'kyo', x: 124, y: 186, anchor: 'end' },
-        { id: 'osa', x: 112, y: 204, anchor: 'end' },
-        { id: 'fuk', x: 58, y: 262, anchor: 'start' },
-        { id: 'oka', x: 74, y: 324, anchor: 'start' }
+        { id: 'spk', x: 236, y: 78, anchor: 'middle', ly: -28, rx: 28, ry: 18 },
+        { id: 'tyo', x: 258, y: 228, anchor: 'start', lx: 16, rx: 22, ry: 16 },
+        { id: 'kyo', x: 176, y: 286, anchor: 'end', lx: 16, rx: 16, ry: 12 },
+        { id: 'osa', x: 156, y: 308, anchor: 'end', lx: 16, rx: 16, ry: 12 },
+        { id: 'fuk', x: 96, y: 392, anchor: 'start', lx: 16, rx: 20, ry: 15 },
+        { id: 'oka', x: 126, y: 488, anchor: 'middle', ly: 24, rx: 12, ry: 9 }
       ]
     },
     tw: {
-      label: '台灣', vb: '0 0 220 320',
+      label: '台灣', vb: '0 0 340 460',
       land: [
-        'M108,28 C132,36 150,58 156,84 C162,112 164,146 156,178 C150,210 138,242 122,266 C112,280 98,286 90,274 C78,256 66,224 62,190 C58,156 60,118 72,84 C82,54 92,34 108,28 Z'
+        'M176,48 C210,62 232,98 236,140 C240,186 230,234 216,278 C202,320 184,358 162,386 C146,406 124,408 116,388 C104,360 90,318 84,274 C78,228 76,176 90,126 C104,78 142,52 164,46 C170,44 172,46 176,48Z'
       ],
+      mark: '<g class="bloom" aria-hidden="true"><circle cx="46" cy="40" r="8"/><circle cx="60" cy="30" r="8"/><circle cx="54" cy="48" r="8"/><circle cx="38" cy="50" r="8"/><circle cx="32" cy="36" r="8"/><circle cx="46" cy="40" r="3.2" class="bloomcore"/></g>',
       pins: [
-        { id: 'tpe', x: 102, y: 62, anchor: 'end' },
-        { id: 'yil', x: 132, y: 78, anchor: 'start' },
-        { id: 'txg', x: 88, y: 118, anchor: 'end' },
-        { id: 'nto', x: 112, y: 136, anchor: 'start' },
-        { id: 'hul', x: 140, y: 150, anchor: 'start' },
-        { id: 'cyi', x: 84, y: 168, anchor: 'end' },
-        { id: 'tnn', x: 80, y: 198, anchor: 'end' },
-        { id: 'khh', x: 86, y: 224, anchor: 'end' },
-        { id: 'ttt', x: 124, y: 210, anchor: 'start' },
-        { id: 'ktn', x: 104, y: 262, anchor: 'start' }
+        { id: 'tpe', x: 168, y: 92, anchor: 'end', lx: 18, rx: 18, ry: 13 },
+        { id: 'yil', x: 206, y: 108, anchor: 'start', lx: 16, rx: 14, ry: 11 },
+        { id: 'txg', x: 150, y: 168, anchor: 'end', lx: 18, rx: 16, ry: 12 },
+        { id: 'nto', x: 178, y: 188, anchor: 'start', lx: 14, ly: -12, rx: 14, ry: 11 },
+        { id: 'hul', x: 214, y: 196, anchor: 'start', lx: 16, rx: 14, ry: 12 },
+        { id: 'cyi', x: 146, y: 228, anchor: 'end', lx: 18, rx: 14, ry: 11 },
+        { id: 'tnn', x: 142, y: 268, anchor: 'end', lx: 18, rx: 14, ry: 11 },
+        { id: 'khh', x: 150, y: 304, anchor: 'end', lx: 18, rx: 15, ry: 12 },
+        { id: 'ttt', x: 196, y: 286, anchor: 'start', lx: 16, rx: 14, ry: 12 },
+        { id: 'ktn', x: 168, y: 352, anchor: 'middle', ly: 22, rx: 14, ry: 11 }
       ]
     },
     kr: {
-      label: '韓國', vb: '0 0 200 280',
+      label: '韓國', vb: '0 0 320 420',
       land: [
-        'M96,36 C122,26 150,40 156,66 C162,94 156,126 146,156 C138,184 128,206 114,216 C100,226 86,216 84,196 C80,168 72,136 74,104 C76,72 80,48 96,36 Z',
-        'M108,236 C124,230 138,242 130,254 C118,264 104,256 108,236 Z'
+        'M156,40 C198,24 242,50 250,94 C258,140 246,186 228,226 C212,260 192,286 166,298 C142,308 116,294 112,262 C106,224 98,182 94,136 C90,88 112,52 156,40Z',
+        'M162,332 C192,320 220,338 210,360 C196,380 164,378 154,358 C146,340 148,334 162,332Z'
       ],
       pins: [
-        { id: 'sel', x: 112, y: 96, anchor: 'end' },
-        { id: 'pus', x: 132, y: 186, anchor: 'start' },
-        { id: 'cju', x: 118, y: 248, anchor: 'start' }
+        { id: 'sel', x: 150, y: 132, anchor: 'end', lx: 16, rx: 20, ry: 15 },
+        { id: 'pus', x: 206, y: 248, anchor: 'start', lx: 16, rx: 18, ry: 14 },
+        { id: 'cju', x: 184, y: 352, anchor: 'start', lx: 16, rx: 16, ry: 12 }
       ]
     }
   };
@@ -681,19 +693,22 @@
     if (!map) return '';
     const byId = {};
     (places || []).forEach(p => { byId[p.id] = p; });
-    const size = map.vb.split(' ');
+    const shade = map.land.map(d => `<path class="landshade" d="${d}"/>`).join('');
     const lands = map.land.map(d => `<path class="land" d="${d}"/>`).join('');
     const pins = map.pins.map(pin => {
       const p = byId[pin.id];
       const on = !!(p && p.on);
       const name = p ? p.name : '';
-      const anchor = pin.anchor === 'end' ? 'end' : 'start';
-      const tx = pin.x + (anchor === 'end' ? -12 : 12);
-      const fill = on && p && /^#[0-9A-Fa-f]{6}$/.test(p.color) ? p.color : '';
-      const label = name ? `<text class="plab${on ? ' on' : ''}" x="${tx}" y="${pin.y + 4}" text-anchor="${anchor}">${esc(name)}</text>` : '';
-      return `<g class="pinwrap" data-city="${pin.id}" onclick="Journey.focusVisit('${pin.id}')"><circle class="pin${on ? ' on' : ''}" cx="${pin.x}" cy="${pin.y}" r="${on ? 8 : 4.5}"${fill ? ` style="fill:${fill}"` : ''}/>${label}<title>${esc(name || pin.id)}${on ? '，去過' : ''}</title></g>`;
+      const anchor = pin.anchor === 'end' ? 'end' : pin.anchor === 'middle' ? 'middle' : 'start';
+      const tx = anchor === 'middle' ? pin.x : pin.x + (anchor === 'end' ? -(pin.lx || 14) : (pin.lx || 14));
+      const ty = pin.y + (pin.ly != null ? pin.ly : 4);
+      const color = on && p && /^#[0-9A-Fa-f]{6}$/.test(p.color) ? p.color : '';
+      const rx = pin.rx || 16;
+      const ry = pin.ry || 12;
+      const label = name ? `<text class="plab${on ? ' on' : ''}" x="${tx}" y="${ty}" text-anchor="${anchor}">${esc(name)}</text>` : '';
+      return `<g class="pinwrap${on ? ' on' : ''}" data-city="${pin.id}" onclick="Journey.focusVisit('${pin.id}')"><ellipse class="wash" cx="${pin.x}" cy="${pin.y}" rx="${on ? rx : rx * 0.72}" ry="${on ? ry : ry * 0.72}"${color ? ` style="fill:${color}"` : ''}/><circle class="hit" cx="${pin.x}" cy="${pin.y}" r="16"/><circle class="pin${on ? ' on' : ''}" cx="${pin.x}" cy="${pin.y}" r="${on ? 3.6 : 2.3}"/>${label}<title>${esc(name || pin.id)}${on ? '，去過' : ''}</title></g>`;
     }).join('');
-    return `<svg class="vmap" viewBox="${map.vb}" role="img" aria-label="${map.label}地圖"><rect class="sea" x="0" y="0" width="${size[2]}" height="${size[3]}" rx="22"/>${lands}${pins}</svg>`;
+    return `<svg class="vmap" viewBox="${map.vb}" role="img" aria-label="${map.label}地圖">${shade}${lands}${map.mark || ''}${pins}</svg>`;
   }
   function visitListHtml(places) {
     const on = (places || []).filter(p => p.on);

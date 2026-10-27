@@ -129,7 +129,7 @@ assert.equal(html.includes('onclick="shareCloud()">一起改'), false);
 assert.ok(foodSrc.includes('在地人推薦度'));
 assert.ok(html.includes('food.js'));
 assert.ok(html.includes('id="nfyn"'));
-assert.ok(html.includes('v2.14.0'));
+assert.ok(html.includes('v2.15.0'));
 assert.ok(rules.includes('match /reviews/{id}'));
 assert.ok(rules.includes('match /backups/{uid}'));
 assert.ok(rules.includes('match /activity/{actId}'));

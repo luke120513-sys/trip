@@ -237,9 +237,9 @@ assert.match(page, /theme-tw/);
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v57/);
+assert.match(sw, /tripmate-v58/);
 assert.match(sw, /journey\.js/);
-assert.match(page, /v2\.14\.0/);
+assert.match(page, /v2\.15\.0/);
 assert.match(page, /openVisitMap/);
 assert.match(page, /class="vmap-entry"/);
 assert.match(page, /\.ach-q/);
@@ -289,6 +289,34 @@ assert.match(twMap, /data-city="tpe"/);
 assert.match(twMap, /data-city="hul"/);
 assert.match(twMap, /台灣地圖/);
 assert.equal(J.visitMapMarkup('nope', places), '');
+const tokyoHome = trip({
+  id: 'home-1', dest: '東京', orig: 'TPE', dep: '2026-10-20', ret: '2026-10-23',
+  days: [[
+    { kind: 'flight', name: 'BR198 TPE→NRT', from: 'TPE', to: 'NRT', leg: 'out' },
+    { name: '淺草寺', time: '10:00' },
+    { kind: 'flight', name: 'BR197 HND→TPE', from: 'HND', to: 'TPE', leg: 'return', note: '回程台北' }
+  ]]
+});
+const homeBy = Object.fromEntries(J.visitedPlaces([tokyoHome]).map(p => [p.id, p]));
+assert.equal(homeBy.tyo.on, true);
+assert.equal(homeBy.tpe.on, false);
+assert.equal(homeBy.tyo.trips[0].dest, '東京');
+const kaohsiungHome = trip({
+  dest: '大阪', orig: 'KHH',
+  days: [[{ kind: 'flight', from: 'KHH', to: 'KIX', name: 'IT230 KHH→KIX', leg: 'out' }]]
+});
+const khhBy = Object.fromEntries(J.visitedPlaces([kaohsiungHome]).map(p => [p.id, p]));
+assert.equal(khhBy.osa.on, true);
+assert.equal(khhBy.khh.on, false);
+const seoulHome = trip({
+  dest: '首爾', orig: 'TPE',
+  days: [[{ kind: 'flight', from: 'ICN', to: 'TSA', name: 'BR169 ICN→TSA', leg: 'return', note: '回台北' }]]
+});
+const selBy = Object.fromEntries(J.visitedPlaces([seoulHome]).map(p => [p.id, p]));
+assert.equal(selBy.sel.on, true);
+assert.equal(selBy.tpe.on, false);
+const taipeiStay = trip({ dest: '台北', orig: 'TPE', days: [[{ name: '故宮博物院' }]] });
+assert.equal(Object.fromEntries(J.visitedPlaces([taipeiStay]).map(p => [p.id, p])).tpe.on, true);
 
 const store = {};
 globalThis.TM = {
