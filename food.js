@@ -17,7 +17,7 @@ const FOOD_KINDS = [
   { id: 'italian', label: '義式', test: /italian|pizza|義大利|披薩/i },
   { id: 'curry', label: '咖哩', test: /curry|咖哩/i }
 ];
-const FOOD_PK = { 東京: 'tokyo', 大阪: 'osaka', 京都: 'kyoto', 福岡: 'fukuoka', 沖繩: 'okinawa', 首爾: 'seoul', 釜山: 'busan', 曼谷: 'bangkok', 香港: 'hongkong', 新加坡: 'singapore' };
+const FOOD_PK = { 東京: 'tokyo', 大阪: 'osaka', 京都: 'kyoto', 福岡: 'fukuoka', 沖繩: 'okinawa', 首爾: 'seoul', 釜山: 'busan', 曼谷: 'bangkok', 香港: 'hongkong', 新加坡: 'singapore', 台北: 'taipei', 台灣: 'taipei' };
 
 function placeKey(name, lat, lng) {
   const s = String(name || '').trim().toLowerCase() + '|' + Number(lat || 0).toFixed(3) + '|' + Number(lng || 0).toFixed(3);

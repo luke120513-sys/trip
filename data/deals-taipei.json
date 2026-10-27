@@ -1,0 +1,123 @@
+{
+  "city": "taipei",
+  "checked": "2026-10-27",
+  "items": [
+    {
+      "cat": "交通",
+      "name": "台北捷運一日票、多日票",
+      "price": "一日票 NT$150（至當日營運結束）；24 小時 NT$180、48 小時 NT$280、72 小時 NT$380",
+      "desc": "適用台北捷運與新北捷運環狀線，不含公車。各站詢問處或指定車站多元支付售票機可買。",
+      "src": ["https://www.metro.taipei/cp.aspx?n=CEF54168B23F73B4&s=9D540D31C5F81237"],
+      "id": "taipei-d0",
+      "checked": "2026-10-27"
+    },
+    {
+      "cat": "交通",
+      "name": "北北基好玩卡 交通暢遊版",
+      "price": "一日 NT$210、二日 NT$340、三日 NT$470、五日 NT$730",
+      "desc": "台北捷運、新北環狀線與公車，不含景點門票。貓空纜車一日券（NT$400）頁面註明暫停販售。",
+      "src": ["https://www.metro.taipei/cp.aspx?n=CEF54168B23F73B4&s=9D540D31C5F81237"],
+      "id": "taipei-d1",
+      "checked": "2026-10-27"
+    },
+    {
+      "cat": "交通",
+      "name": "桃園機場捷運來回＋台北捷運多日票",
+      "price": "機捷來回＋北捷 48 小時 NT$520；＋72 小時 NT$600",
+      "desc": "機捷來回是任選車站搭 2 次，不是固定台北車站到機場。北捷時數從第一次進站起算。A1、A12、A13 現金購買。單程票價這次未從票價表核到，不列。",
+      "src": ["https://www.tymetro.com.tw/tymetro-new/tw/_pages/travel-guide/ticketson04.php"],
+      "id": "taipei-d2",
+      "checked": "2026-10-27"
+    },
+    {
+      "cat": "交通",
+      "name": "淡水渡輪（順風航業）",
+      "price": "淡水渡船頭–八里全票 NT$40、優待 NT$20；淡水–漁人碼頭全票 NT$100、優待 NT$50",
+      "desc": "優待為 65 歲以上、未滿 12 歲、身心障礙者與一位必要陪同。平日淡水–漁人碼頭是預約包船。這不是淡水老街門票。",
+      "src": ["http://www.shuf168.com.tw/price01.php"],
+      "id": "taipei-d3",
+      "checked": "2026-10-27"
+    },
+    {
+      "cat": "交通",
+      "name": "貓空纜車",
+      "price": "單次全票 NT$180、一日票 NT$300；優待單次 NT$50、一日票 NT$100；水晶車廂每趟每人加 NT$50",
+      "desc": "優待限國人並出示證件。0–5 歲由已購票成人陪同可免費，每位成人限帶 2 名。",
+      "src": ["https://www.gondola.taipei/cp.aspx?n=E6E0CD5467B035F9"],
+      "id": "taipei-d4",
+      "checked": "2026-10-27"
+    },
+    {
+      "cat": "門票",
+      "name": "台北101觀景台",
+      "price": "成人一般票 NT$600（89F、88F）；至 101 樓每人加 NT$380；快速通關 NT$1,200；Skyline 460 NT$3,000／人",
+      "desc": "持台灣身分證件的學生、樂齡、愛心票等，一般票頁面為 NT$300。115 公分以下兒童免費。Skyline 460 要預約，身高 145 公分以上。",
+      "src": ["https://www.taipei-101.com.tw/tw/observatory/ticket"],
+      "id": "taipei-d5",
+      "checked": "2026-10-27"
+    },
+    {
+      "cat": "門票",
+      "name": "國立故宮博物院北部院區",
+      "price": "普通參觀券 NT$350；團體 NT$320；優惠 NT$150",
+      "desc": "未滿 18 歲不分國籍免費。本國 65 歲以上、低收入戶、持教育部學生證者免費。與台北101觀景台聯券 NT$820。南部院區票價不同，這筆是台北。",
+      "src": ["https://www.npm.gov.tw/Articles.aspx?l=1&sno=02007004"],
+      "id": "taipei-d6",
+      "checked": "2026-10-27"
+    },
+    {
+      "cat": "門票",
+      "name": "野柳地質公園",
+      "price": "全票 NT$120；優待 NT$60；30 人以上團體 NT$96、學生團體 NT$48",
+      "desc": "未滿 6 歲與萬里區民憑證免費。全年 08:00–17:00，夏季到 18:00。",
+      "src": ["https://www.ylgeopark.org.tw/VisitInformationView/TicketPrice"],
+      "id": "taipei-d7",
+      "checked": "2026-10-27"
+    },
+    {
+      "cat": "門票",
+      "name": "台北市立動物園",
+      "price": "普通 NT$100；臺北市民 NT$60；優待 NT$50；團體 NT$70",
+      "desc": "官網這次寫線上購票暫停。",
+      "src": ["https://www.zoo.gov.taipei/cp.aspx?n=763493FD7ECCAA11"],
+      "id": "taipei-d8",
+      "checked": "2026-10-27"
+    },
+    {
+      "cat": "門票",
+      "name": "新北市立黃金博物館",
+      "price": "全票 NT$80",
+      "desc": "新北市民、65 歲以上、未滿 12 歲、國內在學學生、身心障礙者與一位陪伴者等憑證免費。體驗活動另計。",
+      "src": ["https://www.gep.ntpc.gov.tw/xmdoc/cont?xsmsid=0G246368552167800609"],
+      "id": "taipei-d9",
+      "checked": "2026-10-27"
+    },
+    {
+      "cat": "一日遊",
+      "name": "北北基好玩卡 無限暢遊版",
+      "price": "一日 NT$1,300、二日 NT$1,700、三日 NT$1,800；兒童版一日 NT$1,100、二日 NT$1,500、三日 NT$1,700",
+      "desc": "捷運、環狀線、公車與景點門票。捷運頁註明含貓空纜車，其餘景點清單以北北基好玩卡官網為準。台北車站、西門站、松山機場站詢問處或官網。",
+      "src": ["https://www.metro.taipei/cp.aspx?n=CEF54168B23F73B4&s=9D540D31C5F81237"],
+      "id": "taipei-d10",
+      "checked": "2026-10-27"
+    },
+    {
+      "cat": "一日遊",
+      "name": "北北基好玩卡 景點暢遊版",
+      "price": "二日 NT$650、三日 NT$850、四日 NT$1,050",
+      "desc": "各景點可進一次，含貓空纜車。加值後有悠遊卡功能，不是無限搭乘。",
+      "src": ["https://www.metro.taipei/cp.aspx?n=CEF54168B23F73B4&s=9D540D31C5F81237"],
+      "id": "taipei-d11",
+      "checked": "2026-10-27"
+    },
+    {
+      "cat": "一日遊",
+      "name": "北北基好玩卡 經典景點版",
+      "price": "NT$950",
+      "desc": "101 景觀台與故宮博物院北部院區。從第一次在景點使用當日起 14 日內用完。加值後可當悠遊卡。",
+      "src": ["https://www.metro.taipei/cp.aspx?n=CEF54168B23F73B4&s=9D540D31C5F81237"],
+      "id": "taipei-d12",
+      "checked": "2026-10-27"
+    }
+  ]
+}

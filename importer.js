@@ -167,9 +167,10 @@ async function geocodePending(pending,dest){const out=[];const seen=new Set();
   const find=typeof placeSearch==='function'?placeSearch:(typeof geoSearch==='function'?geoSearch:null);
   if(!find)break;
   try{const hits=await find(q,dest);const h=hits&&hits[0];if(!h||!Number.isFinite(+h.lat))continue;
-   if(h.name&&/^(日本|東京都|tokyo|japan)$/i.test(String(h.name).trim()))continue;
+   if(h.name&&/^(日本|東京都|tokyo|japan|台灣|臺灣|taiwan)$/i.test(String(h.name).trim()))continue;
    const blob=[h.addr,h.city,h.name].filter(Boolean).join(' ');
    if(dest&&/東京|大阪|京都|福岡|沖繩|札幌|名古屋/.test(dest)&&h.addr&&!/東京|大阪|京都|福岡|沖繩|札幌|名古屋|日本|japan|tokyo|osaka|kyoto|fukuoka/i.test(blob))continue;
+   if(dest&&/台北|台灣|臺灣/.test(dest)&&h.addr&&!/台北|臺北|台灣|臺灣|新北|Taiwan|Taipei/i.test(blob))continue;
    const hint=h.hint||(typeof PlaceQ!=='undefined'&&PlaceQ.hint?PlaceQ.hint(h.name):'');
    out.push({name:q,local:h.name&&h.name!==q?h.name:'',zh:hint&&hint!==q?hint:'',area:'',type:'',pid:'',city:dest||'',lat:+h.lat,lng:+h.lng,source:'geo',addr:h.addr||''})}catch{}}
  return out}
