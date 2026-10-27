@@ -130,7 +130,7 @@ function tripDoc(t) {
     archived: t.archived === true,
     archivedAt: +t.archivedAt || 0,
     archiveAsked: t.archiveAsked === true,
-    souvenir: t.souvenir === 'pass' || t.souvenir === 'card' || t.souvenir === 'pack' || t.souvenir === 'figure' ? t.souvenir : ''
+    souvenir: t.souvenir === 'pass' || t.souvenir === 'card' || t.souvenir === 'stamp' || t.souvenir === 'charm' || t.souvenir === 'badge' || t.souvenir === 'plaque' ? t.souvenir : ''
   };
   return JSON.parse(JSON.stringify(o));
 }

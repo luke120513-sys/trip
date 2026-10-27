@@ -167,7 +167,7 @@
     }
     if (L.archiveAsked || R.archiveAsked) L.archiveAsked = true;
     else delete L.archiveAsked;
-    if (meta.souvenir === 'pass' || meta.souvenir === 'card' || meta.souvenir === 'pack' || meta.souvenir === 'figure') L.souvenir = meta.souvenir;
+    if (meta.souvenir === 'pass' || meta.souvenir === 'card' || meta.souvenir === 'stamp' || meta.souvenir === 'charm' || meta.souvenir === 'badge' || meta.souvenir === 'plaque') L.souvenir = meta.souvenir;
     else delete L.souvenir;
     if (Array.isArray(R.tasks)) {
       const lv = +L.tasksRev || taskStamp(L.tasks);
