@@ -1,0 +1,28 @@
+{
+  "city": "nantou",
+  "checked": "2026-10-27",
+  "items": [
+    {
+      "cat": "門票",
+      "name": "日月潭纜車來回",
+      "price": "全票 NT$420、優待 NT$330",
+      "desc": "2026年6月1日起。20人以上團體全票 NT$380、優待 NT$310。未滿3歲或未滿100公分免費。限當日來回一趟。",
+      "src": [
+        "https://www.ropeway.com.tw/page/about/index.aspx?kind=34"
+      ],
+      "id": "nantou-d0",
+      "checked": "2026-10-27"
+    },
+    {
+      "cat": "門票",
+      "name": "九族文化村",
+      "price": "成人 NT$1,100",
+      "desc": "學生 NT$980、兒童 NT$880、博幼 NT$550。未滿3歲或未滿100公分免費。入園票含當日日月潭纜車，纜車暫停不另補償。",
+      "src": [
+        "https://www.nine.com.tw/page/about/index.aspx?kind=234&lang=TW"
+      ],
+      "id": "nantou-d1",
+      "checked": "2026-10-27"
+    }
+  ]
+}

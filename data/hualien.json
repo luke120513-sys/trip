@@ -1,0 +1,153 @@
+{
+  "city": "hualien",
+  "checked": "2026-10-27",
+  "items": [
+    {
+      "id": "hualien-0",
+      "name": "太魯閣國家公園遊客中心",
+      "local": "Taroko National Park Visitor Center",
+      "type": "景點",
+      "area": "秀林",
+      "dur": 90,
+      "slot": "早",
+      "summary": "遊客中心在花蓮縣秀林鄉富世村富世291號。官網首頁寫 2024 年 4 月地震後，閣口至天祥段災損嚴重，峽谷步道與多處景點尚未開放；清水斷崖為部分開放。出發前查公路與步道開放頁。",
+      "price": "遊客中心與園區其他地區免費。錐麓古道另計全票 NT$200、半票 NT$100（6至12歲與學生），未滿6歲免費；須當日完成入園申請與繳費。多數峽谷步道目前未開放。",
+      "rom": "taroko",
+      "lat": 24.15816,
+      "lng": 121.62337,
+      "src": [
+        "https://www.taroko.gov.tw/ch/listicle/faq/386",
+        "https://www.taroko.gov.tw/"
+      ],
+      "count": 2,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "hualien-1",
+      "name": "七星潭",
+      "local": "Qixingtan",
+      "type": "景點",
+      "area": "新城",
+      "dur": 70,
+      "slot": "下午",
+      "summary": "交通部觀光署頁寫月牙灣與遊客中心 10:00–17:00，地址花蓮縣新城鄉七星街32號。頁面沒有門票欄，不列票價。",
+      "rom": "qixingtan",
+      "lat": 24.03143,
+      "lng": 121.62717,
+      "src": [
+        "https://www.tad.gov.tw/m1.aspx?id=9488&sNo=0001016"
+      ],
+      "count": 1,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "hualien-2",
+      "name": "東大門夜市",
+      "local": "Dongdamen Night Market",
+      "type": "餐廳",
+      "area": "花蓮市",
+      "dur": 90,
+      "slot": "晚",
+      "meal": "晚",
+      "summary": "花蓮旅遊網地址花蓮縣花蓮市重慶路572號，每日 18:00–24:00。頁面沒有門票欄，各攤價格不同，不列單一票價或評分。",
+      "rom": "dongdamen",
+      "lat": 23.97254,
+      "lng": 121.61131,
+      "src": [
+        "https://hualien.travel/zh-tw/attraction/17/"
+      ],
+      "count": 1,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "hualien-3",
+      "name": "池南國家森林遊樂區",
+      "local": "Chinan Forest Recreation Area",
+      "type": "景點",
+      "area": "壽豐",
+      "dur": 90,
+      "slot": "下午",
+      "summary": "林業及自然保育署入園費表。假日與非假日全票不同，半票含花蓮縣民、7–12歲、學生與軍警。",
+      "price": "假日全票 NT$50；非假日、持大眾運輸票根或一次購買20張以上 NT$40；半票 NT$25；65歲以上或3–6歲優待 NT$10。",
+      "rom": "chinan",
+      "lat": 23.9183,
+      "lng": 121.50119,
+      "src": [
+        "https://recreation.forest.gov.tw/mis/api/Admission/RANoArray?format=csv",
+        "https://recreation.forest.gov.tw/Forest/RA?typ_id=0800002"
+      ],
+      "count": 2,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "hualien-4",
+      "name": "花蓮文化創意產業園區",
+      "local": "Hualien Cultural and Creative Industries Park",
+      "type": "景點",
+      "area": "花蓮市",
+      "dur": 60,
+      "slot": "下午",
+      "summary": "地址花蓮縣花蓮市中華路144號。參觀注意事項寫全園區戶外免費、進園不需購票；室內展演是否售票依主辦單位。戶外 24 小時，室內每週一休園，服務中心週二至週日 10:00–18:00。",
+      "price": "戶外免費。室內活動另計。",
+      "rom": "hualien1913",
+      "lat": 23.97629,
+      "lng": 121.6047,
+      "src": [
+        "https://hualien1913.nat.gov.tw/%e5%8f%83%e8%a7%80%e6%b3%a8%e6%84%8f%e4%ba%8b%e9%a0%85/"
+      ],
+      "count": 1,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "hualien-5",
+      "name": "太魯閣附近午餐",
+      "local": "Lunch near Taroko",
+      "type": "餐廳",
+      "area": "秀林",
+      "dur": 50,
+      "slot": "午",
+      "meal": "午",
+      "summary": "座標用鄰近景點，方便排在同一天。沒有指定店名。評分與單價未查核。",
+      "src": [],
+      "count": 0,
+      "rom": "tarokolunch",
+      "checked": "2026-10-27",
+      "lat": 24.15816,
+      "lng": 121.62337
+    },
+    {
+      "id": "hualien-6",
+      "name": "七星潭附近午餐",
+      "local": "Lunch near Qixingtan",
+      "type": "餐廳",
+      "area": "新城",
+      "dur": 50,
+      "slot": "午",
+      "meal": "午",
+      "summary": "座標用鄰近景點，方便排在同一天。沒有指定店名。評分與單價未查核。",
+      "src": [],
+      "count": 0,
+      "rom": "qixinglunch",
+      "checked": "2026-10-27",
+      "lat": 24.03143,
+      "lng": 121.62717
+    },
+    {
+      "id": "hualien-7",
+      "name": "池南附近午餐",
+      "local": "Lunch near Chinan",
+      "type": "餐廳",
+      "area": "壽豐",
+      "dur": 50,
+      "slot": "午",
+      "meal": "午",
+      "summary": "座標用鄰近景點，方便排在同一天。沒有指定店名。評分與單價未查核。",
+      "src": [],
+      "count": 0,
+      "rom": "chinanlunch",
+      "checked": "2026-10-27",
+      "lat": 23.9183,
+      "lng": 121.50119
+    }
+  ]
+}

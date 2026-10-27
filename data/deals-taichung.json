@@ -1,0 +1,28 @@
+{
+  "city": "taichung",
+  "checked": "2026-10-27",
+  "items": [
+    {
+      "cat": "門票",
+      "name": "國立自然科學博物館展示場",
+      "price": "一般 NT$120",
+      "desc": "含生命科學廳、人類文化廳、地球環境廳。6–未滿12歲 NT$60，學生與20人團體 NT$90。未滿6歲免費。65歲以上平日免費、假日展示場 NT$60。2026年每週五14:00–17:00展示場免費。太空劇場 NT$100另計。週二至週日09:00–17:00。",
+      "src": [
+        "https://www.nmns.edu.tw/ch/visit/ticket/index.html"
+      ],
+      "id": "taichung-d0",
+      "checked": "2026-10-27"
+    },
+    {
+      "cat": "門票",
+      "name": "九二一地震教育園區展示場",
+      "price": "一般 NT$50",
+      "desc": "地震體驗平台另 NT$30。地址臺中市霧峰區新生路192號。週二至週日09:00–17:00。",
+      "src": [
+        "https://www.nmns.edu.tw/park_921/visit/fare/ticket/index.html"
+      ],
+      "id": "taichung-d1",
+      "checked": "2026-10-27"
+    }
+  ]
+}

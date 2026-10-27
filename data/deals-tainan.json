@@ -1,0 +1,29 @@
+{
+  "city": "tainan",
+  "checked": "2026-10-27",
+  "items": [
+    {
+      "cat": "門票",
+      "name": "奇美博物館常設展",
+      "price": "全票 NT$200、優惠 NT$150",
+      "desc": "優惠為7–22歲或65歲以上。設籍臺南市、臺南市學生、未滿7歲、身障與一位陪同者免費。特展另計。09:30–17:30，週三及除夕休館。",
+      "src": [
+        "https://www.chimeimuseum.org/permanent-exhibition"
+      ],
+      "id": "tainan-d0",
+      "checked": "2026-10-27"
+    },
+    {
+      "cat": "門票",
+      "name": "赤嵌樓、安平古堡、安平樹屋、億載金城",
+      "price": "全票 NT$70、半票 NT$35",
+      "desc": "臺南市公有古蹟購票參觀項目。30人以上團體 NT$60。市民憑身分證免費。赤嵌樓頁面時段較晚，古堡、樹屋、金城為08:30–17:30。",
+      "src": [
+        "https://historic.tainan.gov.tw/index.php?id=64&index=6&lang=cht&option=module&task=pageinfo",
+        "https://historic.tainan.gov.tw/index.php?id=46&index=4&lang=cht&option=module&task=pageinfo"
+      ],
+      "id": "tainan-d1",
+      "checked": "2026-10-27"
+    }
+  ]
+}

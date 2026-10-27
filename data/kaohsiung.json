@@ -1,0 +1,131 @@
+{
+  "city": "kaohsiung",
+  "checked": "2026-10-27",
+  "items": [
+    {
+      "id": "kaohsiung-0",
+      "name": "駁二藝術特區",
+      "local": "Pier-2 Art Center",
+      "type": "景點",
+      "area": "鹽埕",
+      "dur": 120,
+      "slot": "下午",
+      "summary": "地址高雄市鹽埕區大勇路1號。週一至週四 10:00–18:00，週五至週日及國定假日 10:00–20:00。高雄旅遊網寫駁二塔每人每次投幣 NT$10，展場套票與單展票分開。戶外倉庫巷弄可走，各展區仍以駁二官網當日公告為準。",
+      "price": "一般套票 NT$150、單展票 NT$80；學生套票 NT$100、單展票 NT$60；敬老套票 NT$75、單展票 NT$45。",
+      "rom": "pier2",
+      "lat": 22.61953,
+      "lng": 120.28162,
+      "src": [
+        "https://khh.travel/zh-tw/attractions/detail/6/"
+      ],
+      "count": 1,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "kaohsiung-1",
+      "name": "打狗英國領事館",
+      "local": "British Consulate at Takow",
+      "type": "景點",
+      "area": "鼓山",
+      "dur": 80,
+      "slot": "下午",
+      "summary": "地址高雄市鼓山區蓮海路20號。週一、二、四、五 10:00–19:00，週六、日及國定假日 09:00–19:00，18:30 停止售票。每週三古蹟維護休館，國定假日照常。山上官邸修復後，文化局公告自 2026-07-02 恢復全票 NT$99。",
+      "price": "全票 NT$99；高雄市民、國內在學學生、20人以上團體優待 NT$49；1歲以上未滿6歲、65歲以上、志工榮譽卡、本市低收入戶優惠 NT$39。未滿1歲、身心障礙者與一位必要陪伴者免費。",
+      "rom": "takow",
+      "lat": 22.61967,
+      "lng": 120.26651,
+      "src": [
+        "https://britishconsulate.kcg.gov.tw/home02.aspx?EXEC=L&ID=%243002&IDK=2"
+      ],
+      "count": 1,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "kaohsiung-2",
+      "name": "蓮池潭",
+      "local": "Lotus Pond",
+      "type": "景點",
+      "area": "左營",
+      "dur": 90,
+      "slot": "早",
+      "summary": "高雄旅遊網寫龍虎塔、春秋閣與環潭步道，地址高雄市左營區蓮潭路，每日 24 小時。頁面沒有門票欄。蓮潭滑水等水上活動另計，不寫進這裡。",
+      "rom": "lotuspond",
+      "lat": 22.68384,
+      "lng": 120.29645,
+      "src": [
+        "https://khh.travel/zh-tw/attractions/detail/11/"
+      ],
+      "count": 1,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "kaohsiung-3",
+      "name": "美麗島站",
+      "local": "Formosa Boulevard Station",
+      "type": "景點",
+      "area": "新興",
+      "dur": 40,
+      "slot": "下午",
+      "summary": "高雄捷運紅線與橘線交會，地址高雄市新興區中山一路115號地下一樓。光之穹頂在付費區內，進站要依里程買捷運票。這次沒有核到單獨的參觀票，不把車資寫成門票。",
+      "rom": "formosablvd",
+      "lat": 22.63139,
+      "lng": 120.30186,
+      "src": [
+        "https://www.krtc.com.tw/Guide/station_info?n=R10"
+      ],
+      "count": 1,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "kaohsiung-4",
+      "name": "駁二附近午餐",
+      "local": "Lunch near Pier-2",
+      "type": "餐廳",
+      "area": "鹽埕",
+      "dur": 50,
+      "slot": "午",
+      "meal": "午",
+      "summary": "座標用鄰近景點，方便排在同一天。沒有指定店名。評分與單價未查核。",
+      "src": [],
+      "count": 0,
+      "rom": "pier2lunch",
+      "checked": "2026-10-27",
+      "lat": 22.61953,
+      "lng": 120.28162
+    },
+    {
+      "id": "kaohsiung-5",
+      "name": "蓮池潭附近午餐",
+      "local": "Lunch near Lotus Pond",
+      "type": "餐廳",
+      "area": "左營",
+      "dur": 50,
+      "slot": "午",
+      "meal": "午",
+      "summary": "座標用鄰近景點，方便排在同一天。沒有指定店名。評分與單價未查核。",
+      "src": [],
+      "count": 0,
+      "rom": "lotuslunch",
+      "checked": "2026-10-27",
+      "lat": 22.68384,
+      "lng": 120.29645
+    },
+    {
+      "id": "kaohsiung-6",
+      "name": "新興區附近晚餐",
+      "local": "Dinner near Formosa Boulevard",
+      "type": "餐廳",
+      "area": "新興",
+      "dur": 50,
+      "slot": "晚",
+      "meal": "晚",
+      "summary": "座標用鄰近景點，方便排在同一天。沒有指定店名。評分與單價未查核。",
+      "src": [],
+      "count": 0,
+      "rom": "formosadinner",
+      "checked": "2026-10-27",
+      "lat": 22.63139,
+      "lng": 120.30186
+    }
+  ]
+}

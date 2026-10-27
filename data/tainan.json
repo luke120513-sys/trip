@@ -1,0 +1,169 @@
+{
+  "city": "tainan",
+  "checked": "2026-10-27",
+  "items": [
+    {
+      "id": "tainan-0",
+      "name": "奇美博物館常設展",
+      "local": "Chimei Museum permanent exhibition",
+      "type": "景點",
+      "area": "仁德",
+      "dur": 180,
+      "slot": "早",
+      "summary": "地址臺南市仁德區文華路二段66號。開館 09:30–17:30，最後入場 17:00，週三及除夕休館。常設展與特展分開計價，這裡只列常設展。",
+      "price": "常設展全票 NT$200、優惠 NT$150（7–22歲或65歲以上，憑證件）。設籍臺南市、臺南市就讀學生、未滿7歲、身心障礙者與一位陪同者、導遊領隊與 ICOM／CAM 免費。",
+      "rom": "chimei",
+      "lat": 22.93446,
+      "lng": 120.22646,
+      "src": [
+        "https://www.chimeimuseum.org/permanent-exhibition"
+      ],
+      "count": 1,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "tainan-1",
+      "name": "赤嵌樓",
+      "local": "Chihkan Tower",
+      "type": "景點",
+      "area": "中西",
+      "dur": 70,
+      "slot": "早",
+      "summary": "地址臺南市中西區民族路二段212號。古蹟頁寫週一至週日 08:30–21:30、售票至 21:00，以現場公告為準。臺南市市民憑身分證免費。",
+      "price": "全票 NT$70、半票 NT$35。",
+      "rom": "chihkan",
+      "lat": 22.99727,
+      "lng": 120.2027,
+      "src": [
+        "https://historic.tainan.gov.tw/index.php?id=46&index=4&lang=cht&option=module&task=pageinfo"
+      ],
+      "count": 1,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "tainan-2",
+      "name": "安平古堡",
+      "local": "Fort Zeelandia",
+      "type": "景點",
+      "area": "安平",
+      "dur": 70,
+      "slot": "下午",
+      "summary": "臺南市公有古蹟收費頁把安平古堡列為購票參觀，地址國勝路82號，08:30–17:30。市民憑身分證免費。",
+      "price": "全票 NT$70、半票 NT$35；30人以上團體 NT$60。",
+      "rom": "anpingfort",
+      "lat": 23.00161,
+      "lng": 120.16057,
+      "src": [
+        "https://historic.tainan.gov.tw/index.php?id=64&index=6&lang=cht&option=module&task=pageinfo"
+      ],
+      "count": 1,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "tainan-3",
+      "name": "安平樹屋",
+      "local": "Anping Tree House",
+      "type": "景點",
+      "area": "安平",
+      "dur": 60,
+      "slot": "下午",
+      "summary": "同一份公有古蹟收費頁列為購票參觀，地址古堡街108號，08:30–17:30。市民憑身分證免費。",
+      "price": "全票 NT$70、半票 NT$35；30人以上團體 NT$60。",
+      "rom": "anpingtree",
+      "lat": 23.00403,
+      "lng": 120.15974,
+      "src": [
+        "https://historic.tainan.gov.tw/index.php?id=64&index=6&lang=cht&option=module&task=pageinfo"
+      ],
+      "count": 1,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "tainan-4",
+      "name": "億載金城",
+      "local": "Eternal Golden Castle",
+      "type": "景點",
+      "area": "安平",
+      "dur": 70,
+      "slot": "下午",
+      "summary": "同一份公有古蹟收費頁列為購票參觀，地址光州路3號，08:30–17:30。市民憑身分證免費。",
+      "price": "全票 NT$70、半票 NT$35；30人以上團體 NT$60。",
+      "rom": "eternalcastle",
+      "lat": 22.98759,
+      "lng": 120.15953,
+      "src": [
+        "https://historic.tainan.gov.tw/index.php?id=64&index=6&lang=cht&option=module&task=pageinfo"
+      ],
+      "count": 1,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "tainan-5",
+      "name": "赤嵌樓附近午餐",
+      "local": "Lunch near Chihkan Tower",
+      "type": "餐廳",
+      "area": "中西",
+      "dur": 50,
+      "slot": "午",
+      "meal": "午",
+      "summary": "座標用鄰近景點，方便排在同一天。沒有指定店名。評分與單價未查核。",
+      "src": [],
+      "count": 0,
+      "rom": "chihkanlunch",
+      "checked": "2026-10-27",
+      "lat": 22.99727,
+      "lng": 120.2027
+    },
+    {
+      "id": "tainan-6",
+      "name": "安平附近午餐",
+      "local": "Lunch in Anping",
+      "type": "餐廳",
+      "area": "安平",
+      "dur": 50,
+      "slot": "午",
+      "meal": "午",
+      "summary": "座標用鄰近景點，方便排在同一天。沒有指定店名。評分與單價未查核。",
+      "src": [],
+      "count": 0,
+      "rom": "anpinglunch",
+      "checked": "2026-10-27",
+      "lat": 23.00161,
+      "lng": 120.16057
+    },
+    {
+      "id": "tainan-7",
+      "name": "奇美附近午餐",
+      "local": "Lunch near Chimei Museum",
+      "type": "餐廳",
+      "area": "仁德",
+      "dur": 50,
+      "slot": "午",
+      "meal": "午",
+      "summary": "座標用鄰近景點，方便排在同一天。沒有指定店名。評分與單價未查核。",
+      "src": [],
+      "count": 0,
+      "rom": "chimeilunch",
+      "checked": "2026-10-27",
+      "lat": 22.93446,
+      "lng": 120.22646
+    },
+    {
+      "id": "tainan-8",
+      "name": "台南市區附近晚餐",
+      "local": "Dinner in central Tainan",
+      "type": "餐廳",
+      "area": "中西",
+      "dur": 50,
+      "slot": "晚",
+      "meal": "晚",
+      "summary": "座標用鄰近景點，方便排在同一天。沒有指定店名。評分與單價未查核。",
+      "src": [],
+      "count": 0,
+      "rom": "tainandinner",
+      "checked": "2026-10-27",
+      "lat": 22.99727,
+      "lng": 120.2027
+    }
+  ]
+}

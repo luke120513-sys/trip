@@ -19,7 +19,12 @@ assert.equal(J.detectCountry(trip({ dest: '金浦', days: [[{ from: 'GMP', to: '
 assert.equal(J.detectCountry(trip({ dest: '釜山', days: [[{ name: '航班', to: 'PUS' }]] })), 'kr');
 assert.equal(J.detectCountry(trip({ dest: '東京' })), 'jp');
 assert.equal(J.detectCountry(trip({ dest: '首爾' })), 'kr');
-assert.equal(J.detectCountry(trip({ dest: '高雄', orig: 'TPE', days: [[{ name: '駁二', from: 'TPE', to: 'KHH' }]] })), '');
+assert.equal(J.detectCountry(trip({ dest: '高雄', orig: 'TPE', days: [[{ name: '駁二', from: 'TPE', to: 'KHH' }]] })), 'tw');
+assert.equal(J.detectCountry(trip({ dest: '台中' })), 'tw');
+assert.equal(J.detectCountry(trip({ dest: '日月潭' })), 'tw');
+assert.equal(J.detectCountry(trip({ dest: '東京', days: [[{ name: '淺草寺', note: '台灣朋友推薦' }]] })), 'jp');
+assert.equal(J.resolveTheme(trip({ dest: '花蓮' }), 'auto'), 'tw');
+assert.equal(J.resolveTheme(trip({ dest: '高雄', themeStyle: 'plain' }), 'auto'), '');
 
 assert.equal(J.resolveTheme(trip({ dest: '首爾', themeStyle: 'plain' }), 'auto'), '');
 assert.equal(J.resolveTheme(trip({ dest: '首爾' }), 'plain'), '');
@@ -96,6 +101,29 @@ const krRes = J.evaluate([kr], krDiary, {}, 1712000000000);
 const krIds = new Set(krRes.fresh.map(c => c.id));
 ['kr-first', 'kr-spicy', 'kr-palace', 'kr-shop', 'kr-bbq', 'kr-cafe', 'kr-perfect'].forEach(id => assert.ok(krIds.has(id), id));
 assert.equal(krIds.has('kr-archive'), false);
+
+const tw = trip({
+  dest: '高雄',
+  days: [[
+    spot('駁二', { visited: true }),
+    spot('蓮池潭', { visited: true }),
+    spot('六合夜市', { visited: true }),
+    spot('瑞豐夜市')
+  ], day.map(s => Object.assign({}, s))]
+});
+const twDiary = [
+  { date: '2026-04-02', text: '牛肉麵' },
+  { date: '2026-04-03', placeName: '滷肉飯', text: '配湯' }
+];
+const twRes = J.evaluate([tw], twDiary, {}, 1712000000000);
+const twIds = new Set(twRes.fresh.map(c => c.id));
+['tw-first', 'tw-kaohsiung', 'tw-night', 'tw-noodle', 'tw-perfect'].forEach(id => assert.ok(twIds.has(id), id));
+assert.equal(twIds.has('tw-archive'), false);
+assert.equal(twIds.has('tw-taipei'), false);
+tw.archived = true;
+assert.deepEqual(J.evaluate([tw], twDiary, twRes.earned, 1712400000000).fresh.map(c => c.id), ['tw-archive']);
+const packedTw = Share.normTrip(Object.assign({}, trip({ dest: '台南' }), { themeStyle: 'tw' }), 0, true);
+assert.equal(packedTw.themeStyle, 'tw');
 const noon = trip({ dest: '首爾', days: [[spot('烤肉', { time: '12:00' })]] });
 assert.equal(J.evaluate([noon], [], {}, 1712000000000).fresh.some(c => c.id === 'kr-bbq'), false);
 const nightNote = trip({ dest: '首爾', days: [[]] });
@@ -130,10 +158,11 @@ assert.equal(newer.archiveAsked, true);
 
 assert.equal(J.CARDS.filter(c => c.country === 'jp').length, 11);
 assert.equal(J.CARDS.filter(c => c.country === 'kr').length, 8);
+assert.equal(J.CARDS.filter(c => c.country === 'tw').length, 15);
 assert.ok(J.CARDS.every(c => c.title && c.hint && c.desc && c.test));
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v55/);
+assert.match(sw, /tripmate-v56/);
 assert.match(sw, /journey\.js/);
 
 const store = {};

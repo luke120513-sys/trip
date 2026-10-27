@@ -1,0 +1,39 @@
+{
+  "city": "kenting",
+  "checked": "2026-10-27",
+  "items": [
+    {
+      "cat": "門票",
+      "name": "國立海洋生物博物館",
+      "price": "全票 NT$450",
+      "desc": "優待 NT$250、65歲以上 NT$225、20人團體 NT$350。身高115公分以下及未滿6歲免費。週二休館，最後售票為閉館前一小時。",
+      "src": [
+        "https://www.nmmba.gov.tw/cp.aspx?n=A6476B49BA86BBD5"
+      ],
+      "id": "kenting-d0",
+      "checked": "2026-10-27"
+    },
+    {
+      "cat": "門票",
+      "name": "墾丁國家森林遊樂區",
+      "price": "假日全票 NT$150",
+      "desc": "非假日或持大眾運輸票根一般優待 NT$100，半票 NT$75。這不是鵝鑾鼻，也不是整個國家公園。",
+      "src": [
+        "https://recreation.forest.gov.tw/mis/api/Admission/RANoArray?format=csv"
+      ],
+      "id": "kenting-d1",
+      "checked": "2026-10-27"
+    },
+    {
+      "cat": "門票",
+      "name": "鵝鑾鼻公園",
+      "price": "全票 NT$60、半票 NT$30",
+      "desc": "40人以上團體8折。1–3月與10–12月07:00–17:30，4–9月06:30–18:30。",
+      "src": [
+        "https://www.ktnp.gov.tw/News_Content.aspx?n=C40E6CD20CC179F1&s=69C0C86772C70B04&sms=9D39A7A86DB67B11"
+      ],
+      "id": "kenting-d2",
+      "checked": "2026-10-27"
+    }
+  ]
+}

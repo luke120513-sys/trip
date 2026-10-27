@@ -1,0 +1,60 @@
+{
+  "city": "chiayi",
+  "checked": "2026-10-27",
+  "items": [
+    {
+      "id": "chiayi-0",
+      "name": "阿里山國家森林遊樂區",
+      "local": "Alishan National Forest Recreation Area",
+      "type": "景點",
+      "area": "阿里山",
+      "dur": 180,
+      "slot": "早",
+      "summary": "大門門票與園內電動遊園車分開。本國籍持身分證明文件可買優惠票 NT$200，不要和全票 NT$300 混成同一種。祝山日出專線去回全票 NT$300，見票券檔。",
+      "price": "大門全票 NT$300；持大眾運輸票根一般優待 NT$150；半票 NT$150；3–6歲或符合條件之65歲以上優待 NT$10。電動遊園車另計。",
+      "rom": "alishan",
+      "lat": 23.53245,
+      "lng": 120.80505,
+      "src": [
+        "https://recreation.forest.gov.tw/mis/api/Admission/RANoArray?format=csv",
+        "https://recreation.forest.gov.tw/Forest/RA?typ_id=0500001"
+      ],
+      "count": 2,
+      "checked": "2026-10-27"
+    },
+    {
+      "id": "chiayi-1",
+      "name": "阿里山附近午餐",
+      "local": "Lunch near Alishan",
+      "type": "餐廳",
+      "area": "阿里山",
+      "dur": 50,
+      "slot": "午",
+      "meal": "午",
+      "summary": "座標用鄰近景點，方便排在同一天。沒有指定店名。評分與單價未查核。",
+      "src": [],
+      "count": 0,
+      "rom": "alishanlunch",
+      "checked": "2026-10-27",
+      "lat": 23.53245,
+      "lng": 120.80505
+    },
+    {
+      "id": "chiayi-2",
+      "name": "阿里山附近晚餐",
+      "local": "Dinner near Alishan",
+      "type": "餐廳",
+      "area": "阿里山",
+      "dur": 50,
+      "slot": "晚",
+      "meal": "晚",
+      "summary": "座標用鄰近景點，方便排在同一天。沒有指定店名。評分與單價未查核。",
+      "src": [],
+      "count": 0,
+      "rom": "alishandinner",
+      "checked": "2026-10-27",
+      "lat": 23.53245,
+      "lng": 120.80505
+    }
+  ]
+}
