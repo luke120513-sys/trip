@@ -685,25 +685,50 @@
       const click = tracked ? ` onclick="Journey.openCityMap('${p.id}')"` : '';
       return `<path class="${cls}"${idAttr} fill="${fill}" d="${p.d}"${click}/>`;
     }).join('');
-    const labels = labelChips(pack.labels, on, true);
+    const labels = labelChips(pack.labels, on, true, pack.view);
     return `<svg class="vmap" viewBox="${pack.view}" role="img" aria-label="${MAP_LABEL[countryId]}地圖">${sea}${parts}${labels}</svg>`;
   }
-  function labelChips(labels, on, clickable) {
+  function parseView(view) {
+    const p = String(view || '').trim().split(/[\s,]+/).map(Number);
+    if (p.length < 4 || p.some(n => !Number.isFinite(n))) return null;
+    return { x: p[0], y: p[1], w: p[2], h: p[3] };
+  }
+  function boxesHit(a, b, pad) {
+    const g = pad || 0;
+    return a.x < b.x + b.w + g && a.x + a.w + g > b.x && a.y < b.y + b.h + g && a.y + a.h + g > b.y;
+  }
+  function insideView(box, view, margin) {
+    if (!view) return true;
+    const m = margin == null ? 2 : margin;
+    return box.x >= view.x + m && box.y >= view.y + m && box.x + box.w <= view.x + view.w - m && box.y + box.h <= view.y + view.h - m;
+  }
+  function labelChips(labels, on, clickable, view) {
+    const vb = parseView(view);
+    const placed = [];
+    const nudges = [[0, 0], [0, -26], [0, 26], [-36, 0], [36, 0], [0, -48], [0, 48], [-36, -26], [36, -26], [-36, 26], [36, 26], [-64, 0], [64, 0]];
     return (labels || []).map(l => {
       const name = String(l.name || '');
-      if (!name) return '';
-      const lit = !!(l.id && on && on[l.id]);
-      const n = [...name].length;
-      const fs = l.small ? 11 : (lit ? 15 : 13);
-      const go = clickable && l.id && /^[a-z]+$/.test(l.id) ? ` onclick="Journey.openCityMap('${l.id}')"` : '';
-      if (l.small) {
-        return `<text class="wlab" x="${l.x}" y="${l.y}" text-anchor="middle" fill="#142033" font-size="${fs}" font-weight="800" stroke="#fff" stroke-width="2.4" paint-order="stroke fill">${esc(name)}</text>`;
-      }
+      if (!name || !(l.id && on && on[l.id])) return '';
+      const n = Array.from(name).length;
+      const fs = 15;
       const w = n * fs * 0.96 + 12;
       const h = fs + 8;
-      const x = Math.round((l.x - w / 2) * 10) / 10;
-      const y = Math.round((l.y - fs * 0.86) * 10) / 10;
-      return `<g class="rlab${lit ? ' on' : ''}"${go}><rect x="${x}" y="${y}" width="${w.toFixed(1)}" height="${h}" rx="7" fill="#fff" fill-opacity="${lit ? '0.97' : '0.92'}"/><text x="${l.x}" y="${l.y}" text-anchor="middle" fill="${lit ? '#102033' : '#2C3A4A'}" font-size="${fs}" font-weight="${lit ? 900 : 800}">${esc(name)}</text></g>`;
+      let spot = null;
+      for (let i = 0; i < nudges.length; i++) {
+        const cx = l.x + nudges[i][0];
+        const cy = l.y + nudges[i][1];
+        const box = { x: cx - w / 2, y: cy - fs * 0.86, w: w, h: h };
+        if (!insideView(box, vb, 1)) continue;
+        if (placed.some(p => boxesHit(p, box, 4))) continue;
+        spot = { cx: cx, cy: cy, box: box };
+        break;
+      }
+      if (!spot) return '';
+      placed.push(spot.box);
+      const go = clickable && /^[a-z]+$/.test(l.id) ? ` onclick="Journey.openCityMap('${l.id}')"` : '';
+      const x = Math.round(spot.box.x * 10) / 10;
+      const y = Math.round(spot.box.y * 10) / 10;
+      return `<g class="rlab on"${go}><rect x="${x}" y="${y}" width="${w.toFixed(1)}" height="${h}" rx="7" fill="#fff" fill-opacity="0.97"/><text x="${spot.cx}" y="${spot.cy}" text-anchor="middle" fill="#102033" font-size="${fs}" font-weight="900">${esc(name)}</text></g>`;
     }).join('');
   }
   function projectPt(proj, lat, lng) {
@@ -715,15 +740,52 @@
       proj.y + (yN - y) / (yN - yS) * proj.bh
     ];
   }
-  function pinMarkup(proj, spots) {
+  function pinMarkup(proj, spots, view) {
     if (!proj) return '';
-    return (spots || []).map(s => {
+    const vb = parseView(view);
+    const items = [];
+    (spots || []).forEach(s => {
       const lat = +s.lat, lng = +s.lng;
-      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return '';
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
       const pt = projectPt(proj, lat, lng);
-      if (!Number.isFinite(pt[0]) || !Number.isFinite(pt[1])) return '';
-      const name = esc(s.name || '');
-      return `<g class="spotpin"><circle cx="${pt[0].toFixed(1)}" cy="${pt[1].toFixed(1)}" r="6.5" fill="#E53935" stroke="#fff" stroke-width="2"/><text x="${(pt[0] + 10).toFixed(1)}" y="${(pt[1] + 4).toFixed(1)}" text-anchor="start" fill="#142033" font-size="12" font-weight="800" stroke="#fff" stroke-width="3" paint-order="stroke fill">${name}</text></g>`;
+      if (!Number.isFinite(pt[0]) || !Number.isFinite(pt[1])) return;
+      items.push({ name: String(s.name || '').trim(), x: pt[0], y: pt[1] });
+    });
+    items.sort((a, b) => a.x - b.x || a.y - b.y);
+    const placed = items.map(s => ({ x: s.x - 11, y: s.y - 11, w: 22, h: 22 }));
+    const fs = 12;
+    const slots = [[12, 4, 'start'], [-14, 4, 'end'], [0, -28, 'middle'], [0, 22, 'middle'], [18, -16, 'start'], [-18, -16, 'end'], [18, 16, 'start'], [-18, 16, 'end'], [0, -42, 'middle'], [36, 4, 'start'], [-36, 4, 'end']];
+    return items.map(s => {
+      const chars = Array.from(s.name);
+      const candidates = chars.length > 8 ? [s.name, chars.slice(0, 6).join('') + '…'] : [s.name];
+      let chosen = null;
+      let label = '';
+      for (let c = 0; c < candidates.length && !chosen; c++) {
+        label = candidates[c];
+        if (!label) continue;
+        const n = Array.from(label).length;
+        const w = n * fs * 1.05 + 6;
+        const h = fs + 8;
+        for (let i = 0; i < slots.length; i++) {
+          const anchor = slots[i][2];
+          const tx = s.x + slots[i][0];
+          const ty = s.y + slots[i][1];
+          let left = tx;
+          if (anchor === 'middle') left = tx - w / 2;
+          else if (anchor === 'end') left = tx - w;
+          const box = { x: left, y: ty - fs * 0.86, w: w, h: h };
+          if (!insideView(box, vb, 1)) continue;
+          if (placed.some(p => boxesHit(p, box, 3))) continue;
+          chosen = { tx: tx, ty: ty, anchor: anchor, box: box };
+          break;
+        }
+      }
+      let text = '';
+      if (chosen && label) {
+        placed.push(chosen.box);
+        text = `<text x="${chosen.tx.toFixed(1)}" y="${chosen.ty.toFixed(1)}" text-anchor="${chosen.anchor}" fill="#142033" font-size="${fs}" font-weight="800" stroke="#fff" stroke-width="3" paint-order="stroke fill">${esc(label)}</text>`;
+      }
+      return `<g class="spotpin"><circle cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="6.5" fill="#E53935" stroke="#fff" stroke-width="2"/>${text}</g>`;
     }).join('');
   }
   function citySpots(cityId) {
@@ -757,7 +819,7 @@
       const sea = `<rect class="sea" width="100%" height="100%" fill="${pack.sea}"/>`;
       const parts = pack.parts.map(p => `<path class="vreg quiet" fill="${p.color}" d="${p.d}"/>`).join('');
       const title = cityId === 'tyo' ? '東京分區地圖' : (city ? city.name : '') + '分區地圖';
-      return `<svg class="vmap vmap-detail" viewBox="${pack.view}" role="img" aria-label="${esc(title)}">${sea}${parts}${labelChips(pack.labels, {}, false)}${pinMarkup(pack.proj, spots)}</svg>`;
+      return `<svg class="vmap vmap-detail" viewBox="${pack.view}" role="img" aria-label="${esc(title)}">${sea}${parts}${pinMarkup(pack.proj, spots, pack.view)}</svg>`;
     }
     if (!city) return '';
     const countryPack = geo[city.country];
@@ -767,12 +829,12 @@
       const vb = [frame[0] - pad, frame[1] - pad, frame[2] - frame[0] + pad * 2, frame[3] - frame[1] + pad * 2];
       const sea = `<rect class="sea" x="${vb[0]}" y="${vb[1]}" width="${vb[2]}" height="${vb[3]}" fill="${countryPack.sea}"/>`;
       const parts = countryPack.parts.map(p => `<path class="vreg quiet" fill="${p.id === cityId ? p.color : mixHex(p.color, '#F7F9FC', 0.5)}" d="${p.d}"/>`).join('');
-      const labels = labelChips((countryPack.labels || []).filter(l => l.x >= vb[0] && l.x <= vb[0] + vb[2] && l.y >= vb[1] && l.y <= vb[1] + vb[3]), { [cityId]: true }, false);
-      return `<svg class="vmap vmap-detail" viewBox="${vb.map(n => Math.round(n * 10) / 10).join(' ')}" role="img" aria-label="${esc(city.name)}地圖">${sea}${parts}${labels}${pinMarkup(countryPack.proj, spots)}</svg>`;
+      const vbStr = vb.map(n => Math.round(n * 10) / 10).join(' ');
+      return `<svg class="vmap vmap-detail" viewBox="${vbStr}" role="img" aria-label="${esc(city.name)}地圖">${sea}${parts}${pinMarkup(countryPack.proj, spots, vbStr)}</svg>`;
     }
     const box = city.box;
     const proj = { s: box[0] - 0.08, w: box[1] - 0.08, n: box[2] + 0.08, e: box[3] + 0.08, x: 28, y: 36, bw: 284, bh: 320 };
-    return `<svg class="vmap vmap-detail" viewBox="0 0 340 380" role="img" aria-label="${esc(city.name)}地圖"><rect width="100%" height="100%" fill="#E7F4FB"/><text x="170" y="26" text-anchor="middle" fill="#142033" font-size="18" font-weight="800">${esc(city.name)}</text>${pinMarkup(proj, spots)}</svg>`;
+    return `<svg class="vmap vmap-detail" viewBox="0 0 340 380" role="img" aria-label="${esc(city.name)}地圖"><rect width="100%" height="100%" fill="#E7F4FB"/>${pinMarkup(proj, spots, '0 0 340 380')}</svg>`;
   }
   function openCityMap(id) {
     if (!/^[a-z0-9]+$/.test(String(id || ''))) return;
@@ -784,7 +846,7 @@
     const rows = spots.length
       ? spots.map(s => `<div class="vtrip"><b>${esc(s.name)}</b></div>`).join('')
       : '<div class="vempty"><b>這座城市還沒有帶座標的景點</b><p>行程裡的景點若有位置，會標在地圖上。</p></div>';
-    const hint = id === 'tyo' ? '東京 23 區。這幾趟行程的景點會標在區上。' : '放大這個地方。有座標的景點會標在圖上。';
+    const hint = '有座標的景點會標在地圖上，完整名稱在下面。';
     const layer = layerEl();
     layer.innerHTML = `<div class="achpage vmap-page"><div class="row" style="align-items:center"><button type="button" class="btn ghost sm" style="flex:0" onclick="Journey.openVisitMap('${city.country}')">返回</button><h2 style="margin:0">${esc(city.name)}</h2></div><p class="mut achhint">${hint}</p><div class="vmap-card">${cityMapMarkup(id, spots)}</div><div class="vlist"><div class="cityhead"><h3>景點</h3><span>${spots.length}</span></div>${rows}</div></div>`;
     layer.hidden = false;
@@ -820,7 +882,7 @@
     const lit = mine.filter(p => p.on).length;
     const tabs = `<div class="seg achtabs">${COUNTRIES.map(c => `<button type="button" class="${c.id === country ? 'on' : ''}" onclick="Journey.openVisitMap('${c.id}')">${c.name}${count(c.id) ? ' ' + count(c.id) : ''}</button>`).join('')}</div>`;
     const layer = layerEl();
-    layer.innerHTML = `<div class="achpage vmap-page"><div class="row" style="align-items:center"><h2 style="margin:0">去過的地方</h2><button type="button" class="btn ghost sm" style="flex:0" onclick="Journey.closeLayer()">關閉</button></div><p class="mut achhint">有寫進行程的城市會亮起來，封存的也算。點亮的城市可以再點開。</p>${tabs}<div class="vmap-layout"><div class="vmap-card">${visitMapMarkup(country, mine)}</div><div class="vlist"><div class="cityhead"><h3>去過</h3><span>${lit}/${mine.length}</span></div>${visitListHtml(mine)}</div></div></div>`;
+    layer.innerHTML = `<div class="achpage vmap-page"><div class="row" style="align-items:center"><h2 style="margin:0">去過的地方</h2><button type="button" class="btn ghost sm" style="flex:0" onclick="Journey.closeLayer()">關閉</button></div><p class="mut achhint">有寫進行程的城市會亮起來，也只標那些地名。點亮的城市可以再點開。</p>${tabs}<div class="vmap-layout"><div class="vmap-card">${visitMapMarkup(country, mine)}</div><div class="vlist"><div class="cityhead"><h3>去過</h3><span>${lit}/${mine.length}</span></div>${visitListHtml(mine)}</div></div></div>`;
     layer.hidden = false;
     try { if (TM.closeSheet) TM.closeSheet(); } catch (e) {}
     return places;

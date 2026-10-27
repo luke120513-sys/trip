@@ -12,6 +12,46 @@ const trip = (over) => Object.assign({
   id: 't1', dest: '東京', dep: '2026-04-01', ret: '2026-04-05', pax: 2, orig: 'TPE', days: [[]], expenses: []
 }, over);
 
+function assertClear(svg, label) {
+  const chips = [];
+  const chipRe = /<g class="rlab[^"]*"[^>]*>\s*<rect x="([^"]+)" y="([^"]+)" width="([^"]+)" height="([^"]+)"[^>]*>\s*<text\b[^>]*>([^<]*)<\/text>/g;
+  let m;
+  while ((m = chipRe.exec(svg))) chips.push({ x: +m[1], y: +m[2], w: +m[3], h: +m[4], name: m[5] });
+  const pins = [];
+  const pinRe = /<g class="spotpin">([\s\S]*?)<\/g>/g;
+  while ((m = pinRe.exec(svg))) {
+    const chunk = m[1];
+    const c = chunk.match(/cx="([^"]+)" cy="([^"]+)" r="([^"]+)"/);
+    const t = chunk.match(/<text x="([^"]+)" y="([^"]+)" text-anchor="([^"]+)"[^>]*>([^<]*)<\/text>/);
+    const circle = c ? { x: +c[1] - (+c[3] + 2), y: +c[2] - (+c[3] + 2), w: (+c[3] + 2) * 2, h: (+c[3] + 2) * 2, name: 'pin' } : null;
+    let text = null;
+    if (t) {
+      const fs = 12;
+      const name = t[4];
+      const w = Array.from(name).length * fs * 1.05 + 6;
+      const h = fs + 8;
+      const tx = +t[1];
+      const ty = +t[2];
+      const anchor = t[3];
+      let left = tx;
+      if (anchor === 'middle') left = tx - w / 2;
+      else if (anchor === 'end') left = tx - w;
+      text = { x: left, y: ty - fs * 0.86, w, h, name };
+    }
+    pins.push({ circle, text });
+  }
+  const boxes = [...chips, ...pins.map(p => p.circle).filter(Boolean), ...pins.map(p => p.text).filter(Boolean)];
+  for (let i = 0; i < boxes.length; i++) {
+    for (let j = i + 1; j < boxes.length; j++) {
+      const a = boxes[i];
+      const b = boxes[j];
+      if (a.name === 'pin' && b.name === 'pin') continue;
+      const hit = a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+      assert.equal(hit, false, label + ' ' + a.name + ' overlaps ' + b.name);
+    }
+  }
+}
+
 assert.equal(J.detectCountry(trip({ dest: 'NRT' })), 'jp');
 assert.equal(J.detectCountry(trip({ dest: '成田', days: [[{ name: '飯店', to: 'HND' }]] })), 'jp');
 assert.equal(J.detectCountry(trip({ dest: '關西', days: [[{ name: '航班', to: 'KIX' }]] })), 'jp');
@@ -238,9 +278,9 @@ assert.match(page, /theme-tw/);
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v62/);
+assert.match(sw, /tripmate-v63/);
 assert.match(sw, /journey\.js/);
-assert.match(page, /v2\.19\.0/);
+assert.match(page, /v2\.20\.0/);
 assert.match(page, /openVisitMap/);
 assert.match(page, /class="vmap-entry"/);
 assert.match(page, /\.ach-q/);
@@ -287,7 +327,11 @@ assert.match(jpMap, /class="vreg on" data-id="tyo"/);
 assert.match(jpMap, /class="vreg" data-id="osa"/);
 assert.equal(/class="vreg on" data-id="osa"/.test(jpMap), false);
 assert.match(jpMap, /class="vreg on" data-id="kyo"/);
-assert.match(jpMap, /北海道/);
+assert.match(jpMap, />東京</);
+assert.match(jpMap, />京都</);
+['北海道', '大阪', '福岡', '沖繩', '九州', '東北', '中部', '四國'].forEach(name => {
+  assert.equal(jpMap.includes('>' + name + '<'), false, name);
+});
 assert.equal(jpMap.includes('World_Imagery'), false);
 assert.equal(jpMap.includes('leaflet'), false);
 const jpPins = J.mapPins('jp', places);
@@ -305,9 +349,18 @@ assert.match(twMap, /台灣地圖/);
 assert.match(twMap, /class="vreg on" data-id="tpe"/);
 assert.match(twMap, /class="vreg on" data-id="hul"/);
 assert.match(twMap, /class="vreg" data-id="khh"/);
-['台北', '台中', '台南', '高雄', '花蓮', '台東', '嘉義', '墾丁', '宜蘭', '南投', '桃園', '新竹', '苗栗', '彰化', '雲林', '澎湖', '金門', '馬祖', '蘭嶼', '綠島'].forEach(name => {
-  assert.match(twMap, new RegExp('>' + name + '<'));
+['台北', '花蓮'].forEach(name => assert.match(twMap, new RegExp('>' + name + '<')));
+['台中', '台南', '高雄', '台東', '嘉義', '墾丁', '宜蘭', '南投', '桃園', '新竹', '苗栗', '彰化', '雲林', '澎湖', '金門', '馬祖', '蘭嶼', '綠島', '新竹市'].forEach(name => {
+  assert.equal(twMap.includes('>' + name + '<'), false, name);
 });
+const sparseTw = J.visitMapMarkup('tw', [{ id: 'tpe', on: true }, { id: 'kmn', on: true }, { id: 'hul', on: true }]);
+assert.deepEqual([...sparseTw.matchAll(/<text\b[^>]*>([^<]+)<\/text>/g)].map(m => m[1]).sort(), ['台北', '花蓮', '金門']);
+assertClear(sparseTw, 'sparse-tw');
+const crowdedTw = J.visitMapMarkup('tw', [{ id: 'ttt', on: true }, { id: 'khh', on: true }]);
+assert.match(crowdedTw, />台東</);
+assert.match(crowdedTw, />高雄</);
+assert.equal(crowdedTw.includes('>台北<'), false);
+assertClear(crowdedTw, 'taitung-kaohsiung');
 ['kmn', 'mzu', 'lud', 'lny'].forEach(id => {
   assert.match(twMap, new RegExp('data-id="' + id + '"'));
 });
@@ -315,31 +368,43 @@ assert.equal(/<text\b[^>]*>\s*<\/text>/.test(twMap), false);
 assert.equal(/<text\b[^>]*>\s*<\/text>/.test(jpMap), false);
 const tokyoDetail = J.cityMapMarkup('tyo', [{ name: '淺草寺', lat: 35.7148, lng: 139.7967 }, { name: '澀谷十字路口', lat: 35.6595, lng: 139.7004 }]);
 assert.match(tokyoDetail, /東京分區地圖/);
-['世田谷區', '新宿區', '澀谷區', '江戶川區', '千代田區', '練馬區'].forEach(name => assert.match(tokyoDetail, new RegExp(name)));
+['世田谷區', '新宿區', '澀谷區', '江戶川區', '千代田區', '練馬區', '中央區', '港區'].forEach(name => assert.equal(tokyoDetail.includes(name), false, name));
 assert.match(tokyoDetail, /淺草寺/);
 assert.match(tokyoDetail, /澀谷十字路口/);
-assert.equal(/<text\b[^>]*>\s*<\/text>/.test(tokyoDetail), false);
-const tpeDetail = J.cityMapMarkup('tpe', [{ name: '故宮博物院', lat: 25.1023, lng: 121.5485 }]);
+assert.equal((tokyoDetail.match(/class="spotpin"/g) || []).length, 2);
+assertClear(tokyoDetail, 'tokyo');
+const closeTokyo = J.cityMapMarkup('tyo', [{ name: '淺草寺', lat: 35.7148, lng: 139.7967 }, { name: '晴空塔', lat: 35.7101, lng: 139.8107 }]);
+assert.equal((closeTokyo.match(/class="spotpin"/g) || []).length, 2);
+assert.match(closeTokyo, /淺草寺/);
+assert.match(closeTokyo, /晴空塔/);
+assert.equal(closeTokyo.includes('千代田'), false);
+assertClear(closeTokyo, 'asakusa-skytree');
+const tpeDetail = J.cityMapMarkup('tpe', [{ name: '故宮博物院', lat: 25.1023, lng: 121.5485 }, { name: '九份', lat: 25.1096, lng: 121.8442 }]);
 assert.match(tpeDetail, /台北分區地圖/);
-['大安區', '士林區', '瑞芳區', '淡水區'].forEach(name => assert.match(tpeDetail, new RegExp(name)));
+['大安區', '士林區', '瑞芳區', '淡水區', '金山區', '萬里區'].forEach(name => assert.equal(tpeDetail.includes(name), false, name));
 assert.match(tpeDetail, /故宮博物院/);
+assert.match(tpeDetail, /九份/);
+assertClear(tpeDetail, 'taipei');
 const selDetail = J.cityMapMarkup('sel', [{ name: '景福宮', lat: 37.5796, lng: 126.977 }]);
 assert.match(selDetail, /首爾分區地圖/);
-assert.match(selDetail, /鍾路區/);
+assert.equal(selDetail.includes('鍾路區'), false);
 assert.match(selDetail, /景福宮/);
+assertClear(selDetail, 'seoul');
 const osaDetail = J.cityMapMarkup('osa', [{ name: '大阪城', lat: 34.6873, lng: 135.5262 }]);
 assert.match(osaDetail, /大阪分區地圖/);
-assert.match(osaDetail, /中央區/);
+assert.equal(osaDetail.includes('中央區'), false);
 assert.match(osaDetail, /大阪城/);
+assertClear(osaDetail, 'osaka');
 const kinmenDetail = J.cityMapMarkup('kmn', [{ name: '莒光樓', lat: 24.433, lng: 118.318 }]);
 assert.match(kinmenDetail, /金門分區地圖/);
-assert.match(kinmenDetail, /金城鎮/);
+assert.equal(kinmenDetail.includes('金城鎮'), false);
 assert.match(kinmenDetail, /莒光樓/);
+assertClear(kinmenDetail, 'kinmen');
 J.CITIES.forEach(c => {
   const svg = J.cityMapMarkup(c.id, []);
   assert.match(svg, /<svg/, c.id);
   assert.match(svg, /[\u4e00-\u9fff]/, c.id);
-  assert.equal(/<text\b[^>]*>\s*<\/text>/.test(svg), false, c.id);
+  assert.equal(svg.includes('<text'), false, c.id);
 });
 assert.equal(J.visitMapMarkup('nope', places), '');
 assert.equal(J.mapPins('nope', places).length, 0);
