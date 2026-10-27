@@ -51,7 +51,7 @@
     return JSON.stringify((trip.days || []).map(d => (d || []).map(s => s && s.sid || '')));
   }
   function metaKey(trip) {
-    return JSON.stringify([trip.dest, trip.dep, trip.ret, trip.pax, trip.orig, trip.themeStyle || '', trip.archived ? 1 : 0, +trip.archivedAt || 0, trip.souvenir || '']);
+    return JSON.stringify([trip.dest, trip.dep, trip.ret, trip.pax, trip.orig, trip.themeStyle || '', trip.archived ? 1 : 0, +trip.archivedAt || 0, trip.souvenir || '', trip.sovLook == null ? '' : trip.sovLook]);
   }
   function indexBy(days, key) {
     const m = new Map();
@@ -167,8 +167,10 @@
     }
     if (L.archiveAsked || R.archiveAsked) L.archiveAsked = true;
     else delete L.archiveAsked;
-    if (meta.souvenir === 'pass' || meta.souvenir === 'card' || meta.souvenir === 'stamp' || meta.souvenir === 'charm' || meta.souvenir === 'badge' || meta.souvenir === 'plaque') L.souvenir = meta.souvenir;
+    if (meta.souvenir === 'pass' || meta.souvenir === 'card' || meta.souvenir === 'stamp' || meta.souvenir === 'charm' || meta.souvenir === 'badge' || meta.souvenir === 'plaque' || meta.souvenir === 'pack') L.souvenir = meta.souvenir;
     else delete L.souvenir;
+    if (meta.sovLook === 0 || meta.sovLook === 1 || meta.sovLook === 2 || meta.sovLook === 3 || meta.sovLook === 4) L.sovLook = meta.sovLook;
+    else delete L.sovLook;
     if (Array.isArray(R.tasks)) {
       const lv = +L.tasksRev || taskStamp(L.tasks);
       const rv = +R.tasksRev || taskStamp(R.tasks);

@@ -130,7 +130,8 @@ function tripDoc(t) {
     archived: t.archived === true,
     archivedAt: +t.archivedAt || 0,
     archiveAsked: t.archiveAsked === true,
-    souvenir: t.souvenir === 'pass' || t.souvenir === 'card' || t.souvenir === 'stamp' || t.souvenir === 'charm' || t.souvenir === 'badge' || t.souvenir === 'plaque' ? t.souvenir : ''
+    souvenir: t.souvenir === 'pass' || t.souvenir === 'card' || t.souvenir === 'stamp' || t.souvenir === 'charm' || t.souvenir === 'badge' || t.souvenir === 'plaque' || t.souvenir === 'pack' ? t.souvenir : '',
+    sovLook: t.sovLook === 0 || t.sovLook === 1 || t.sovLook === 2 || t.sovLook === 3 || t.sovLook === 4 ? t.sovLook : 0
   };
   return JSON.parse(JSON.stringify(o));
 }

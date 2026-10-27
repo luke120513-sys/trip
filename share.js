@@ -178,7 +178,8 @@
         if (at > 1e11 && at < 1e14) o.archivedAt = Math.round(at);
       }
       if (t.archiveAsked === true) o.archiveAsked = true;
-      if (t.souvenir === 'pass' || t.souvenir === 'card' || t.souvenir === 'stamp' || t.souvenir === 'charm' || t.souvenir === 'badge' || t.souvenir === 'plaque') o.souvenir = t.souvenir;
+      if (t.souvenir === 'pass' || t.souvenir === 'card' || t.souvenir === 'stamp' || t.souvenir === 'charm' || t.souvenir === 'badge' || t.souvenir === 'plaque' || t.souvenir === 'pack') o.souvenir = t.souvenir;
+      if (t.sovLook === 0 || t.sovLook === 1 || t.sovLook === 2 || t.sovLook === 3 || t.sovLook === 4) o.sovLook = t.sovLook;
     }
     return o;
   }

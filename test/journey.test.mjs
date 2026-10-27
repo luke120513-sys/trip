@@ -279,9 +279,9 @@ assert.match(page, /theme-tw/);
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v70/);
+assert.match(sw, /tripmate-v72/);
 assert.match(sw, /journey\.js/);
-assert.match(page, /v2\.24\.2/);
+assert.match(page, /v2\.25\.0/);
 assert.match(page, /openVisitMap/);
 assert.match(page, /class="vmap-entry"/);
 assert.match(page, /\.ach-q/);
@@ -731,7 +731,7 @@ assert.equal(J.motifOf({ dest: '曼谷', days: [] }).known, false);
 assert.match(bangkok, /曼谷/);
 assert.equal(/晴空塔|章魚燒|御守/.test(bangkok), false);
 assert.match(J.souvenirMarkup(trip({ dest: '曼谷', souvenir: 'charm' }), [], { size: 'lg' }), /祈福掛飾/);
-assert.deepEqual(J.SOUVENIRS.map(x => x[0]), ['pass', 'card', 'stamp', 'charm', 'badge', 'plaque']);
+assert.deepEqual(J.SOUVENIRS.map(x => x[0]), ['pass', 'card', 'stamp', 'charm', 'badge', 'plaque', 'pack']);
 assert.match(page, /stampdown/);
 assert.match(page, /charmsway/);
 assert.match(page, /badgeglow/);
@@ -740,7 +740,9 @@ assert.match(page, /passflutter/);
 const packedSov = Share.normTrip(Object.assign({}, passTrip), 0, true);
 assert.equal(packedSov.souvenir, 'pass');
 assert.equal(Share.normTrip(Object.assign({}, passTrip, { souvenir: 'stamp' }), 0, true).souvenir, 'stamp');
-assert.equal(Share.normTrip(Object.assign({}, passTrip, { souvenir: 'pack' }), 0, true).souvenir, undefined);
+assert.equal(Share.normTrip(Object.assign({}, passTrip, { souvenir: 'pack' }), 0, true).souvenir, 'pack');
+assert.equal(Share.normTrip(Object.assign({}, passTrip, { souvenir: 'pack', sovLook: 3 }), 0, true).sovLook, 3);
+assert.equal(Share.normTrip(Object.assign({}, passTrip, { sovLook: 9 }), 0, true).sovLook, undefined);
 assert.equal(Share.normTrip(Object.assign({}, passTrip, { souvenir: 'nope' }), 0, true).souvenir, undefined);
 assert.equal(Share.normTrip(Object.assign({}, passTrip), 0, false).souvenir, undefined);
 const keepLocal = { days: [[]], expenses: [], tomb: {}, expTomb: {}, metaRev: 5, dest: '東京', dep: '2026-04-01', ret: '2026-04-05', pax: 2, orig: 'TPE', archived: true, archivedAt: 1712100000000, souvenir: 'pass' };
@@ -761,12 +763,60 @@ const six = ['pass', 'card', 'stamp', 'charm', 'badge', 'plaque'].map((souvenir,
 }));
 const sixWall = J.shelfHtml(six);
 ['sov-pass', 'sov-card', 'sov-stamp', 'sov-charm', 'sov-badge', 'sov-plaque'].forEach(k => assert.match(sixWall, new RegExp(k)));
-assert.equal(/sov-pack|sov-figure|禮包|手辦/.test(sixWall), false);
+assert.equal(/sov-figure|禮包|手辦/.test(sixWall), false);
+assert.equal(/sov-pack/.test(sixWall), false);
 const sovCss = page.slice(page.indexOf('.sovshelf'), page.indexOf('@media (prefers-reduced-motion'));
 assert.equal(/rotate\(/.test(sovCss), false);
-[['pass', '東京'], ['card', '京都'], ['stamp', '大阪'], ['charm', '首爾'], ['badge', '台北'], ['plaque', '花蓮']].forEach(([kind, dest]) => {
+[['pass', '東京'], ['card', '京都'], ['stamp', '大阪'], ['charm', '首爾'], ['badge', '台北'], ['plaque', '花蓮'], ['pack', '大阪']].forEach(([kind, dest]) => {
   const html = J.souvenirMarkup(trip({ dest, souvenir: kind }), [], { size: 'lg' });
   assert.equal(/rotate\(|skew[XY]?\(/.test(html), false, kind);
 });
+const lookCities = { pass: '東京', card: '釜山', stamp: '大阪', charm: '京都', badge: '台北', plaque: '首爾', pack: '台南' };
+Object.keys(J.LOOKS).forEach(kind => {
+  assert.equal(J.LOOKS[kind].length, 5, kind);
+  J.LOOKS[kind].forEach((row, i) => {
+    const html = J.souvenirMarkup(trip({
+      dest: lookCities[kind],
+      souvenir: kind,
+      sovLook: i,
+      orig: 'TPE',
+      days: kind === 'pass' ? [[{ kind: 'flight', name: 'BR198 TPE→NRT', from: 'TPE', to: 'NRT', leg: 'out' }]] : [[]]
+    }), [], { size: 'lg', look: i });
+    assert.match(html, new RegExp('data-look="' + row[0] + '"'), kind + i);
+    assert.match(html, new RegExp(lookCities[kind]), kind + row[1]);
+    assert.equal(/rotate\(|skew[XY]?\(/.test(html), false, kind + row[0]);
+    const motif = J.motifOf({ dest: lookCities[kind], days: [] });
+    assert.match(html, new RegExp(motif.land), kind + ' ' + row[1]);
+  });
+});
+['東京', '大阪', '京都'].forEach(dest => {
+  for (let i = 0; i < 5; i++) {
+    const html = J.souvenirMarkup(trip({ dest, souvenir: 'charm', sovLook: i }), [], { size: 'lg', look: i });
+    assert.match(html, /御守/, dest + i);
+    assert.equal(/平安符|護身符/.test(html), false, dest + i);
+  }
+});
+['台北', '台南', '高雄'].forEach(dest => {
+  for (let i = 0; i < 5; i++) {
+    const html = J.souvenirMarkup(trip({ dest, souvenir: 'charm', sovLook: i }), [], { size: 'lg', look: i });
+    assert.match(html, /平安符/, dest + i);
+    assert.equal(/御守/.test(html), false, dest + i);
+  }
+});
+['首爾', '釜山', '濟州'].forEach(dest => {
+  for (let i = 0; i < 5; i++) {
+    const html = J.souvenirMarkup(trip({ dest, souvenir: 'charm', sovLook: i }), [], { size: 'lg', look: i });
+    assert.match(html, /護身符/, dest + i);
+    assert.equal(/御守/.test(html), false, dest + i);
+  }
+});
+const packHtml = J.souvenirMarkup(trip({ dest: '大阪', souvenir: 'pack' }), [], { size: 'lg' });
+assert.match(packHtml, /卡包/);
+assert.match(packHtml, /章魚燒/);
+assert.match(J.memoryOf(trip({ dest: '大阪', souvenir: 'pack' }), []).line, /大阪城/);
+assert.equal(J.lookTitle('charm', 2, J.memoryOf(trip({ dest: '東京', souvenir: 'charm' }), [])), '神社掛排');
+assert.equal(J.lookTitle('charm', 2, J.memoryOf(trip({ dest: '台北', souvenir: 'charm' }), [])), '木架掛排');
+assert.equal(J.lookTitle('charm', 4, J.memoryOf(trip({ dest: '台南', souvenir: 'charm' }), [])), '平安符');
+assert.equal(J.lookTitle('plaque', 2, J.memoryOf(trip({ dest: '首爾', souvenir: 'plaque' }), [])), '木架掛牆');
 
 console.log('journey tests ok');
