@@ -279,9 +279,9 @@ assert.match(page, /theme-tw/);
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v76/);
+assert.match(sw, /tripmate-v77/);
 assert.match(sw, /journey\.js/);
-assert.match(page, /v2\.26\.3/);
+assert.match(page, /v2\.26\.4/);
 assert.match(page, /controllerchange/);
 assert.match(page, /發現新版本/);
 assert.match(page, /SKIP_WAITING/);
