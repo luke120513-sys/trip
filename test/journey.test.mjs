@@ -237,9 +237,9 @@ assert.match(page, /theme-tw/);
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v58/);
+assert.match(sw, /tripmate-v59/);
 assert.match(sw, /journey\.js/);
-assert.match(page, /v2\.15\.0/);
+assert.match(page, /v2\.16\.0/);
 assert.match(page, /openVisitMap/);
 assert.match(page, /class="vmap-entry"/);
 assert.match(page, /\.ach-q/);
@@ -281,14 +281,27 @@ assert.equal(J.visitBrief(seenTrips), '日本 2 · 韓國 1 · 台灣 2');
 assert.equal(J.visitBrief([]), '還沒有點亮的城市');
 const jpMap = J.visitMapMarkup('jp', places);
 assert.match(jpMap, /aria-label="日本地圖"/);
-assert.match(jpMap, /data-city="tyo"/);
-assert.match(jpMap, /class="pin on"/);
-assert.match(jpMap, /data-city="osa"[^>]*>[\s\S]*?<circle class="pin"/);
-const twMap = J.visitMapMarkup('tw', places);
-assert.match(twMap, /data-city="tpe"/);
-assert.match(twMap, /data-city="hul"/);
-assert.match(twMap, /台灣地圖/);
+assert.match(jpMap, /id="vmapbox"/);
+assert.equal(jpMap.includes('<svg'), false);
+const jpPins = J.mapPins('jp', places);
+assert.equal(jpPins.find(p => p.id === 'tyo').on, true);
+assert.equal(jpPins.find(p => p.id === 'osa').on, false);
+assert.ok(jpPins.find(p => p.id === 'tyo').lat > 35 && jpPins.find(p => p.id === 'tyo').lat < 36);
+assert.ok(jpPins.find(p => p.id === 'oka').lat < 28);
+const twPins = J.mapPins('tw', places);
+assert.equal(twPins.find(p => p.id === 'tpe').on, true);
+assert.equal(twPins.find(p => p.id === 'hul').on, true);
+assert.equal(twPins.length, 10);
+assert.ok(twPins.find(p => p.id === 'tpe').lng > 121 && twPins.find(p => p.id === 'tpe').lng < 122);
+assert.match(J.visitMapMarkup('tw', places), /台灣地圖/);
 assert.equal(J.visitMapMarkup('nope', places), '');
+assert.equal(J.mapPins('nope', places).length, 0);
+J.CITIES.forEach(c => {
+  const pin = J.mapPins(c.country, []).find(p => p.id === c.id);
+  assert.ok(pin && pin.lat > 20 && pin.lat < 50 && pin.lng > 110 && pin.lng < 150, c.id);
+});
+assert.match(page, /vendor\/leaflet\.js/);
+assert.match(sw, /vendor\/leaflet\.js/);
 const tokyoHome = trip({
   id: 'home-1', dest: '東京', orig: 'TPE', dep: '2026-10-20', ret: '2026-10-23',
   days: [[

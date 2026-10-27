@@ -636,75 +636,73 @@
     layer.hidden = false;
     return card.hint;
   }
-  const MAPS = {
-    jp: {
-      label: '日本', vb: '0 0 220 340',
-      land: [
-        'M132,16 C158,6 198,14 204,40 C210,64 186,84 158,78 C132,72 110,56 118,34 C122,22 124,18 132,16 Z',
-        'M150,82 C168,96 186,118 192,142 C196,158 184,170 170,174 C156,180 148,192 136,200 C120,210 104,216 90,228 C76,240 64,244 58,232 C54,220 68,212 84,204 C100,196 114,184 122,168 C130,152 128,132 136,114 C142,98 146,88 150,82 Z',
-        'M92,232 C110,224 122,238 114,252 C104,262 90,252 92,232 Z',
-        'M46,234 C66,224 84,242 78,266 C70,288 48,290 38,270 C32,252 36,238 46,234 Z',
-        'M56,308 C66,302 76,312 70,322 C62,330 52,320 56,308 Z',
-        'M78,320 C86,316 94,324 88,332 C80,338 72,328 78,320 Z'
-      ],
-      pins: [
-        { id: 'spk', x: 158, y: 46, anchor: 'start' },
-        { id: 'tyo', x: 176, y: 150, anchor: 'end' },
-        { id: 'kyo', x: 124, y: 186, anchor: 'end' },
-        { id: 'osa', x: 112, y: 204, anchor: 'end' },
-        { id: 'fuk', x: 58, y: 262, anchor: 'start' },
-        { id: 'oka', x: 74, y: 324, anchor: 'start' }
-      ]
-    },
-    tw: {
-      label: '台灣', vb: '0 0 220 320',
-      land: [
-        'M108,28 C132,36 150,58 156,84 C162,112 164,146 156,178 C150,210 138,242 122,266 C112,280 98,286 90,274 C78,256 66,224 62,190 C58,156 60,118 72,84 C82,54 92,34 108,28 Z'
-      ],
-      pins: [
-        { id: 'tpe', x: 102, y: 62, anchor: 'end' },
-        { id: 'yil', x: 132, y: 78, anchor: 'start' },
-        { id: 'txg', x: 88, y: 118, anchor: 'end' },
-        { id: 'nto', x: 112, y: 136, anchor: 'start' },
-        { id: 'hul', x: 140, y: 150, anchor: 'start' },
-        { id: 'cyi', x: 84, y: 168, anchor: 'end' },
-        { id: 'tnn', x: 80, y: 198, anchor: 'end' },
-        { id: 'khh', x: 86, y: 224, anchor: 'end' },
-        { id: 'ttt', x: 124, y: 210, anchor: 'start' },
-        { id: 'ktn', x: 104, y: 262, anchor: 'start' }
-      ]
-    },
-    kr: {
-      label: '韓國', vb: '0 0 200 280',
-      land: [
-        'M96,36 C122,26 150,40 156,66 C162,94 156,126 146,156 C138,184 128,206 114,216 C100,226 86,216 84,196 C80,168 72,136 74,104 C76,72 80,48 96,36 Z',
-        'M108,236 C124,230 138,242 130,254 C118,264 104,256 108,236 Z'
-      ],
-      pins: [
-        { id: 'sel', x: 112, y: 96, anchor: 'end' },
-        { id: 'pus', x: 132, y: 186, anchor: 'start' },
-        { id: 'cju', x: 118, y: 248, anchor: 'start' }
-      ]
-    }
+  const GEO = {
+    tyo: [35.6812, 139.7671], osa: [34.6937, 135.5023], kyo: [35.0116, 135.7681],
+    spk: [43.0642, 141.3469], oka: [26.2124, 127.6809], fuk: [33.5904, 130.4017],
+    sel: [37.5665, 126.9780], pus: [35.1796, 129.0756], cju: [33.4996, 126.5312],
+    tpe: [25.0330, 121.5654], txg: [24.1477, 120.6736], tnn: [22.9999, 120.2270],
+    khh: [22.6273, 120.3014], hul: [23.9872, 121.6015], ttt: [22.7583, 121.1444],
+    cyi: [23.4801, 120.4491], ktn: [21.9466, 120.7987], yil: [24.7021, 121.7377],
+    nto: [23.9609, 120.9719]
   };
-  function visitMapMarkup(countryId, places) {
-    const map = MAPS[countryId];
-    if (!map) return '';
+  const VIEWS = {
+    jp: [[24.20, 122.90], [45.70, 145.90]],
+    tw: [[21.55, 119.25], [25.55, 122.15]],
+    kr: [[33.00, 125.05], [38.85, 129.70]]
+  };
+  const MAP_LABEL = { jp: '日本', kr: '韓國', tw: '台灣' };
+  function mapPins(countryId, places) {
+    if (!VIEWS[countryId]) return [];
     const byId = {};
-    (places || []).forEach(p => { byId[p.id] = p; });
-    const size = map.vb.split(' ');
-    const lands = map.land.map(d => `<path class="land" d="${d}"/>`).join('');
-    const pins = map.pins.map(pin => {
-      const p = byId[pin.id];
-      const on = !!(p && p.on);
-      const name = p ? p.name : '';
-      const anchor = pin.anchor === 'end' ? 'end' : 'start';
-      const tx = pin.x + (anchor === 'end' ? -12 : 12);
-      const fill = on && p && /^#[0-9A-Fa-f]{6}$/.test(p.color) ? p.color : '';
-      const label = name ? `<text class="plab${on ? ' on' : ''}" x="${tx}" y="${pin.y + 4}" text-anchor="${anchor}">${esc(name)}</text>` : '';
-      return `<g class="pinwrap" data-city="${pin.id}" onclick="Journey.focusVisit('${pin.id}')"><circle class="pin${on ? ' on' : ''}" cx="${pin.x}" cy="${pin.y}" r="${on ? 8 : 4.5}"${fill ? ` style="fill:${fill}"` : ''}/>${label}<title>${esc(name || pin.id)}${on ? '，去過' : ''}</title></g>`;
-    }).join('');
-    return `<svg class="vmap" viewBox="${map.vb}" role="img" aria-label="${map.label}地圖"><rect class="sea" x="0" y="0" width="${size[2]}" height="${size[3]}" rx="22"/>${lands}${pins}</svg>`;
+    (places || []).forEach(p => { if (p) byId[p.id] = p; });
+    return CITIES.filter(c => c.country === countryId && GEO[c.id]).map(c => {
+      const hit = byId[c.id];
+      return { id: c.id, name: c.name, lat: GEO[c.id][0], lng: GEO[c.id][1], on: !!(hit && hit.on), color: c.color };
+    });
+  }
+  function visitMapMarkup(countryId) {
+    if (!VIEWS[countryId]) return '';
+    return `<div id="vmapbox" class="vmap-real" role="img" aria-label="${MAP_LABEL[countryId]}地圖" data-country="${countryId}"></div>`;
+  }
+  let liveMap = null;
+  function clearMap() {
+    if (!liveMap) return;
+    try { liveMap.remove(); } catch (e) {}
+    liveMap = null;
+  }
+  function mountRealMap(country, places) {
+    const el = document.getElementById('vmapbox');
+    if (!el) return;
+    if (typeof L === 'undefined') {
+      el.textContent = '地圖載入失敗，請稍後再試。';
+      return;
+    }
+    clearMap();
+    const map = L.map(el, { zoomControl: true, attributionControl: true, minZoom: 3, maxZoom: 16, zoomSnap: 0.25 });
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+      attribution: '衛星影像 &copy; Esri, Maxar',
+      maxZoom: 18
+    }).addTo(map);
+    map.fitBounds(VIEWS[country], { padding: [18, 18], animate: false });
+    mapPins(country, places).forEach(p => {
+      const color = p.on && /^#[0-9A-Fa-f]{6}$/.test(p.color) ? p.color : 'rgba(255,255,255,.72)';
+      const marker = L.marker([p.lat, p.lng], {
+        icon: L.divIcon({
+          className: 'vpin' + (p.on ? ' on' : ''),
+          html: `<span class="vd"><i style="background:${color}"></i><b>${esc(p.name)}</b></span>`,
+          iconSize: [0, 0],
+          iconAnchor: [0, 0]
+        }),
+        keyboard: false,
+        title: p.name + (p.on ? '，去過' : '')
+      });
+      marker.addTo(map);
+      marker.on('click', () => focusVisit(p.id));
+    });
+    liveMap = map;
+    const fix = () => { if (liveMap === map) map.invalidateSize(); };
+    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(fix);
+    setTimeout(fix, 80);
   }
   function visitListHtml(places) {
     const on = (places || []).filter(p => p.on);
@@ -735,9 +733,11 @@
     const mine = places.filter(p => p.country === country);
     const lit = mine.filter(p => p.on).length;
     const tabs = `<div class="seg achtabs">${COUNTRIES.map(c => `<button type="button" class="${c.id === country ? 'on' : ''}" onclick="Journey.openVisitMap('${c.id}')">${c.name}${count(c.id) ? ' ' + count(c.id) : ''}</button>`).join('')}</div>`;
+    clearMap();
     const layer = layerEl();
-    layer.innerHTML = `<div class="achpage vmap-page"><div class="row" style="align-items:center"><h2 style="margin:0">去過的地方</h2><button type="button" class="btn ghost sm" style="flex:0" onclick="Journey.closeLayer()">關閉</button></div><p class="mut achhint">有寫進行程的城市會亮起來，封存的也算。</p>${tabs}<div class="vmap-layout"><div class="vmap-card">${visitMapMarkup(country, mine)}</div><div class="vlist"><div class="cityhead"><h3>去過</h3><span>${lit}/${mine.length}</span></div>${visitListHtml(mine)}</div></div></div>`;
+    layer.innerHTML = `<div class="achpage vmap-page"><div class="row" style="align-items:center"><h2 style="margin:0">去過的地方</h2><button type="button" class="btn ghost sm" style="flex:0" onclick="Journey.closeLayer()">關閉</button></div><p class="mut achhint">有寫進行程的城市會亮起來，封存的也算。</p>${tabs}<div class="vmap-layout"><div class="vmap-card">${visitMapMarkup(country)}</div><div class="vlist"><div class="cityhead"><h3>去過</h3><span>${lit}/${mine.length}</span></div>${visitListHtml(mine)}</div></div></div>`;
     layer.hidden = false;
+    mountRealMap(country, mine);
     try { if (TM.closeSheet) TM.closeSheet(); } catch (e) {}
     return places;
   }
@@ -793,7 +793,7 @@
     }
     return el;
   }
-  function closeLayer() { const el = document.querySelector('#jlayer'); if (el) el.hidden = true; }
+  function closeLayer() { clearMap(); const el = document.querySelector('#jlayer'); if (el) el.hidden = true; }
 
   function celebrate(card, rest) {
     celebrating = true;
@@ -934,7 +934,7 @@
   return {
     STYLES, COUNTRIES, CITIES, CARDS, ALIAS, HOME, JP_AIR, KR_AIR,
     detectCountry, detectCity, resolveTheme, summarize, evaluate, cardById, migrateBadges, progressBrief, shortStyle, transitLegs, dayCount,
-    visitedPlaces, visitBrief, visitMapMarkup, achMarkup, howTo,
+    visitedPlaces, visitBrief, visitMapMarkup, mapPins, achMarkup, howTo,
     apply, afterPaint, exportState, importState, setGlobalStyle, globalStyle,
     openAchieve, peek, closeLayer, celebrate, doneCelebrate, openVisitMap, focusVisit, openMappedTrip,
     themeSheet, setTripStyle, askArchive, dismissArchive, startArchive, unarchive, promptArchive, maybePrompt
