@@ -47,7 +47,7 @@ assert.match(importer, /placeSearch\(q, dest\)|placeSearch\(q,dest\)|find\(q,des
 assert.match(readFileSync(new URL('../placeurl.js', import.meta.url), 'utf8'), /PlaceQ\.search/);
 assert.ok(html.includes('placeq.js'));
 assert.ok(extras.includes('這家有多間分店'));
-assert.match(sw, /tripmate-v52/);
+assert.match(sw, /tripmate-v54/);
 assert.ok(sw.includes('placeq.js'));
 
 assert.equal(PlaceQ.hint('玄品ふぐ'), '玄品河豚');
