@@ -725,7 +725,7 @@
       }
       if (!spot) return '';
       placed.push(spot.box);
-      const go = clickable && /^[a-z]+$/.test(l.id) ? ` onclick="Journey.openCityMap('${l.id}')"` : '';
+      const go = clickable && /^[a-z]+$/.test(l.id) ? ` data-id="${l.id}" onclick="Journey.openCityMap('${l.id}')"` : '';
       const x = Math.round(spot.box.x * 10) / 10;
       const y = Math.round(spot.box.y * 10) / 10;
       return `<g class="rlab on"${go}><rect x="${x}" y="${y}" width="${w.toFixed(1)}" height="${h}" rx="7" fill="#fff" fill-opacity="0.97"/><text x="${spot.cx}" y="${spot.cy}" text-anchor="middle" fill="#102033" font-size="${fs}" font-weight="900">${esc(name)}</text></g>`;
@@ -744,18 +744,18 @@
     if (!proj) return '';
     const vb = parseView(view);
     const items = [];
-    (spots || []).forEach(s => {
+    (spots || []).forEach((s, idx) => {
       const lat = +s.lat, lng = +s.lng;
       if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
       const pt = projectPt(proj, lat, lng);
       if (!Number.isFinite(pt[0]) || !Number.isFinite(pt[1])) return;
-      items.push({ name: String(s.name || '').trim(), x: pt[0], y: pt[1] });
+      items.push({ name: String(s.name || '').trim(), x: pt[0], y: pt[1], i: idx });
     });
     items.sort((a, b) => a.x - b.x || a.y - b.y);
     const placed = items.map(s => ({ x: s.x - 11, y: s.y - 11, w: 22, h: 22 }));
     const fs = 12;
     const slots = [[12, 4, 'start'], [-14, 4, 'end'], [0, -28, 'middle'], [0, 22, 'middle'], [18, -16, 'start'], [-18, -16, 'end'], [18, 16, 'start'], [-18, 16, 'end'], [0, -42, 'middle'], [36, 4, 'start'], [-36, 4, 'end']];
-    return items.map(s => {
+    return items.map((s, order) => {
       const chars = Array.from(s.name);
       const candidates = chars.length > 8 ? [s.name, chars.slice(0, 6).join('') + '…'] : [s.name];
       let chosen = null;
@@ -785,7 +785,7 @@
         placed.push(chosen.box);
         text = `<text x="${chosen.tx.toFixed(1)}" y="${chosen.ty.toFixed(1)}" text-anchor="${chosen.anchor}" fill="#142033" font-size="${fs}" font-weight="800" stroke="#fff" stroke-width="3" paint-order="stroke fill">${esc(label)}</text>`;
       }
-      return `<g class="spotpin"><circle cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="6.5" fill="#E53935" stroke="#fff" stroke-width="2"/>${text}</g>`;
+      return `<g class="spotpin" data-i="${s.i}" data-x="${s.x.toFixed(1)}" data-y="${s.y.toFixed(1)}" style="--i:${order}" tabindex="0" role="button" aria-label="${esc(s.name)}"><circle class="spotpin-dot" cx="${s.x.toFixed(1)}" cy="${s.y.toFixed(1)}" r="6.5" fill="#E53935" stroke="#fff" stroke-width="2"/>${text}</g>`;
     }).join('');
   }
   function citySpots(cityId) {
@@ -805,7 +805,11 @@
         const key = String(s.name || '') + '@' + lat.toFixed(3) + ',' + lng.toFixed(3);
         if (seen.has(key)) return;
         seen.add(key);
-        out.push({ name: String(s.name || city.name), lat, lng });
+        out.push({
+          name: String(s.name || city.name), lat, lng,
+          summary: String(s.summary || ''), note: String(s.note || ''),
+          rating: String(s.rating || ''), area: String(s.area || ''), zh: String(s.zh || '')
+        });
       }));
     });
     return out.slice(0, 20);
@@ -836,6 +840,244 @@
     const proj = { s: box[0] - 0.08, w: box[1] - 0.08, n: box[2] + 0.08, e: box[3] + 0.08, x: 28, y: 36, bw: 284, bh: 320 };
     return `<svg class="vmap vmap-detail" viewBox="0 0 340 380" role="img" aria-label="${esc(city.name)}地圖"><rect width="100%" height="100%" fill="#E7F4FB"/>${pinMarkup(proj, spots, '0 0 340 380')}</svg>`;
   }
+  function loreApi() { return typeof globalThis !== 'undefined' ? globalThis.SpotLore : null; }
+  function spotStory(spot) {
+    const api = loreApi();
+    if (api) return api.story(spot || {});
+    return { name: String(spot && spot.name || '景點'), intro: '', trivia: [], rating: '' };
+  }
+  function spotCardHtml(st) { const api = loreApi(); return api ? api.cardHtml(st) : ''; }
+  function focusView(pin, vb, box, scale, anchor) {
+    const api = loreApi();
+    return api ? api.focusView(pin, vb, box, scale, anchor) : { s: 1, x: 0, y: 0 };
+  }
+  function clampMapView(view, w, h) {
+    const api = loreApi();
+    return api ? api.clampMapView(view, w, h) : { s: 1, x: 0, y: 0 };
+  }
+  function placeCard(pin, stage, card) {
+    const api = loreApi();
+    return api ? api.placeCard(pin, stage, card) : { left: 8, top: 46 };
+  }
+  function focusAnchor(w) {
+    const api = loreApi();
+    return api ? api.focusAnchor(w) : { x: 0.34, y: 0.48 };
+  }
+  function mapStage(kind, cityId, svg) {
+    if (!svg) return '';
+    const city = cityId ? ` data-city="${cityId}"` : '';
+    return `<div class="vmap-stage" data-kind="${kind}"${city}><div class="vmap-tools"><button type="button" onclick="Journey.zoomMap(1)" aria-label="放大">＋</button><button type="button" onclick="Journey.zoomMap(-1)" aria-label="縮小">－</button><button type="button" class="vmap-fit" onclick="Journey.resetMap()">全圖</button></div>${svg}</div>`;
+  }
+  function activeStage() { return document.querySelector('#jlayer .vmap-stage'); }
+  function applyMap(stage) {
+    const svg = stage.querySelector('svg.vmap');
+    if (!svg) return;
+    const box = { w: svg.clientWidth, h: svg.clientHeight };
+    stage._view = clampMapView(stage._view || { s: 1, x: 0, y: 0 }, box.w, box.h);
+    const view = stage._view;
+    svg.style.transform = 'translate(' + view.x.toFixed(2) + 'px,' + view.y.toFixed(2) + 'px) scale(' + view.s.toFixed(4) + ')';
+  }
+  function pinPoint(stage, pin) {
+    const svg = stage.querySelector('svg.vmap');
+    const vb = parseView(svg.getAttribute('viewBox'));
+    const box = { w: svg.clientWidth, h: svg.clientHeight };
+    const view = stage._view || { s: 1, x: 0, y: 0 };
+    if (!vb || !box.w || !box.h) return null;
+    const px = (+pin.getAttribute('data-x') - vb.x) / vb.w * box.w;
+    const py = (+pin.getAttribute('data-y') - vb.y) / vb.h * box.h;
+    return { x: view.x + px * view.s, y: view.y + py * view.s };
+  }
+  function moveCard(stage) {
+    const card = stage.querySelector('.spotcard');
+    const pin = stage.querySelector('.spotpin.is-on');
+    if (!card || !pin) return;
+    const pt = pinPoint(stage, pin);
+    if (!pt) return;
+    const pos = placeCard(pt, { w: stage.clientWidth, h: stage.clientHeight }, { w: card.offsetWidth, h: card.offsetHeight });
+    card.style.left = pos.left + 'px';
+    card.style.top = pos.top + 'px';
+  }
+  function focusSpot(i) {
+    if (typeof document === 'undefined') return;
+    const layer = document.querySelector('#jlayer');
+    const stage = layer && layer.querySelector('.vmap-stage');
+    if (!stage || stage.dataset.kind !== 'city') return;
+    const spot = (layer._spots || [])[+i];
+    const svg = stage.querySelector('svg.vmap');
+    const pin = svg && svg.querySelector('.spotpin[data-i="' + (+i) + '"]');
+    if (!spot || !pin) return;
+    layer._focus = +i;
+    svg.querySelectorAll('.spotpin').forEach(el => {
+      const on = el.getAttribute('data-i') === String(+i);
+      el.classList.toggle('is-on', on);
+      if (on) el.setAttribute('aria-pressed', 'true');
+      else el.removeAttribute('aria-pressed');
+    });
+    stage.classList.add('is-focus');
+    layer.querySelectorAll('.vlist .vtrip').forEach((el, n) => el.classList.toggle('on', n === +i));
+    const run = () => {
+      const vb = parseView(svg.getAttribute('viewBox'));
+      const box = { w: svg.clientWidth, h: svg.clientHeight };
+      if (!vb || !box.w || !box.h) return;
+      const raw = focusView(
+        { x: +pin.getAttribute('data-x'), y: +pin.getAttribute('data-y') },
+        vb, box, 1.9, focusAnchor(stage.clientWidth)
+      );
+      stage._view = clampMapView(raw, box.w, box.h);
+      applyMap(stage);
+      const html = spotCardHtml(spotStory(spot));
+      const card = stage.querySelector('.spotcard');
+      if (card) card.outerHTML = html;
+      else stage.insertAdjacentHTML('beforeend', html);
+      moveCard(stage);
+    };
+    if (svg.clientWidth) run();
+    else requestAnimationFrame(run);
+    if (stage.scrollIntoView) stage.scrollIntoView({ block: 'nearest' });
+  }
+  function clearSpot() {
+    if (typeof document === 'undefined') return;
+    const layer = document.querySelector('#jlayer');
+    const stage = layer && layer.querySelector('.vmap-stage');
+    if (!layer || !stage) return;
+    layer._focus = -1;
+    stage.classList.remove('is-focus');
+    stage.querySelectorAll('.spotpin').forEach(el => { el.classList.remove('is-on'); el.removeAttribute('aria-pressed'); });
+    layer.querySelectorAll('.vlist .vtrip.on').forEach(el => el.classList.remove('on'));
+    const card = stage.querySelector('.spotcard');
+    if (card) card.remove();
+    const svg = stage.querySelector('svg.vmap');
+    const box = svg ? { w: svg.clientWidth, h: svg.clientHeight } : { w: stage.clientWidth, h: stage.clientHeight };
+    stage._view = clampMapView({ s: 1, x: 0, y: 0 }, box.w, box.h);
+    applyMap(stage);
+  }
+  function resetMap() {
+    if (typeof document === 'undefined') return;
+    const stage = activeStage();
+    if (!stage) return;
+    if (stage.classList.contains('is-focus')) { clearSpot(); return; }
+    stage._view = { s: 1, x: 0, y: 0 };
+    applyMap(stage);
+  }
+  function zoomMap(dir) {
+    if (typeof document === 'undefined') return;
+    const stage = activeStage();
+    const svg = stage && stage.querySelector('svg.vmap');
+    if (!svg) return;
+    const box = { w: svg.clientWidth, h: svg.clientHeight };
+    const view = stage._view || { s: 1, x: 0, y: 0 };
+    const next = dir > 0 ? view.s * 1.25 : view.s / 1.25;
+    const cx = box.w / 2, cy = box.h / 2, k = next / view.s;
+    stage._view = clampMapView({ s: next, x: cx - (cx - view.x) * k, y: cy - (cy - view.y) * k }, box.w, box.h);
+    applyMap(stage);
+    moveCard(stage);
+  }
+  function bindVisit(layer) {
+    const stage = layer.querySelector('.vmap-stage');
+    if (!stage || stage._bound) return;
+    stage._bound = true;
+    stage._view = { s: 1, x: 0, y: 0 };
+    const pointers = new Map();
+    let drag = null;
+    let pinch = null;
+    stage.addEventListener('wheel', e => {
+      if (e.target.closest && e.target.closest('.spotcard')) return;
+      e.preventDefault();
+      const svg = stage.querySelector('svg.vmap');
+      if (!svg) return;
+      const sr = stage.getBoundingClientRect();
+      const mx = e.clientX - sr.left, my = e.clientY - sr.top;
+      const view = stage._view || { s: 1, x: 0, y: 0 };
+      const next = view.s * (e.deltaY < 0 ? 1.12 : 1 / 1.12);
+      const k = next / view.s;
+      const box = { w: svg.clientWidth, h: svg.clientHeight };
+      stage._view = clampMapView({ s: next, x: mx - (mx - view.x) * k, y: my - (my - view.y) * k }, box.w, box.h);
+      applyMap(stage);
+      moveCard(stage);
+    }, { passive: false });
+    const capture = id => { try { stage.setPointerCapture(id); } catch (err) {} };
+    stage.addEventListener('pointerdown', e => {
+      if (e.button > 0) return;
+      if (e.target.closest && e.target.closest('.spotcard, .vmap-tools')) return;
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const view = stage._view || { s: 1, x: 0, y: 0 };
+      if (pointers.size === 1) {
+        drag = { id: e.pointerId, x: e.clientX, y: e.clientY, vx: view.x, vy: view.y, s: view.s, moved: 0, pinch: false };
+      } else if (pointers.size === 2) {
+        const pts = [...pointers.values()];
+        pinch = { dist: Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1, s: view.s, x: view.x, y: view.y };
+        if (drag) drag.pinch = true;
+        pointers.forEach((_, id) => capture(id));
+        stage.classList.add('is-drag');
+      }
+    });
+    stage.addEventListener('pointermove', e => {
+      if (!pointers.has(e.pointerId)) return;
+      pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const svg = stage.querySelector('svg.vmap');
+      const box = svg ? { w: svg.clientWidth, h: svg.clientHeight } : { w: 0, h: 0 };
+      if (pointers.size >= 2 && pinch) {
+        const pts = [...pointers.values()];
+        const d = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y) || 1;
+        const sr = stage.getBoundingClientRect();
+        const mx = (pts[0].x + pts[1].x) / 2 - sr.left;
+        const my = (pts[0].y + pts[1].y) / 2 - sr.top;
+        const next = pinch.s * (d / pinch.dist);
+        const k = next / pinch.s;
+        stage._view = clampMapView({ s: next, x: mx - (mx - pinch.x) * k, y: my - (my - pinch.y) * k }, box.w, box.h);
+        applyMap(stage);
+        moveCard(stage);
+        return;
+      }
+      if (!drag || drag.pinch) return;
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      drag.moved = Math.max(drag.moved, Math.hypot(dx, dy));
+      if (drag.moved < 3) return;
+      if (!stage.classList.contains('is-drag')) {
+        capture(drag.id);
+        stage.classList.add('is-drag');
+      }
+      stage._view = clampMapView({ s: drag.s, x: drag.vx + dx, y: drag.vy + dy }, box.w, box.h);
+      applyMap(stage);
+    });
+    const endPointer = e => {
+      const info = drag;
+      pointers.delete(e.pointerId);
+      if (pointers.size < 2) pinch = null;
+      if (pointers.size > 0) return;
+      stage.classList.remove('is-drag');
+      drag = null;
+      if (!info || info.pinch) return;
+      if (info.moved >= 8 && stage._view && stage._view.s > 1.01) { stage._swallow = true; return; }
+      if (info.moved >= 8) return;
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      if (stage.dataset.kind !== 'city') {
+        const hit = el && el.closest && el.closest('.vreg[data-id], .rlab[data-id]');
+        if (hit && stage.contains(hit)) openCityMap(hit.getAttribute('data-id'));
+        return;
+      }
+      const pin = el && el.closest && el.closest('.spotpin');
+      const ui = el && el.closest && el.closest('.spotcard, .vmap-tools');
+      if (pin && stage.contains(pin)) focusSpot(+pin.getAttribute('data-i'));
+      else if (!ui && stage.classList.contains('is-focus')) clearSpot();
+    };
+    stage.addEventListener('pointerup', endPointer);
+    stage.addEventListener('pointercancel', endPointer);
+    stage.addEventListener('click', e => {
+      if (!stage._swallow) return;
+      stage._swallow = false;
+      e.preventDefault();
+      e.stopPropagation();
+    }, true);
+    stage.addEventListener('keydown', e => {
+      const pin = e.target.closest && e.target.closest('.spotpin');
+      if (!pin) return;
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); focusSpot(+pin.getAttribute('data-i')); }
+    });
+    if (layer._key) document.removeEventListener('keydown', layer._key);
+    layer._key = e => { if (e.key === 'Escape' && layer.querySelector('.spotcard')) clearSpot(); };
+    document.addEventListener('keydown', layer._key);
+  }
   function openCityMap(id) {
     if (!/^[a-z0-9]+$/.test(String(id || ''))) return;
     const places = visitedPlaces(tripsNow());
@@ -844,12 +1086,15 @@
     const spots = citySpots(id);
     if (typeof document === 'undefined') return spots;
     const rows = spots.length
-      ? spots.map(s => `<div class="vtrip"><b>${esc(s.name)}</b></div>`).join('')
+      ? spots.map((s, i) => `<button type="button" class="vtrip" onclick="Journey.focusSpot(${i})"><b>${esc(s.name)}</b></button>`).join('')
       : '<div class="vempty"><b>這座城市還沒有帶座標的景點</b><p>行程裡的景點若有位置，會標在地圖上。</p></div>';
-    const hint = '有座標的景點會標在地圖上，完整名稱在下面。';
+    const hint = '點景點會放大，旁邊有簡介和冷知識。點空白或關閉就回到城市全圖。';
     const layer = layerEl();
-    layer.innerHTML = `<div class="achpage vmap-page"><div class="row" style="align-items:center"><button type="button" class="btn ghost sm" style="flex:0" onclick="Journey.openVisitMap('${city.country}')">返回</button><h2 style="margin:0">${esc(city.name)}</h2></div><p class="mut achhint">${hint}</p><div class="vmap-card">${cityMapMarkup(id, spots)}</div><div class="vlist"><div class="cityhead"><h3>景點</h3><span>${spots.length}</span></div>${rows}</div></div>`;
+    layer.innerHTML = `<div class="achpage vmap-page"><div class="row" style="align-items:center"><button type="button" class="btn ghost sm" style="flex:0" onclick="Journey.openVisitMap('${city.country}')">返回</button><h2 style="margin:0">${esc(city.name)}</h2></div><p class="mut achhint">${hint}</p><div class="vmap-layout"><div class="vmap-card">${mapStage('city', id, cityMapMarkup(id, spots))}</div><div class="vlist"><div class="cityhead"><h3>景點</h3><span>${spots.length}</span></div>${rows}</div></div></div>`;
+    layer._spots = spots;
+    layer._focus = -1;
     layer.hidden = false;
+    bindVisit(layer);
     return spots;
   }
   function visitListHtml(places) {
@@ -882,8 +1127,11 @@
     const lit = mine.filter(p => p.on).length;
     const tabs = `<div class="seg achtabs">${COUNTRIES.map(c => `<button type="button" class="${c.id === country ? 'on' : ''}" onclick="Journey.openVisitMap('${c.id}')">${c.name}${count(c.id) ? ' ' + count(c.id) : ''}</button>`).join('')}</div>`;
     const layer = layerEl();
-    layer.innerHTML = `<div class="achpage vmap-page"><div class="row" style="align-items:center"><h2 style="margin:0">去過的地方</h2><button type="button" class="btn ghost sm" style="flex:0" onclick="Journey.closeLayer()">關閉</button></div><p class="mut achhint">有寫進行程的城市會亮起來，也只標那些地名。點亮的城市可以再點開。</p>${tabs}<div class="vmap-layout"><div class="vmap-card">${visitMapMarkup(country, mine)}</div><div class="vlist"><div class="cityhead"><h3>去過</h3><span>${lit}/${mine.length}</span></div>${visitListHtml(mine)}</div></div></div>`;
+    layer.innerHTML = `<div class="achpage vmap-page"><div class="row" style="align-items:center"><h2 style="margin:0">去過的地方</h2><button type="button" class="btn ghost sm" style="flex:0" onclick="Journey.closeLayer()">關閉</button></div><p class="mut achhint">有寫進行程的城市會亮起來，也只標那些地名。點亮的城市可以再點開。地圖可以縮放、平移。</p>${tabs}<div class="vmap-layout"><div class="vmap-card">${mapStage('country', '', visitMapMarkup(country, mine))}</div><div class="vlist"><div class="cityhead"><h3>去過</h3><span>${lit}/${mine.length}</span></div>${visitListHtml(mine)}</div></div></div>`;
+    layer._spots = [];
+    layer._focus = -1;
     layer.hidden = false;
+    bindVisit(layer);
     try { if (TM.closeSheet) TM.closeSheet(); } catch (e) {}
     return places;
   }
@@ -939,7 +1187,12 @@
     }
     return el;
   }
-  function closeLayer() { const el = document.querySelector('#jlayer'); if (el) el.hidden = true; }
+  function closeLayer() {
+    const el = document.querySelector('#jlayer');
+    if (!el) return;
+    if (el._key) { document.removeEventListener('keydown', el._key); el._key = null; }
+    el.hidden = true;
+  }
 
   function celebrate(card, rest) {
     celebrating = true;
@@ -1081,8 +1334,10 @@
     STYLES, COUNTRIES, CITIES, CARDS, ALIAS, HOME, JP_AIR, KR_AIR,
     detectCountry, detectCity, resolveTheme, summarize, evaluate, cardById, migrateBadges, progressBrief, shortStyle, transitLegs, dayCount,
     visitedPlaces, visitBrief, visitMapMarkup, mapPins, cityMapMarkup, citySpots, achMarkup, howTo,
+    spotStory, spotCardHtml, focusView, clampMapView, placeCard, focusAnchor, mapStage,
     apply, afterPaint, exportState, importState, setGlobalStyle, globalStyle,
     openAchieve, peek, closeLayer, celebrate, doneCelebrate, openVisitMap, openCityMap, focusVisit, openMappedTrip,
+    focusSpot, clearSpot, resetMap, zoomMap,
     themeSheet, setTripStyle, askArchive, dismissArchive, startArchive, unarchive, promptArchive, maybePrompt
   };
 });
