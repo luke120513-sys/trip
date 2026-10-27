@@ -660,49 +660,31 @@
       return { id: c.id, name: c.name, lat: GEO[c.id][0], lng: GEO[c.id][1], on: !!(hit && hit.on), color: c.color };
     });
   }
-  function visitMapMarkup(countryId) {
-    if (!VIEWS[countryId]) return '';
-    return `<div id="vmapbox" class="vmap-real" role="img" aria-label="${MAP_LABEL[countryId]}地圖" data-country="${countryId}"></div>`;
+  function mixHex(hex, toward, t) {
+    const pick = h => [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)];
+    const a = pick(hex), b = pick(toward);
+    return '#' + a.map((v, i) => Math.round(v + (b[i] - v) * t).toString(16).padStart(2, '0')).join('');
   }
-  let liveMap = null;
-  function clearMap() {
-    if (!liveMap) return;
-    try { liveMap.remove(); } catch (e) {}
-    liveMap = null;
-  }
-  function mountRealMap(country, places) {
-    const el = document.getElementById('vmapbox');
-    if (!el) return;
-    if (typeof L === 'undefined') {
-      el.textContent = '地圖載入失敗，請稍後再試。';
-      return;
-    }
-    clearMap();
-    const map = L.map(el, { zoomControl: true, attributionControl: true, minZoom: 3, maxZoom: 16, zoomSnap: 0.25 });
-    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-      attribution: '衛星影像 &copy; Esri, Maxar',
-      maxZoom: 18
-    }).addTo(map);
-    map.fitBounds(VIEWS[country], { padding: [18, 18], animate: false });
-    mapPins(country, places).forEach(p => {
-      const color = p.on && /^#[0-9A-Fa-f]{6}$/.test(p.color) ? p.color : 'rgba(255,255,255,.72)';
-      const marker = L.marker([p.lat, p.lng], {
-        icon: L.divIcon({
-          className: 'vpin' + (p.on ? ' on' : ''),
-          html: `<span class="vd"><i style="background:${color}"></i><b>${esc(p.name)}</b></span>`,
-          iconSize: [0, 0],
-          iconAnchor: [0, 0]
-        }),
-        keyboard: false,
-        title: p.name + (p.on ? '，去過' : '')
-      });
-      marker.addTo(map);
-      marker.on('click', () => focusVisit(p.id));
-    });
-    liveMap = map;
-    const fix = () => { if (liveMap === map) map.invalidateSize(); };
-    if (typeof requestAnimationFrame === 'function') requestAnimationFrame(fix);
-    setTimeout(fix, 80);
+  function visitMapMarkup(countryId, places) {
+    const pack = (typeof globalThis !== 'undefined' && globalThis.VISIT_GEO) ? globalThis.VISIT_GEO[countryId] : null;
+    if (!pack) return '';
+    const on = {};
+    (places || []).forEach(p => { if (p && p.on) on[p.id] = true; });
+    const sea = `<rect class="sea" width="100%" height="100%" fill="${pack.sea}"/>`;
+    const parts = pack.parts.map(p => {
+      const tracked = !!p.id;
+      const lit = tracked && !!on[p.id];
+      const fill = lit ? p.color : mixHex(p.color, '#F7F9FC', tracked ? 0.72 : 0.34);
+      const cls = 'vreg' + (lit ? ' on' : '') + (tracked ? '' : ' quiet');
+      const idAttr = tracked ? ` data-id="${p.id}"` : '';
+      const click = tracked ? ` onclick="Journey.focusVisit('${p.id}')"` : '';
+      return `<path class="${cls}"${idAttr} fill="${fill}" d="${p.d}"${click}/>`;
+    }).join('');
+    const labels = (pack.labels || []).map(l => {
+      const lit = !!on[l.id];
+      return `<text class="rlab${lit ? ' on' : ''}" x="${l.x}" y="${l.y}" text-anchor="middle">${esc(l.name)}</text>`;
+    }).join('');
+    return `<svg class="vmap" viewBox="${pack.view}" role="img" aria-label="${MAP_LABEL[countryId]}地圖">${sea}${parts}${labels}</svg>`;
   }
   function visitListHtml(places) {
     const on = (places || []).filter(p => p.on);
@@ -733,11 +715,9 @@
     const mine = places.filter(p => p.country === country);
     const lit = mine.filter(p => p.on).length;
     const tabs = `<div class="seg achtabs">${COUNTRIES.map(c => `<button type="button" class="${c.id === country ? 'on' : ''}" onclick="Journey.openVisitMap('${c.id}')">${c.name}${count(c.id) ? ' ' + count(c.id) : ''}</button>`).join('')}</div>`;
-    clearMap();
     const layer = layerEl();
-    layer.innerHTML = `<div class="achpage vmap-page"><div class="row" style="align-items:center"><h2 style="margin:0">去過的地方</h2><button type="button" class="btn ghost sm" style="flex:0" onclick="Journey.closeLayer()">關閉</button></div><p class="mut achhint">有寫進行程的城市會亮起來，封存的也算。</p>${tabs}<div class="vmap-layout"><div class="vmap-card">${visitMapMarkup(country)}</div><div class="vlist"><div class="cityhead"><h3>去過</h3><span>${lit}/${mine.length}</span></div>${visitListHtml(mine)}</div></div></div>`;
+    layer.innerHTML = `<div class="achpage vmap-page"><div class="row" style="align-items:center"><h2 style="margin:0">去過的地方</h2><button type="button" class="btn ghost sm" style="flex:0" onclick="Journey.closeLayer()">關閉</button></div><p class="mut achhint">有寫進行程的城市會亮起來，封存的也算。</p>${tabs}<div class="vmap-layout"><div class="vmap-card">${visitMapMarkup(country, mine)}</div><div class="vlist"><div class="cityhead"><h3>去過</h3><span>${lit}/${mine.length}</span></div>${visitListHtml(mine)}</div></div></div>`;
     layer.hidden = false;
-    mountRealMap(country, mine);
     try { if (TM.closeSheet) TM.closeSheet(); } catch (e) {}
     return places;
   }
@@ -793,7 +773,7 @@
     }
     return el;
   }
-  function closeLayer() { clearMap(); const el = document.querySelector('#jlayer'); if (el) el.hidden = true; }
+  function closeLayer() { const el = document.querySelector('#jlayer'); if (el) el.hidden = true; }
 
   function celebrate(card, rest) {
     celebrating = true;

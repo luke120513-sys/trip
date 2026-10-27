@@ -3,6 +3,7 @@ import { createRequire } from 'node:module';
 import fs from 'node:fs';
 
 const require = createRequire(import.meta.url);
+require('../visitgeo.js');
 const J = require('../journey.js');
 const Share = require('../share.js');
 const { mergeTrip } = require('../sync.js');
@@ -237,9 +238,9 @@ assert.match(page, /theme-tw/);
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v59/);
+assert.match(sw, /tripmate-v60/);
 assert.match(sw, /journey\.js/);
-assert.match(page, /v2\.16\.0/);
+assert.match(page, /v2\.17\.0/);
 assert.match(page, /openVisitMap/);
 assert.match(page, /class="vmap-entry"/);
 assert.match(page, /\.ach-q/);
@@ -281,8 +282,14 @@ assert.equal(J.visitBrief(seenTrips), '日本 2 · 韓國 1 · 台灣 2');
 assert.equal(J.visitBrief([]), '還沒有點亮的城市');
 const jpMap = J.visitMapMarkup('jp', places);
 assert.match(jpMap, /aria-label="日本地圖"/);
-assert.match(jpMap, /id="vmapbox"/);
-assert.equal(jpMap.includes('<svg'), false);
+assert.match(jpMap, /<svg/);
+assert.match(jpMap, /class="vreg on" data-id="tyo"/);
+assert.match(jpMap, /class="vreg" data-id="osa"/);
+assert.equal(/class="vreg on" data-id="osa"/.test(jpMap), false);
+assert.match(jpMap, /class="vreg on" data-id="kyo"/);
+assert.match(jpMap, /北海道/);
+assert.equal(jpMap.includes('World_Imagery'), false);
+assert.equal(jpMap.includes('leaflet'), false);
 const jpPins = J.mapPins('jp', places);
 assert.equal(jpPins.find(p => p.id === 'tyo').on, true);
 assert.equal(jpPins.find(p => p.id === 'osa').on, false);
@@ -293,15 +300,21 @@ assert.equal(twPins.find(p => p.id === 'tpe').on, true);
 assert.equal(twPins.find(p => p.id === 'hul').on, true);
 assert.equal(twPins.length, 10);
 assert.ok(twPins.find(p => p.id === 'tpe').lng > 121 && twPins.find(p => p.id === 'tpe').lng < 122);
-assert.match(J.visitMapMarkup('tw', places), /台灣地圖/);
+const twMap = J.visitMapMarkup('tw', places);
+assert.match(twMap, /台灣地圖/);
+assert.match(twMap, /class="vreg on" data-id="tpe"/);
+assert.match(twMap, /class="vreg on" data-id="hul"/);
+assert.match(twMap, /class="vreg" data-id="khh"/);
 assert.equal(J.visitMapMarkup('nope', places), '');
 assert.equal(J.mapPins('nope', places).length, 0);
 J.CITIES.forEach(c => {
   const pin = J.mapPins(c.country, []).find(p => p.id === c.id);
   assert.ok(pin && pin.lat > 20 && pin.lat < 50 && pin.lng > 110 && pin.lng < 150, c.id);
 });
-assert.match(page, /vendor\/leaflet\.js/);
-assert.match(sw, /vendor\/leaflet\.js/);
+assert.match(page, /visitgeo\.js/);
+assert.match(sw, /visitgeo\.js/);
+assert.equal(page.includes('leaflet'), false);
+assert.equal(sw.includes('leaflet'), false);
 const tokyoHome = trip({
   id: 'home-1', dest: '東京', orig: 'TPE', dep: '2026-10-20', ret: '2026-10-23',
   days: [[
