@@ -7,6 +7,7 @@
   const HOME = { TPE: 1, TSA: 1, KHH: 1, RMQ: 1, TNN: 1, HUN: 1, TTT: 1, CYI: 1, PIF: 1 };
   const JP_AIR = { NRT: 1, HND: 1, KIX: 1, ITM: 1, UKB: 1, NGO: 1, CTS: 1, FUK: 1, OKA: 1, KOJ: 1, HIJ: 1, SDJ: 1, KMQ: 1, TAK: 1, KMJ: 1, FSZ: 1, OKJ: 1, TOY: 1, KIJ: 1, AOJ: 1, MMB: 1, AKJ: 1 };
   const KR_AIR = { ICN: 1, GMP: 1, PUS: 1, CJU: 1, TAE: 1, KWJ: 1, CJJ: 1, RSU: 1 };
+  const CITY_AIR = { NRT: 'tyo', HND: 'tyo', KIX: 'osa', ITM: 'osa', UKB: 'osa', FUK: 'fuk', OKA: 'oka', CTS: 'spk', ICN: 'sel', GMP: 'sel', PUS: 'pus', CJU: 'cju', TPE: 'tpe', TSA: 'tpe', RMQ: 'txg', TNN: 'tnn', KHH: 'khh', HUN: 'hul', TTT: 'ttt', CYI: 'cyi', PIF: 'ktn' };
   const JP_WORDS = ['日本', '東京', '大阪', '京都', '福岡', '札幌', '沖繩', '名古屋', '奈良', '神戶', '神戸', '橫濱', '横浜', '鎌倉', '箱根', '北海道', '廣島', '広島', '金澤', '金沢', '淺草', '浅草', '新宿', '澀谷', '渋谷', '上野', '晴空塔', '東京鐵塔', '東京塔', '道頓堀', '心齋橋', '心斎橋', '伏見稻荷', '伏見稲荷', '清水寺', '金閣寺', '嵐山', 'Tokyo', 'Osaka', 'Kyoto', 'Japan', 'Sapporo', 'Okinawa', 'Hiroshima', 'Nara', 'Kobe', 'Yokohama'];
   const KR_WORDS = ['韓國', '首爾', '釜山', '濟州', '仁川', '大邱', '光州', '慶州', '江陵', '明洞', '弘大', '弘益', '景福宮', '昌德宮', '昌慶宮', '德壽宮', '北村', '韓屋', 'Seoul', 'Busan', 'Korea', 'Jeju', 'Incheon', 'Myeongdong', 'Hongdae'];
   const TW_WORDS = ['台灣', '臺灣', '台北', '臺北', '新北', '台中', '臺中', '台南', '臺南', '高雄', '花蓮', '台東', '臺東', '嘉義', '阿里山', '墾丁', '屏東', '宜蘭', '南投', '日月潭', '太魯閣', '九份', '野柳', '淡水', '駁二', '七星潭', '三仙台', '伯朗大道', '鵝鑾鼻', '傳藝', '九族', 'Taipei', 'Taichung', 'Tainan', 'Kaohsiung', 'Hualien', 'Taitung', 'Chiayi', 'Alishan', 'Kenting', 'Pingtung', 'Yilan', 'Nantou', 'Taiwan', 'Sun Moon Lake'];
@@ -199,6 +200,48 @@
     const named = cityFromText(blob(spot));
     if (named) return named;
     return cityFromText(trip && trip.dest);
+  }
+  function airCities(text) {
+    const ids = [];
+    const re = /\b([A-Za-z]{3})\b/g;
+    let m;
+    const s = String(text || '');
+    while ((m = re.exec(s))) {
+      const id = CITY_AIR[m[1].toUpperCase()];
+      if (id && ids.indexOf(id) < 0) ids.push(id);
+    }
+    return ids;
+  }
+  function citiesTouched(trip) {
+    const ids = new Set();
+    if (!trip) return ids;
+    const add = id => { if (id) ids.add(id); };
+    add(cityFromText(trip.dest));
+    airCities(trip.dest).forEach(add);
+    (trip.days || []).forEach(d => (d || []).forEach(s => {
+      if (!s) return;
+      add(detectCity(s, trip));
+      airCities([s.from, s.to, s.name].filter(Boolean).join(' ')).forEach(add);
+    }));
+    return ids;
+  }
+  function visitedPlaces(trips) {
+    const bag = {};
+    CITIES.forEach(c => { bag[c.id] = []; });
+    (trips || []).forEach(t => {
+      if (!t) return;
+      const row = { id: String(t.id || ''), dest: String(t.dest || ''), dep: String(t.dep || ''), ret: String(t.ret || ''), archived: t.archived === true };
+      citiesTouched(t).forEach(id => { if (bag[id]) bag[id].push(row); });
+    });
+    return CITIES.map(c => ({ id: c.id, country: c.country, name: c.name, color: c.color, on: bag[c.id].length > 0, trips: bag[c.id] }));
+  }
+  function visitBrief(trips) {
+    const places = visitedPlaces(trips || (typeof tripsNow === 'function' ? tripsNow() : []));
+    const bits = COUNTRIES.map(c => {
+      const n = places.filter(p => p.country === c.id && p.on).length;
+      return n ? c.name + ' ' + n : '';
+    }).filter(Boolean);
+    return bits.join(' · ') || '還沒有點亮的城市';
   }
   function near(spot, lat, lng, km) {
     const a = spot && +spot.lat, b = spot && +spot.lng;
@@ -562,11 +605,141 @@
     return d.getFullYear() + '/' + (d.getMonth() + 1) + '/' + d.getDate();
   }
   let achCountry = 'jp';
+  const LOCK_ART = '<span class="ach-art" aria-hidden="true"><svg viewBox="0 0 64 64"><circle cx="32" cy="28" r="10"/><path d="M12 54c4-12 12-16 20-16s16 4 20 16"/></svg></span>';
   function achButton(card, earned) {
     const on = +earned[card.id] > 1e11;
     const cls = 'ach' + (card.city ? ' city-' + card.city : '') + (on ? '' : ' ach-lock');
-    if (!on) return `<button type="button" class="${cls}" onclick="Journey.peek('${card.id}')"><span class="ach-art" aria-hidden="true"><svg viewBox="0 0 64 64"><circle cx="32" cy="28" r="10"/><path d="M12 54c4-12 12-16 20-16s16 4 20 16"/></svg></span><b>尚未收集</b><small>${esc(card.hint)}</small></button>`;
+    if (!on) return `<div class="${cls}">${`<button type="button" class="ach-hit" onclick="Journey.peek('${card.id}')">${LOCK_ART}<b>尚未收集</b><small>${esc(card.hint)}</small></button><button type="button" class="ach-q" aria-label="如何完成：${esc(card.title)}" onclick="Journey.howTo('${card.id}')">?</button>`}</div>`;
     return `<button type="button" class="${cls}" onclick="Journey.peek('${card.id}')"><span class="ach-art" aria-hidden="true">${card.art}</span><b>${esc(card.title)}</b><small>${esc(ymd(earned[card.id]))}</small></button>`;
+  }
+  function achMarkup(id, earned) {
+    const card = cardById(id);
+    return card ? achButton(card, earned || {}) : '';
+  }
+  function howTo(id) {
+    const card = cardById(id);
+    if (!card) return '';
+    if (typeof document === 'undefined') return card.hint;
+    const layer = layerEl();
+    layer.innerHTML = `<div class="achpage"><button type="button" class="btn ghost sm" onclick="Journey.openAchieve()">返回收藏</button><article class="howto"><p class="howto-k">如何完成</p><h2>${esc(card.title)}</h2><p>${esc(card.hint)}</p></article></div>`;
+    layer.hidden = false;
+    return card.hint;
+  }
+  const MAPS = {
+    jp: {
+      label: '日本', vb: '0 0 220 340',
+      land: [
+        'M132,16 C158,6 198,14 204,40 C210,64 186,84 158,78 C132,72 110,56 118,34 C122,22 124,18 132,16 Z',
+        'M150,82 C168,96 186,118 192,142 C196,158 184,170 170,174 C156,180 148,192 136,200 C120,210 104,216 90,228 C76,240 64,244 58,232 C54,220 68,212 84,204 C100,196 114,184 122,168 C130,152 128,132 136,114 C142,98 146,88 150,82 Z',
+        'M92,232 C110,224 122,238 114,252 C104,262 90,252 92,232 Z',
+        'M46,234 C66,224 84,242 78,266 C70,288 48,290 38,270 C32,252 36,238 46,234 Z',
+        'M56,308 C66,302 76,312 70,322 C62,330 52,320 56,308 Z',
+        'M78,320 C86,316 94,324 88,332 C80,338 72,328 78,320 Z'
+      ],
+      pins: [
+        { id: 'spk', x: 158, y: 46, anchor: 'start' },
+        { id: 'tyo', x: 176, y: 150, anchor: 'end' },
+        { id: 'kyo', x: 124, y: 186, anchor: 'end' },
+        { id: 'osa', x: 112, y: 204, anchor: 'end' },
+        { id: 'fuk', x: 58, y: 262, anchor: 'start' },
+        { id: 'oka', x: 74, y: 324, anchor: 'start' }
+      ]
+    },
+    tw: {
+      label: '台灣', vb: '0 0 220 320',
+      land: [
+        'M108,28 C132,36 150,58 156,84 C162,112 164,146 156,178 C150,210 138,242 122,266 C112,280 98,286 90,274 C78,256 66,224 62,190 C58,156 60,118 72,84 C82,54 92,34 108,28 Z'
+      ],
+      pins: [
+        { id: 'tpe', x: 102, y: 62, anchor: 'end' },
+        { id: 'yil', x: 132, y: 78, anchor: 'start' },
+        { id: 'txg', x: 88, y: 118, anchor: 'end' },
+        { id: 'nto', x: 112, y: 136, anchor: 'start' },
+        { id: 'hul', x: 140, y: 150, anchor: 'start' },
+        { id: 'cyi', x: 84, y: 168, anchor: 'end' },
+        { id: 'tnn', x: 80, y: 198, anchor: 'end' },
+        { id: 'khh', x: 86, y: 224, anchor: 'end' },
+        { id: 'ttt', x: 124, y: 210, anchor: 'start' },
+        { id: 'ktn', x: 104, y: 262, anchor: 'start' }
+      ]
+    },
+    kr: {
+      label: '韓國', vb: '0 0 200 280',
+      land: [
+        'M96,36 C122,26 150,40 156,66 C162,94 156,126 146,156 C138,184 128,206 114,216 C100,226 86,216 84,196 C80,168 72,136 74,104 C76,72 80,48 96,36 Z',
+        'M108,236 C124,230 138,242 130,254 C118,264 104,256 108,236 Z'
+      ],
+      pins: [
+        { id: 'sel', x: 112, y: 96, anchor: 'end' },
+        { id: 'pus', x: 132, y: 186, anchor: 'start' },
+        { id: 'cju', x: 118, y: 248, anchor: 'start' }
+      ]
+    }
+  };
+  function visitMapMarkup(countryId, places) {
+    const map = MAPS[countryId];
+    if (!map) return '';
+    const byId = {};
+    (places || []).forEach(p => { byId[p.id] = p; });
+    const size = map.vb.split(' ');
+    const lands = map.land.map(d => `<path class="land" d="${d}"/>`).join('');
+    const pins = map.pins.map(pin => {
+      const p = byId[pin.id];
+      const on = !!(p && p.on);
+      const name = p ? p.name : '';
+      const anchor = pin.anchor === 'end' ? 'end' : 'start';
+      const tx = pin.x + (anchor === 'end' ? -12 : 12);
+      const fill = on && p && /^#[0-9A-Fa-f]{6}$/.test(p.color) ? p.color : '';
+      const label = name ? `<text class="plab${on ? ' on' : ''}" x="${tx}" y="${pin.y + 4}" text-anchor="${anchor}">${esc(name)}</text>` : '';
+      return `<g class="pinwrap" data-city="${pin.id}" onclick="Journey.focusVisit('${pin.id}')"><circle class="pin${on ? ' on' : ''}" cx="${pin.x}" cy="${pin.y}" r="${on ? 8 : 4.5}"${fill ? ` style="fill:${fill}"` : ''}/>${label}<title>${esc(name || pin.id)}${on ? '，去過' : ''}</title></g>`;
+    }).join('');
+    return `<svg class="vmap" viewBox="${map.vb}" role="img" aria-label="${map.label}地圖"><rect class="sea" x="0" y="0" width="${size[2]}" height="${size[3]}" rx="22"/>${lands}${pins}</svg>`;
+  }
+  function visitListHtml(places) {
+    const on = (places || []).filter(p => p.on);
+    if (!on.length) return '<div class="vempty"><b>這個地區還沒有點亮的城市</b><p>行程目的地、景點或封存的行程對得上城市時，地圖會亮起來。</p></div>';
+    return on.map(p => {
+      const rows = p.trips.slice(0, 4).map(t => {
+        const when = [t.dep, t.ret].filter(Boolean).join(' – ');
+        const idOk = /^[A-Za-z0-9_-]+$/.test(t.id || '');
+        const open = idOk ? ` onclick="Journey.openMappedTrip('${t.id}')"` : '';
+        const extra = t.dest && t.dest !== p.name ? esc(t.dest) : '';
+        const bits = [extra, t.archived ? '已封存' : ''].filter(Boolean).join(' · ');
+        return `<button type="button" class="vtrip"${open}><b>${esc(when || p.name)}</b>${bits ? `<small>${bits}</small>` : ''}</button>`;
+      }).join('');
+      const more = p.trips.length > 4 ? `<p class="mut">還有 ${p.trips.length - 4} 趟</p>` : '';
+      return `<section class="vitem" id="v-${p.id}"><i style="background:${p.color}"></i><div><b>${esc(p.name)}</b><span class="mut">${p.trips.length} 趟行程</span>${rows}${more}</div></section>`;
+    }).join('');
+  }
+  function openVisitMap(which) {
+    const places = visitedPlaces(tripsNow());
+    if (typeof document === 'undefined') return places;
+    const count = id => places.filter(p => p.country === id && p.on).length;
+    let country = which;
+    if (country !== 'jp' && country !== 'kr' && country !== 'tw') {
+      const cur = detectCountry(globalThis.TM && TM.T && TM.T());
+      const ranked = ['jp', 'tw', 'kr'].slice().sort((a, b) => count(b) - count(a));
+      country = (cur && count(cur) ? cur : '') || ranked.find(id => count(id)) || cur || 'jp';
+    }
+    const mine = places.filter(p => p.country === country);
+    const lit = mine.filter(p => p.on).length;
+    const tabs = `<div class="seg achtabs">${COUNTRIES.map(c => `<button type="button" class="${c.id === country ? 'on' : ''}" onclick="Journey.openVisitMap('${c.id}')">${c.name}${count(c.id) ? ' ' + count(c.id) : ''}</button>`).join('')}</div>`;
+    const layer = layerEl();
+    layer.innerHTML = `<div class="achpage vmap-page"><div class="row" style="align-items:center"><h2 style="margin:0">去過的地方</h2><button type="button" class="btn ghost sm" style="flex:0" onclick="Journey.closeLayer()">關閉</button></div><p class="mut achhint">有寫進行程的城市會亮起來，封存的也算。</p>${tabs}<div class="vmap-layout"><div class="vmap-card">${visitMapMarkup(country, mine)}</div><div class="vlist"><div class="cityhead"><h3>去過</h3><span>${lit}/${mine.length}</span></div>${visitListHtml(mine)}</div></div></div>`;
+    layer.hidden = false;
+    try { if (TM.closeSheet) TM.closeSheet(); } catch (e) {}
+    return places;
+  }
+  function focusVisit(id) {
+    if (typeof document === 'undefined') return;
+    document.querySelectorAll('.vitem').forEach(el => el.classList.toggle('hot', el.id === 'v-' + id));
+    const el = document.getElementById('v-' + id);
+    if (el && el.scrollIntoView) el.scrollIntoView({ block: 'nearest' });
+  }
+  function openMappedTrip(id) {
+    if (!/^[A-Za-z0-9_-]+$/.test(String(id || ''))) return;
+    closeLayer();
+    if (typeof TM.focus === 'function' && TM.focus(id) && TM.go) TM.go('edit');
   }
   function openAchieve(which) {
     if (which === 'jp' || which === 'kr' || which === 'tw') achCountry = which;
@@ -750,8 +923,9 @@
   return {
     STYLES, COUNTRIES, CITIES, CARDS, ALIAS, HOME, JP_AIR, KR_AIR,
     detectCountry, detectCity, resolveTheme, summarize, evaluate, cardById, migrateBadges, progressBrief, shortStyle, transitLegs, dayCount,
+    visitedPlaces, visitBrief, visitMapMarkup, achMarkup, howTo,
     apply, afterPaint, exportState, importState, setGlobalStyle, globalStyle,
-    openAchieve, peek, closeLayer, celebrate, doneCelebrate,
+    openAchieve, peek, closeLayer, celebrate, doneCelebrate, openVisitMap, focusVisit, openMappedTrip,
     themeSheet, setTripStyle, askArchive, dismissArchive, startArchive, unarchive, promptArchive, maybePrompt
   };
 });
