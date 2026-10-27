@@ -695,7 +695,7 @@
     const poke = size === 'lg' ? ' sov-poke' : '';
     return '<span class="sov sov-' + mem.kind + ' sov-' + size + poke + ' tone-' + mem.tone + '"><span class="sov-body">' + body + '</span>' + cap + '</span>';
   }
-  const POKE_MS = { pass: 1120, card: 1080, stamp: 1160, charm: 1160, badge: 1120, plaque: 1160 };
+  const POKE_MS = { pass: 1400, card: 1360, stamp: 1480, charm: 1460, badge: 1400, plaque: 1460 };
   function motionNodes(sov) {
     return sov.querySelectorAll('.sov-body,.charmart,.emaart,.sealart,.pinart,.bp,.mcard-stamp,.badge-case,.charm-foot i');
   }

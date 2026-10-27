@@ -547,23 +547,23 @@ html.dark .sovhit{background:#1c2530;box-shadow:none;border:1px solid var(--line
 .sov-charm .sov-body,.sov-plaque .sov-body{transform-origin:50% 0}
 .sov-pass .sov-body,.sov-stamp .sov-body,.sov-card .sov-body,.sov-badge .sov-body{transform-origin:50% 50%}
 .sov-poke .sov-body{animation:none}
-.sov-poke.sov-pass .bp{animation:passpoke 1.05s ease-out forwards}
-.sov-poke.sov-pass .bp:after{animation:perftear 1.02s ease-out forwards}
-.sov-poke.sov-card .mcard-shine{animation:cardpoke 1s ease-out forwards}
-.sov-poke.sov-card .mcard-stamp{animation:cardstamp .88s cubic-bezier(.2,.8,.2,1) forwards}
-.sov-poke.sov-stamp .sealart{animation:stampdown 1.08s cubic-bezier(.2,.72,.2,1) forwards}
-.sov-poke.sov-stamp .sealcard:after{content:"";position:absolute;left:50%;top:46%;width:74%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(193,122,110,.34),rgba(193,122,110,0) 68%);animation:inkhit 1.08s ease-out forwards;pointer-events:none}
-.sov-poke.sov-charm .charmart{animation:charmpoke 1.08s ease-in-out forwards}
-.sov-poke.sov-charm .charm-foot i{animation:cordflick .95s ease-in-out forwards}
-.sov-poke.sov-badge .badge-case{animation:badgepoke 1.05s cubic-bezier(.2,.8,.2,1) forwards}
-.sov-poke.sov-badge .badge-case:after{animation:badgeglow .42s ease-in-out 2}
-.sov-poke.sov-badge .badge-case:before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(100deg,transparent 32%,rgba(255,255,255,.9) 50%,transparent 68%);animation:metalflash .9s ease-out forwards;pointer-events:none;z-index:2}
-.sov-poke.sov-plaque .emaart{animation:emapoke 1.08s ease-in-out forwards}
-.sov-poke.sov-plaque .ema-cord{animation:cordbow .8s ease-in-out;transform-box:fill-box;transform-origin:center}
+.sov-poke.sov-pass .bp{animation:passpoke 1.28s ease-out forwards}
+.sov-poke.sov-pass .bp:after{animation:perftear 1.2s ease-out forwards}
+.sov-poke.sov-card .mcard-shine{animation:cardpoke 1.24s ease-out forwards}
+.sov-poke.sov-card .mcard-stamp{animation:cardstamp 1.12s cubic-bezier(.2,.8,.2,1) forwards}
+.sov-poke.sov-stamp .sealart{animation:stampdown 1.36s cubic-bezier(.2,.7,.2,1) forwards;transform-origin:50% 42%}
+.sov-poke.sov-stamp .sealcard:after{content:"";position:absolute;left:50%;top:46%;width:78%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(193,122,110,.42),rgba(193,122,110,0) 68%);animation:inkhit 1.36s ease-out forwards;pointer-events:none}
+.sov-poke.sov-stamp .sealcard:before{content:"";position:absolute;left:50%;top:46%;width:88%;aspect-ratio:1;border-radius:50%;border:2px solid rgba(193,122,110,.55);animation:inkring 1.36s ease-out forwards;pointer-events:none}
+.sov-poke.sov-charm .charmart{animation:charmpoke 1.34s ease-in-out forwards}
+.sov-poke.sov-charm .charm-foot i{animation:cordflick 1.16s ease-in-out forwards}
+.sov-poke.sov-badge .badge-case{animation:badgepoke 1.28s cubic-bezier(.2,.8,.2,1) forwards}
+.sov-poke.sov-badge .badge-case:after{animation:badgeglow .36s ease-in-out 3}
+.sov-poke.sov-badge .badge-case:before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.95) 50%,transparent 70%);animation:metalflash 1.15s ease-out forwards;pointer-events:none;z-index:2}
+.sov-poke.sov-plaque .emaart{animation:emapoke 1.34s ease-in-out forwards}
+.sov-poke.sov-plaque .ema-cord{animation:cordbow 1.05s ease-in-out;transform-box:fill-box;transform-origin:center}
 .sov-rest .bp,.sov-rest .bp:after,.sov-rest .charmart,.sov-rest .emaart,.sov-rest .badge-case,.sov-rest .badge-case:after,.sov-rest .mcard-shine,.sov-rest .mcard-stamp,.sov-rest .sealart,.sov-rest .charm-foot i{animation:none;transform:none;filter:none}
 .sovstage{padding:8px 0 2px}
-.sovplay{display:block;width:100%;margin:0;padding:0;border:0;background:none;color:inherit;font:inherit;cursor:pointer;transition:transform .16s ease-out}
-.sovplay:active{transform:scale(.98)}
+.sovplay{display:block;width:100%;margin:0;padding:0;border:0;background:none;color:inherit;font:inherit;cursor:pointer}
 .sovplay:focus-visible{outline:2px solid var(--g);outline-offset:3px;border-radius:18px}
 .sovhint{margin:8px 0 0;text-align:center;color:var(--mut);font-size:12px;font-weight:700}
 .sovrecap{background:var(--card);border-radius:18px;padding:16px;margin-top:14px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
@@ -600,18 +600,19 @@ html.dark .sovstory{box-shadow:none;border:1px solid var(--line)}
 @keyframes charmsway{0%,64%,100%{transform:translateX(0)}76%{transform:translateX(-2px)}88%{transform:translateX(2px)}}
 @keyframes emaswing{0%,64%,100%{transform:translateX(0)}76%{transform:translateX(-2px)}88%{transform:translateX(2px)}}
 @keyframes badgeglow{0%,100%{opacity:.22}50%{opacity:.72}}
-@keyframes passpoke{0%{transform:translateX(-52px)}46%{transform:translateX(7px)}68%{transform:translateX(-3px)}100%{transform:none}}
-@keyframes perftear{0%{transform:translateY(0) scaleY(.88);opacity:.3}30%{transform:translateY(6px) scaleY(1.06);opacity:1}58%{transform:translateY(-4px)}80%{transform:translateY(2px)}100%{transform:none;opacity:1}}
-@keyframes cardpoke{0%{transform:translateX(-40%);opacity:0}16%{opacity:1}100%{transform:translateX(340%);opacity:0}}
-@keyframes cardstamp{0%{transform:scale(1.5);opacity:.15}40%{transform:scale(.88);opacity:1}68%{transform:scale(1.08)}100%{transform:none;opacity:1}}
-@keyframes stampdown{0%{transform:translateY(-40px) scale(1.06);filter:drop-shadow(0 22px 8px rgba(90,40,20,.28))}46%{transform:translateY(4px) scale(1.05,.88);filter:drop-shadow(0 1px 0 rgba(90,40,20,.22))}64%{transform:translateY(0) scale(.98,1.04);filter:none}82%{transform:translateY(-8px) scale(1.02)}100%{transform:none;filter:none}}
-@keyframes inkhit{0%,36%{opacity:0;transform:translate(-50%,-50%) scale(.55)}50%{opacity:1;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.14)}}
-@keyframes charmpoke{0%{transform:translateX(0)}16%{transform:translateX(-18px)}36%{transform:translateX(16px)}56%{transform:translateX(-10px)}74%{transform:translateX(5px)}100%{transform:none}}
-@keyframes cordflick{0%,100%{transform:translateX(0) scaleX(1)}22%{transform:translateX(-8px) scaleX(1.12)}48%{transform:translateX(8px) scaleX(.92)}74%{transform:translateX(-3px)}}
-@keyframes badgepoke{0%{transform:scale(1)}24%{transform:scale(.86)}50%{transform:scale(1.1)}72%{transform:scale(.98)}100%{transform:none}}
-@keyframes metalflash{0%{transform:translateX(-130%);opacity:0}20%{opacity:1}100%{transform:translateX(230%);opacity:0}}
-@keyframes emapoke{0%{transform:translateX(0)}18%{transform:translateX(18px) translateY(2px)}40%{transform:translateX(-16px)}60%{transform:translateX(9px) translateY(-1px)}78%{transform:translateX(-4px)}100%{transform:none}}
-@keyframes cordbow{0%,100%{transform:translateX(0)}35%{transform:translateX(-5px)}68%{transform:translateX(5px)}}
+@keyframes passpoke{0%{transform:translateX(-86px)}38%{transform:translateX(12px)}58%{transform:translateX(-7px)}76%{transform:translateX(3px)}100%{transform:none}}
+@keyframes perftear{0%{transform:translateY(0) scaleY(.78);opacity:.2}24%{transform:translateY(11px) scaleY(1.18);opacity:1}46%{transform:translateY(-7px) scaleY(.92)}68%{transform:translateY(3px) scaleY(1.04)}100%{transform:none;opacity:1}}
+@keyframes cardpoke{0%{transform:translateX(-55%);opacity:0}12%{opacity:1}42%{transform:translateX(380%);opacity:0}52%{transform:translateX(-55%);opacity:0}64%{opacity:1}100%{transform:translateX(380%);opacity:0}}
+@keyframes cardstamp{0%{transform:scale(1.85);opacity:0}30%{transform:scale(.8);opacity:1}52%{transform:scale(1.14)}74%{transform:scale(.97)}100%{transform:none;opacity:1}}
+@keyframes stampdown{0%{transform:translateY(-78px) scale(1.1);filter:drop-shadow(0 28px 10px rgba(90,40,20,.32))}40%{transform:translateY(8px) scale(1.14,.74);filter:drop-shadow(0 1px 0 rgba(90,40,20,.28))}56%{transform:translateY(-18px) scale(1.02,1.08);filter:none}72%{transform:translateY(5px) scale(1.06,.92)}86%{transform:translateY(-4px) scale(1)}100%{transform:none;filter:none}}
+@keyframes inkhit{0%,28%{opacity:0;transform:translate(-50%,-50%) scale(.4)}46%{opacity:1;transform:translate(-50%,-50%) scale(1.05)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.28)}}
+@keyframes inkring{0%,32%{opacity:0;transform:translate(-50%,-50%) scale(.5)}50%{opacity:.85;transform:translate(-50%,-50%) scale(1)}100%{opacity:0;transform:translate(-50%,-50%) scale(1.24)}}
+@keyframes charmpoke{0%{transform:rotate(0deg)}14%{transform:rotate(-11deg)}32%{transform:rotate(9deg)}50%{transform:rotate(-6deg)}68%{transform:rotate(3.5deg)}84%{transform:rotate(-1.2deg)}100%{transform:none}}
+@keyframes cordflick{0%,100%{transform:translateX(0) scaleX(1)}20%{transform:translateX(-14px) scaleX(1.2)}46%{transform:translateX(12px) scaleX(.86)}70%{transform:translateX(-5px) scaleX(1.06)}}
+@keyframes badgepoke{0%{transform:scale(1)}16%{transform:scale(.76)}38%{transform:scale(1.18)}56%{transform:scale(.94)}74%{transform:scale(1.06)}100%{transform:none}}
+@keyframes metalflash{0%{transform:translateX(-140%);opacity:0}16%{opacity:1}46%{transform:translateX(240%);opacity:0}56%{transform:translateX(-140%);opacity:0}68%{opacity:.9}100%{transform:translateX(240%);opacity:0}}
+@keyframes emapoke{0%{transform:rotate(0deg)}16%{transform:rotate(10deg)}34%{transform:rotate(-8deg)}52%{transform:rotate(5deg)}70%{transform:rotate(-2.5deg)}86%{transform:rotate(.8deg)}100%{transform:none}}
+@keyframes cordbow{0%,100%{transform:translateX(0) scaleX(1)}28%{transform:translateX(-12px) scaleX(1.18)}58%{transform:translateX(10px) scaleX(.88)}78%{transform:translateX(-3px)}}
 .sov-arrive,.sovstage .sov{animation:sovin .36s ease forwards}
 .sovpage{animation:pagein .28s ease}
 .sovstory{animation:storyin .36s ease both}
@@ -620,7 +621,7 @@ html.dark .sovstory{box-shadow:none;border:1px solid var(--line)}
  .spot-ghost,.spotblock,.spotblock.spot-arm{transition:none}
  .vstamp.thump,.dayprog i{animation:none}
  .wfx,.wfx *,.wsun,.wsun:before,.wmoon,.wstar,.wcl,.wcl:before,.wcl:after,.wdrop,.wflk,.wfl,.wmist{animation:none!important}
- .jstamp.thump,.journal,.archstage,.archveil.leave .archstage,.achbig.flip,.conf,.sov-arrive,.sovstage .sov,.sovpage,.sovstory,.sovrecap,.bp,.bp:after,.mcard-shine,.mcard-stamp,.charmart,.emaart,.badge-case,.badge-case:before,.badge-case:after,.sealart,.sealcard:after,.ema-cord,.charm-foot i,.sov-poke .sov-body{animation:none}
+ .jstamp.thump,.journal,.archstage,.archveil.leave .archstage,.achbig.flip,.conf,.sov-arrive,.sovstage .sov,.sovpage,.sovstory,.sovrecap,.bp,.bp:after,.mcard-shine,.mcard-stamp,.charmart,.emaart,.badge-case,.badge-case:before,.badge-case:after,.sealart,.sealcard:before,.sealcard:after,.ema-cord,.charm-foot i,.sov-poke .sov-body{animation:none}
  .sovhit,.sovplay{transition:none}
  .vmap-page,.spotpin,.spotpin-dot,.vmap-stage .vmap,.vreg{animation:none!important;transition:none!important}
  .spotpin{opacity:1}
