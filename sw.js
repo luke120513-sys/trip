@@ -1,6 +1,39 @@
 const C='tripmate-v72',A=['./','index.html','manifest.json','planner.js','placeq.js','placeurl.js','legs.js','journey.js','extras.js','food.js','fx.js','share.js','tickets.js','notify.js','visitgeo.js','spotlore.js','vendor/lz-string.min.js','sync.js','collab.js','live.js','importer.js','urlimport.js','data/local-food.json','icons/icon.svg','icons/icon-192.png','icons/ui-spot.svg','icons/ui-fly.svg','icons/ui-hotel.svg','icons/ui-suitcase.svg','icons/coffee-trip.svg','icons/share-trip.svg','icons/fly-fly.svg','icons/hotel-fan.svg','icons/cat-food.svg','icons/cat-sightseeing.svg','icons/cat-shopping.svg','icons/cat-hotel.svg','icons/cat-transport.svg','icons/cat-cafe.svg','icons/cat-nature.svg','icons/cat-museum.svg','icons/cat-nightlife.svg','icons/cat-custom.svg'];
-self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(A)));self.skipWaiting()});
-self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(n=>n.startsWith('tripmate-')&&n!==C).map(n=>caches.delete(n)))));self.clients.claim()});
+// 繞過 GitHub Pages 的 max-age，避免新快取被 HTTP 快取塞進舊的 index.html
+async function putFresh(cache,url){
+  const res=await fetch(new Request(url,{cache:'reload'}));
+  if(!res.ok)throw new Error('precache '+url);
+  await cache.put(url,res);
+}
+self.addEventListener('install',e=>{
+  e.waitUntil((async()=>{
+    const cache=await caches.open(C);
+    await putFresh(cache,'./');
+    await putFresh(cache,'index.html');
+    await Promise.all(A.filter(u=>u!=='./'&&u!=='index.html').map(u=>putFresh(cache,u).catch(()=>{})));
+    await self.skipWaiting();
+  })());
+});
+self.addEventListener('activate',e=>{
+  e.waitUntil((async()=>{
+    const keys=await caches.keys();
+    const upgraded=keys.some(n=>n.startsWith('tripmate-')&&n!==C);
+    await Promise.all(keys.filter(n=>n.startsWith('tripmate-')&&n!==C).map(n=>caches.delete(n)));
+    await self.clients.claim();
+    if(!upgraded)return;
+    const wins=await self.clients.matchAll({type:'window',includeUncontrolled:true});
+    await Promise.all(wins.map(async w=>{
+      try{w.postMessage({type:'SW_UPDATED'})}catch(err){}
+      if(!w.url||typeof w.navigate!=='function')return;
+      try{
+        const u=new URL(w.url);
+        u.searchParams.set('swup',String(Date.now()));
+        await w.navigate(u.href);
+      }catch(err){}
+    }));
+  })());
+});
+
 // stale-while-revalidate：先回快取（秒開），背景更新；只處理 /trip/ 自己的檔案
 self.addEventListener('fetch',e=>{const r=e.request,u=new URL(r.url);
 if(u.pathname.indexOf('/__/auth/')>=0||u.pathname.indexOf('/__/firebase/')>=0)return;
@@ -10,4 +43,6 @@ if(r.method!=='GET'||u.origin!==location.origin)return;
 if(!u.pathname.startsWith('/trip/'))return;
 const key=r.mode==='navigate'?new Request(u.pathname,{}):r;
 e.respondWith(caches.open(C).then(async c=>{const hit=await c.match(key);const net=fetch(r).then(res=>{if(res.ok)c.put(key,res.clone());return res}).catch(()=>hit);if(hit){e.waitUntil(net.catch(()=>{}));return hit}return net}))});
-self.addEventListener('message',e=>{const d=e.data||{};if(d.type!=='show-note')return;const title=String(d.title||'旅伴').slice(0,80),body=String(d.body||'').slice(0,180),tag=String(d.id||'trip').slice(0,80);self.registration.showNotification(title,{body,tag,icon:'icons/icon-192.png'})});
+self.addEventListener('message',e=>{const d=e.data||{};
+if(d.type==='SKIP_WAITING'){self.skipWaiting();return}
+if(d.type!=='show-note')return;const title=String(d.title||'旅伴').slice(0,80),body=String(d.body||'').slice(0,180),tag=String(d.id||'trip').slice(0,80);self.registration.showNotification(title,{body,tag,icon:'icons/icon-192.png'})});
