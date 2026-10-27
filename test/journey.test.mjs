@@ -279,9 +279,9 @@ assert.match(page, /theme-tw/);
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v65/);
+assert.match(sw, /tripmate-v66/);
 assert.match(sw, /journey\.js/);
-assert.match(page, /v2\.22\.0/);
+assert.match(page, /v2\.23\.0/);
 assert.match(page, /openVisitMap/);
 assert.match(page, /class="vmap-entry"/);
 assert.match(page, /\.ach-q/);
@@ -580,5 +580,56 @@ assert.match(J.spotCardHtml(towerStory), /冷知識/);
   assert.ok(st.trivia.length >= 1, name);
   assert.match(J.spotCardHtml(st), /簡介/, name);
 });
+
+const passTrip = trip({
+  dest: '東京', orig: 'TPE', archived: true, souvenir: 'pass',
+  days: [[
+    { kind: 'flight', name: 'BR198 TPE→NRT', from: 'TPE', to: 'NRT', time: '08:30', leg: 'out' },
+    { name: '淺草寺', icon: 'sightseeing', visited: true },
+    { name: '一蘭拉麵', icon: 'food', visited: true }
+  ], [
+    { kind: 'flight', name: 'BR199 NRT→TPE', from: 'NRT', to: 'TPE', time: '18:00', leg: 'return' }
+  ]]
+});
+assert.equal(J.suggestSouvenir(Object.assign({}, passTrip, { souvenir: '' }), []), 'pass');
+const mem = J.memoryOf(passTrip, [{ date: '2026-04-02', placeName: '一蘭拉麵', dishes: '醬油拉麵' }]);
+assert.equal(mem.route, '桃園 → 成田');
+assert.equal(mem.backRoute, '成田 → 桃園');
+assert.ok(mem.spots.includes('淺草寺'));
+assert.ok(mem.eats.includes('一蘭拉麵'));
+assert.match(mem.line, /桃園 → 成田/);
+assert.match(mem.line, /淺草寺/);
+const passHtml = J.souvenirMarkup(passTrip, [], { size: 'lg', cap: false });
+assert.match(passHtml, /sov-pass/);
+assert.match(passHtml, /<b>桃園<\/b><small>TPE<\/small>/);
+assert.match(passHtml, /<b>成田<\/b><small>NRT<\/small>/);
+assert.equal(/<b>TPE<\/b>/.test(passHtml), false);
+assert.equal(/<b>NRT<\/b>/.test(passHtml), false);
+const shop = trip({ dest: '大阪', days: [[{ name: '心齋橋', icon: 'shopping', visited: true }, { name: '道頓堀', icon: 'food', visited: true }]] });
+assert.equal(J.suggestSouvenir(shop, []), 'pack');
+assert.match(J.souvenirMarkup(shop, [], { size: 'lg' }), /sov-pack/);
+assert.match(J.souvenirMarkup(shop, [], { size: 'lg' }), /gift-in/);
+const nature = trip({ dest: '花蓮', days: [[{ name: '太魯閣', icon: 'nature', visited: true }]] });
+assert.equal(J.suggestSouvenir(nature, []), 'figure');
+assert.match(J.souvenirMarkup(nature, [], { size: 'mini' }), /sov-figure/);
+assert.match(J.souvenirMarkup(nature, [], { size: 'mini' }), /figplaque/);
+const see = trip({ dest: '京都', days: [[{ name: '清水寺', icon: 'sightseeing', visited: true }, { name: '伏見稻荷', visited: true }]] });
+assert.equal(J.suggestSouvenir(see, []), 'card');
+assert.match(J.souvenirMarkup(see, [], { size: 'lg' }), /mcard-shine/);
+assert.equal(J.souvenirOf(Object.assign({}, see, { souvenir: 'figure' }), []), 'figure');
+assert.equal(J.suggestSouvenir(trip({ dest: '東京', days: [[]] }), []), 'pass');
+const packedSov = Share.normTrip(Object.assign({}, passTrip), 0, true);
+assert.equal(packedSov.souvenir, 'pass');
+assert.equal(Share.normTrip(Object.assign({}, passTrip, { souvenir: 'nope' }), 0, true).souvenir, undefined);
+assert.equal(Share.normTrip(Object.assign({}, passTrip), 0, false).souvenir, undefined);
+const keepLocal = { days: [[]], expenses: [], tomb: {}, expTomb: {}, metaRev: 5, dest: '東京', dep: '2026-04-01', ret: '2026-04-05', pax: 2, orig: 'TPE', archived: true, archivedAt: 1712100000000, souvenir: 'pass' };
+const keepRemote = { days: [[]], expenses: [], tomb: {}, expTomb: {}, metaRev: 9, dest: '東京', dep: '2026-04-01', ret: '2026-04-05', pax: 2, orig: 'TPE', archived: true, archivedAt: 1712100000000, souvenir: 'card' };
+assert.equal(mergeTrip(keepLocal, keepRemote).souvenir, 'card');
+assert.equal(mergeTrip(keepRemote, keepLocal).souvenir, 'card');
+assert.equal(mergeTrip(Object.assign({}, keepRemote, { metaRev: 1 }), keepLocal).souvenir, 'pass');
+const wall = J.shelfHtml([passTrip, Object.assign({}, nature, { id: 'hul', archived: true, archivedAt: 10 })]);
+assert.match(wall, /sov-pass/);
+assert.match(wall, /sov-figure/);
+assert.match(wall, /旅途|收藏|打開收藏/);
 
 console.log('journey tests ok');

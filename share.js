@@ -178,6 +178,7 @@
         if (at > 1e11 && at < 1e14) o.archivedAt = Math.round(at);
       }
       if (t.archiveAsked === true) o.archiveAsked = true;
+      if (t.souvenir === 'pass' || t.souvenir === 'card' || t.souvenir === 'pack' || t.souvenir === 'figure') o.souvenir = t.souvenir;
     }
     return o;
   }

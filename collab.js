@@ -129,7 +129,8 @@ function tripDoc(t) {
     themeStyle: t.themeStyle || '',
     archived: t.archived === true,
     archivedAt: +t.archivedAt || 0,
-    archiveAsked: t.archiveAsked === true
+    archiveAsked: t.archiveAsked === true,
+    souvenir: t.souvenir === 'pass' || t.souvenir === 'card' || t.souvenir === 'pack' || t.souvenir === 'figure' ? t.souvenir : ''
   };
   return JSON.parse(JSON.stringify(o));
 }

@@ -170,6 +170,248 @@
     return { days, visited, diary: notes, spend };
   }
 
+  /* 封存後的紀念品。純函式，畫面只負責把結果畫出來。 */
+  const SOUVENIRS = [['pass', '登機證'], ['card', '紀念卡'], ['pack', '禮包'], ['figure', '手辦']];
+  const AIR_ZH = {
+    TPE: '桃園', TSA: '松山', KHH: '高雄', RMQ: '台中', TNN: '台南', HUN: '花蓮', TTT: '台東', CYI: '嘉義', PIF: '屏東',
+    KNH: '金門', LZN: '南竿', MFK: '北竿', KYD: '蘭嶼', GNI: '綠島',
+    NRT: '成田', HND: '羽田', KIX: '關西', ITM: '伊丹', UKB: '神戶', NGO: '中部', CTS: '新千歲', FUK: '福岡', OKA: '那霸',
+    KOJ: '鹿兒島', HIJ: '廣島', SDJ: '仙台', KMQ: '小松', TAK: '高松', KMJ: '熊本', FSZ: '靜岡', OKJ: '岡山',
+    ICN: '仁川', GMP: '金浦', PUS: '金海', CJU: '濟州', TAE: '大邱',
+    BKK: '素萬那普', DMK: '廊曼', CNX: '清邁', HKT: '普吉', HKG: '香港', MFM: '澳門', SIN: '樟宜', KUL: '吉隆坡',
+    MNL: '馬尼拉', CEB: '宿霧', SGN: '胡志明市', HAN: '河內', DAD: '峴港', DPS: '峇里島',
+    PVG: '浦東', SHA: '虹橋', PEK: '首都', CDG: '戴高樂', LHR: '希斯洛', JFK: '甘迺迪', LAX: '洛杉磯', SFO: '舊金山', SYD: '雪梨', BNE: '布里斯本'
+  };
+  const DEST_AIR = {
+    東京: 'NRT', 大阪: 'KIX', 京都: 'KIX', 福岡: 'FUK', 札幌: 'CTS', 北海道: 'CTS', 沖繩: 'OKA', 名古屋: 'NGO',
+    首爾: 'ICN', 釜山: 'PUS', 濟州: 'CJU', 曼谷: 'BKK', 香港: 'HKG', 新加坡: 'SIN', 吉隆坡: 'KUL', 馬尼拉: 'MNL',
+    胡志明市: 'SGN', 河內: 'HAN', 峇里島: 'DPS', 巴黎: 'CDG', 倫敦: 'LHR', 紐約: 'JFK',
+    台北: 'TPE', 臺北: 'TPE', 台灣: 'TPE', 臺灣: 'TPE', 高雄: 'KHH', 台中: 'RMQ', 臺中: 'RMQ', 台南: 'TNN', 臺南: 'TNN',
+    花蓮: 'HUN', 台東: 'TTT', 臺東: 'TTT', 嘉義: 'CYI', 墾丁: 'KHH', 屏東: 'KHH', 宜蘭: 'TPE', 南投: 'RMQ', 日月潭: 'RMQ'
+  };
+  function kindOk(v) { return v === 'pass' || v === 'card' || v === 'pack' || v === 'figure'; }
+  function kindLabel(v) { return (SOUVENIRS.find(x => x[0] === v) || ['', '紀念品'])[1]; }
+  function airName(code) {
+    const c = String(code || '').toUpperCase();
+    if (AIR_ZH[c]) return AIR_ZH[c];
+    return c;
+  }
+  function routeText(from, to, destName) {
+    const a = from ? airName(from) : '';
+    const b = to ? airName(to) : '';
+    if (a && b) return a + ' → ' + b;
+    if (a && destName) return a + ' → ' + destName;
+    if (b && destName) return destName + ' → ' + b;
+    return a || b || '';
+  }
+  function flightLegs(trip) {
+    const out = [];
+    (trip && trip.days || []).forEach(d => (d || []).forEach(s => {
+      if (!s || (s.kind !== 'flight' && !isHop(s))) return;
+      let from = String(s.from || '').toUpperCase();
+      let to = String(s.to || '').toUpperCase();
+      const name = String(s.name || '');
+      if (!/^[A-Z]{3}$/.test(from) || !/^[A-Z]{3}$/.test(to)) {
+        const m = /([A-Z]{3})\s*(?:→|->|–|~|-)\s*([A-Z]{3})/.exec(name);
+        if (m) {
+          if (!/^[A-Z]{3}$/.test(from)) from = m[1];
+          if (!/^[A-Z]{3}$/.test(to)) to = m[2];
+        }
+      }
+      const no = (name.match(/[A-Z0-9]{2}\s?\d{1,4}/) || [])[0] || '';
+      out.push({
+        from: /^[A-Z]{3}$/.test(from) ? from : '',
+        to: /^[A-Z]{3}$/.test(to) ? to : '',
+        no: String(no).replace(/\s/g, ''),
+        leg: s.leg === 'return' ? 'return' : 'out'
+      });
+    }));
+    return out;
+  }
+  function isEat(s) {
+    if (!s || s.kind === 'flight' || s.kind === 'hotel' || isHop(s)) return false;
+    return s.icon === 'food' || s.icon === 'cafe' || s.ptype === '餐廳';
+  }
+  function isShop(s) {
+    if (!s || s.kind === 'flight' || s.kind === 'hotel' || isHop(s)) return false;
+    if (s.icon === 'shopping' || s.ptype === '購物') return true;
+    return /伴手禮|紀念品/.test(String(s.name || '') + String(s.note || ''));
+  }
+  function isNature(s) {
+    return !!(s && s.kind !== 'flight' && s.kind !== 'hotel' && !isHop(s) && (s.icon === 'nature' || s.icon === 'museum'));
+  }
+  function isSight(s) {
+    if (!s || s.kind === 'flight' || s.kind === 'hotel' || isHop(s) || isEat(s) || isShop(s)) return false;
+    return !!String(s.name || '').trim();
+  }
+  function impliedHop(trip) {
+    const orig = String(trip && trip.orig || '').toUpperCase();
+    const destAir = DEST_AIR[String(trip && trip.dest || '').trim()] || '';
+    return !!(destAir && orig && destAir !== orig);
+  }
+  function suggestSouvenir(trip, diary) {
+    if (!trip) return 'card';
+    if (flightLegs(trip).length) return 'pass';
+    let shop = 0, food = 0, nature = 0, sight = 0;
+    (trip.days || []).forEach(d => (d || []).forEach(s => {
+      if (isShop(s)) shop++;
+      else if (isEat(s)) food++;
+      else if (isNature(s)) nature++;
+      else if (isSight(s)) sight++;
+    }));
+    const notes = (diary || []).filter(d => d && inRange(d.date, trip) && (d.placeName || d.dishes)).length;
+    if (shop > 0 || notes >= 2) return 'pack';
+    if (food >= 2 && food > sight) return 'pack';
+    if (nature > 0 && nature >= sight) return 'figure';
+    if (sight > 0) return 'card';
+    if (food > 0 || notes > 0) return 'pack';
+    if (impliedHop(trip)) return 'pass';
+    return 'card';
+  }
+  function souvenirOf(trip, diary) {
+    if (trip && kindOk(trip.souvenir)) return trip.souvenir;
+    return suggestSouvenir(trip, diary);
+  }
+  function pushUnique(arr, name, max) {
+    const n = String(name || '').replace(/\s+/g, ' ').trim();
+    if (!n || n.length > 40 || arr.indexOf(n) >= 0 || arr.length >= max) return;
+    arr.push(n);
+  }
+  function mdSlash(s) {
+    const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s || ''));
+    return m ? (+m[2]) + '/' + (+m[3]) : '';
+  }
+  function toneOf(trip) {
+    const id = detectCountry(trip);
+    return id === 'jp' || id === 'kr' || id === 'tw' ? id : 'plain';
+  }
+  function memoryLine(mem) {
+    const spot = mem.spots[0] || '';
+    const eat = mem.eats[0] || '';
+    const dest = mem.dest || '這趟';
+    if (mem.kind === 'pass') {
+      if (mem.route && spot && eat) return mem.route + '。下了飛機，' + spot + '和' + eat + '都還在。';
+      if (mem.route && spot) return mem.route + '。下了飛機去的' + spot + '，還想再走一次。';
+      if (mem.route) return mem.route + '。這張登機證還留著那幾天的光。';
+      return '這張' + dest + '的登機證，還留著那幾天的光。';
+    }
+    if (mem.kind === 'pack') {
+      if (eat) return '盒子裡收著' + dest + '的味道，' + eat + '還記得。';
+      if (spot) return '從' + dest + '帶回來的，打開還是' + spot + '。';
+      return '這盒' + dest + '的紀念品，想再打開看看。';
+    }
+    if (mem.kind === 'figure') {
+      if (spot) return '小小的他站在' + dest + '，旁邊是' + spot + '。';
+      return '這只' + dest + '的手辦，是那幾天帶回來的。';
+    }
+    if (spot && eat) return dest + '的' + spot + '，還有' + eat + '。翻開這張卡就回去了。';
+    if (spot) return '翻開這張卡，' + dest + '的' + spot + '還在。';
+    return '這張' + dest + '的紀念卡，收著那幾天。';
+  }
+  function memoryOf(trip, diary) {
+    const t = trip || {};
+    const kind = souvenirOf(t, diary);
+    const flights = flightLegs(t);
+    const go = flights.find(f => f.leg !== 'return' && (f.from || f.to)) || flights.find(f => f.from || f.to) || null;
+    const back = go ? flights.find(f => f !== go && f.leg === 'return' && (f.from || f.to)) : null;
+    let from = '', to = '', no = '';
+    if (go) {
+      from = go.from;
+      to = go.to;
+      no = go.no;
+    } else if (impliedHop(t)) {
+      from = String(t.orig || 'TPE').toUpperCase();
+      to = DEST_AIR[String(t.dest || '').trim()] || '';
+    }
+    const dest = String(t.dest || '這趟').trim() || '這趟';
+    const route = routeText(from, to, to ? '' : dest);
+    const backRoute = back ? routeText(back.from, back.to, '') : '';
+    const spots = [], eats = [];
+    const all = [];
+    (t.days || []).forEach(d => (d || []).forEach(s => { if (s) all.push(s); }));
+    function take(pred, bucket, max, visitedOnly) {
+      all.forEach(s => {
+        if (visitedOnly && s.visited !== true) return;
+        if (!pred(s)) return;
+        pushUnique(bucket, s.name, max);
+      });
+    }
+    take(s => isSight(s) || isShop(s), spots, 4, true);
+    take(s => isSight(s) || isShop(s), spots, 4, false);
+    take(isEat, eats, 3, true);
+    take(isEat, eats, 3, false);
+    (diary || []).forEach(d => {
+      if (!inRange(d && d.date, t)) return;
+      pushUnique(eats, d && d.placeName, 3);
+    });
+    (diary || []).forEach(d => {
+      if (!inRange(d && d.date, t) || !d.dishes) return;
+      String(d.dishes).split(/[、,，]/).forEach(bit => pushUnique(eats, bit, 3));
+    });
+    const days = dayCount(t);
+    const dep = mdSlash(t.dep), ret = mdSlash(t.ret);
+    const when = [dep && ret ? dep + '–' + ret : (dep || ret), days ? days + ' 天' : '', (+t.pax || 0) > 0 ? (+t.pax) + ' 人' : ''].filter(Boolean).join(' · ');
+    const mem = {
+      kind, label: kindLabel(kind), dest, when, days, pax: +t.pax || 1,
+      from, to, fromName: from ? airName(from) : '', toName: to ? airName(to) : '',
+      no, route, backRoute, flew: flights.length > 0,
+      spots, eats, inside: (eats.length ? eats : spots).slice(0, 2), tone: toneOf(t)
+    };
+    mem.line = memoryLine(mem);
+    return mem;
+  }
+  function airEnd(code, name) {
+    const zh = code && AIR_ZH[code] ? AIR_ZH[code] : '';
+    const label = zh || name || code || '—';
+    const small = zh && code ? '<small>' + esc(code) + '</small>' : '';
+    return '<span class="bp-end"><b>' + esc(label) + '</b>' + small + '</span>';
+  }
+  function passHtml(mem) {
+    const meta = [mem.when.split(' · ')[0] || '', mem.no || '', mem.pax ? mem.pax + ' 人' : ''].filter(Boolean);
+    const back = mem.backRoute ? '<span class="bp-back">回程 ' + esc(mem.backRoute) + '</span>' : '';
+    const route = mem.from || mem.to
+      ? '<span class="bp-route">' + airEnd(mem.from, mem.fromName) + '<span class="bp-go" aria-hidden="true">→</span>' + airEnd(mem.to, mem.toName) + '</span>'
+      : '<span class="bp-route"><span class="bp-end"><b>' + esc(mem.dest) + '</b></span></span>';
+    return '<span class="bp"><span class="bp-top"><span>旅伴</span><b>登機證</b></span>' + route + '<span class="bp-meta">' + meta.map(x => '<span>' + esc(x) + '</span>').join('') + '</span>' + back + '<span class="bp-bar" aria-hidden="true"></span></span>';
+  }
+  function cardHtml(mem) {
+    const faceWhen = (mem.when || '').split(' · ')[0] || '這幾天';
+    return '<span class="mcard mcard-' + mem.tone + '"><span class="mcard-shine" aria-hidden="true"></span><span class="mcard-top"><span>收藏卡</span><span>旅伴</span></span><b class="mcard-dest">' + esc(mem.dest) + '</b><span class="mcard-foot"><span class="mcard-sub">' + esc(faceWhen) + '</span><span class="mcard-stamp">到此<br>一遊</span></span></span>';
+  }
+  function packHtml(mem) {
+    const items = (mem.inside.length ? mem.inside : [mem.dest]).map(n => '<b>' + esc(n) + '</b>').join('');
+    return '<span class="gift"><span class="gift-lid"><span class="gift-bow" aria-hidden="true"></span><i></i></span><span class="gift-box"><i class="gift-rib" aria-hidden="true"></i><span class="gift-in">' + items + '</span></span><span class="gift-tag"><b>' + esc(mem.dest) + '</b></span></span>';
+  }
+  function figureHtml(mem) {
+    return '<span class="figbox"><svg class="fig fig-' + mem.tone + '" viewBox="0 0 120 132" aria-hidden="true"><ellipse cx="60" cy="124" rx="36" ry="6" fill="#000" opacity=".08"/><circle class="fig-skin" cx="60" cy="34" r="16"/><path class="fig-hair" d="M46 34c1-16 8-24 14-24s13 8 14 24c-3-7-8-10-14-10s-11 3-14 10z"/><path class="fig-cloth" d="M40 68c2-16 10-24 20-24s18 8 20 24l4 36H36z"/><circle class="fig-skin" cx="34" cy="76" r="6"/><circle class="fig-skin" cx="86" cy="76" r="6"/><path class="fig-bag" d="M78 82h16a6 6 0 0 1 0 12H80a8 8 0 0 1-8-8z"/><circle class="fig-eye" cx="54" cy="34" r="1.7"/><circle class="fig-eye" cx="66" cy="34" r="1.7"/></svg><span class="figplaque"><b>' + esc(mem.dest) + '</b><small>手辦</small></span></span>';
+  }
+  function souvenirMarkup(trip, diary, opt) {
+    opt = opt || {};
+    const mem = opt.mem || memoryOf(trip, diary);
+    const size = opt.size === 'lg' ? 'lg' : 'mini';
+    const body = mem.kind === 'pass' ? passHtml(mem) : mem.kind === 'pack' ? packHtml(mem) : mem.kind === 'figure' ? figureHtml(mem) : cardHtml(mem);
+    const cap = opt.cap === false ? '' : (mem.kind === 'pass'
+      ? '<span class="sovcap"><b>' + esc(mem.dest) + '</b><small>' + esc(mem.label) + '</small></span>'
+      : '<span class="sovcap"><small>' + esc(mem.label) + '</small></span>');
+    return '<span class="sov sov-' + mem.kind + ' sov-' + size + ' tone-' + mem.tone + '">' + body + cap + '</span>';
+  }
+  function safeTid(id) { return /^[A-Za-z0-9_-]+$/.test(String(id || '')) ? String(id) : ''; }
+  function archivedTrips(list) {
+    return (list || []).filter(t => t && t.archived).slice().sort((a, b) => (+b.archivedAt || 0) - (+a.archivedAt || 0));
+  }
+  function souvenirHit(t, diary) {
+    const id = safeTid(t && t.id);
+    if (!id) return '';
+    const mem = memoryOf(t, diary);
+    return '<button type="button" class="sovhit" onclick="Journey.openSouvenir(\'' + id + '\')" aria-label="' + esc(mem.dest + '的' + mem.label) + '">' + souvenirMarkup(t, diary, { size: 'mini', mem: mem }) + '</button>';
+  }
+  function shelfHtml(list) {
+    const arch = archivedTrips(list || tripsNow());
+    if (!arch.length) return '';
+    const diary = diaryNow();
+    return '<section class="sovshelf"><div class="sovhead"><h3>收藏</h3><button type="button" class="textbtn" onclick="Journey.openKeepsakes()">打開收藏</button></div><p class="mut sovlead">封存之後收在這裡。點一下，就是那趟帶回來的紀念品。</p><div class="sovwall">' + arch.map(t => souvenirHit(t, diary)).join('') + '</div></section>';
+  }
+
   function kmBetween(aLat, aLng, bLat, bLng) {
     const R = 6371, rad = Math.PI / 180;
     const dLat = (bLat - aLat) * rad, dLng = (bLng - aLng) * rad;
@@ -1349,27 +1591,106 @@
   }
 
   function spendLine(sum) { return sum.spend; }
+  function closeSheetQuiet() {
+    try {
+      const sheet = document.querySelector('#sheet');
+      if (sheet && sheet.classList.contains('on') && TM.closeSheet) TM.closeSheet();
+    } catch (e) {}
+  }
+  function chipList(title, names) {
+    if (!names || !names.length) return '';
+    return '<div class="sovsec"><b>' + esc(title) + '</b><div class="sovchips">' + names.map(n => '<span>' + esc(n) + '</span>').join('') + '</div></div>';
+  }
+  function openKeepsakes() {
+    if (typeof document === 'undefined') return;
+    closeSheetQuiet();
+    const arch = archivedTrips(tripsNow());
+    const diary = diaryNow();
+    const wall = arch.length
+      ? '<div class="sovwall">' + arch.map(t => souvenirHit(t, diary)).join('') + '</div>'
+      : '<div class="card"><b>還沒有收藏</b><p class="mut">走完一段行程後，在行程的 ⋯ 裡封存。它會變成登機證、紀念卡、禮包或手辦。</p></div>';
+    const layer = layerEl();
+    layer.innerHTML = '<div class="achpage sovpage"><div class="row" style="align-items:center"><h2 style="margin:0">旅途收藏</h2><button type="button" class="btn ghost sm" style="flex:0" onclick="Journey.closeLayer()">關閉</button></div><p class="mut achhint">封存之後，收成想再打開看看的紀念品。</p>' + wall + '</div>';
+    layer.hidden = false;
+  }
+  function openSouvenir(id) {
+    if (typeof document === 'undefined') return;
+    const sid = safeTid(id);
+    const t = tripsNow().find(x => x && x.id === sid);
+    if (!t || !t.archived) return;
+    closeSheetQuiet();
+    const diary = diaryNow();
+    const mem = memoryOf(t, diary);
+    const route = mem.flew && mem.kind !== 'pass' && mem.route ? '<p class="sovroute">' + esc(mem.route) + '</p>' : '';
+    const places = chipList('去過', mem.spots) + chipList('吃過', mem.eats);
+    const empty = !mem.spots.length && !mem.eats.length ? '<p class="mut">這趟還沒寫下景點。目的地和日期先留在這件紀念品上。</p>' : '';
+    const pick = '<p class="sovpicklab">想換成別的樣子</p><div class="seg sovpick" role="group" aria-label="紀念品形態">' + SOUVENIRS.map(([k, lab]) => '<button type="button" class="' + (k === mem.kind ? 'on' : '') + '" onclick="Journey.setSouvenir(\'' + sid + '\',\'' + k + '\')">' + lab + '</button>').join('') + '</div>';
+    const layer = layerEl();
+    layer.innerHTML = '<div class="achpage sovpage"><button type="button" class="btn ghost sm" onclick="Journey.openKeepsakes()">返回收藏</button><div class="sovstage">' + souvenirMarkup(t, diary, { size: 'lg', cap: false, mem: mem }) + '</div><article class="sovstory"><p class="sovkicker">還想再打開看看</p><h2>' + esc(mem.dest) + '</h2><p class="sovwhen">' + esc(mem.when) + '</p>' + route + '<p class="sovline">' + esc(mem.line) + '</p>' + places + empty + pick + '<div class="row"><button type="button" class="btn" onclick="Journey.openKeptTrip(\'' + sid + '\')">翻開行程</button><button type="button" class="btn ghost" onclick="Journey.releaseSouvenir(\'' + sid + '\')">解除封存</button></div><p class="sovdrop"><button type="button" class="textbtn" onclick="Journey.dropSouvenir(\'' + sid + '\')">刪除這趟</button></p></article></div>';
+    layer.hidden = false;
+  }
+  function setSouvenir(id, kind) {
+    const sid = safeTid(id);
+    if (!sid || !kindOk(kind)) return;
+    const t = tripsNow().find(x => x && x.id === sid);
+    if (!t || !t.archived) return;
+    t.souvenir = kind;
+    t.metaRev = Date.now();
+    try { TM.save(); } catch (e) {}
+    const shelf = typeof document !== 'undefined' && document.querySelector('.sovshelf');
+    if (shelf) {
+      const html = shelfHtml(archivedTrips(tripsNow()));
+      if (html) shelf.outerHTML = html;
+    }
+    openSouvenir(sid);
+  }
+  function openKeptTrip(id) {
+    const sid = safeTid(id);
+    if (!sid) return;
+    closeLayer();
+    if (typeof TM.focus === 'function' && TM.focus(sid) && TM.go) {
+      try { TM.save(); } catch (e) {}
+      TM.go('edit');
+    }
+  }
+  function releaseSouvenir(id) {
+    const sid = safeTid(id);
+    if (!sid) return;
+    if (typeof TM.focus === 'function' && !TM.focus(sid)) return;
+    closeLayer();
+    unarchive();
+  }
+  function dropSouvenir(id) {
+    const sid = safeTid(id);
+    if (!sid || typeof delTrip !== 'function') return;
+    delTrip(sid);
+    if (!tripsNow().some(t => t && t.id === sid)) closeLayer();
+  }
   function askArchive() {
     const t = TM.T();
     if (!t) return;
     if (t.archived) { unarchive(); return; }
     const sum = summarize(t, diaryNow());
-    document.querySelector('#sheetBody').innerHTML = `<h2>封存行程</h2><p>把「${esc(t.dest)}」收成一本可以再翻開的冊子。封存後只能看，可以隨時解除。</p><p class="mut">${sum.days} 天 · 去過 ${sum.visited} 個景點 · 美食日記 ${sum.diary} 則 · ${esc(sum.spend)}</p><div class="row"><button type="button" class="btn ghost" onclick="Journey.dismissArchive()">先不要</button><button type="button" class="btn" onclick="Journey.startArchive()">封存行程</button></div>`;
+    const kind = kindOk(t.souvenir) ? t.souvenir : suggestSouvenir(t, diaryNow());
+    document.querySelector('#sheetBody').innerHTML = `<h2>收成紀念品</h2><p>把「${esc(t.dest)}」收成一件${esc(kindLabel(kind))}。封存後只能看，也可以再換成登機證、紀念卡、禮包或手辦。</p><p class="mut">${sum.days} 天 · 去過 ${sum.visited} 個景點 · 美食日記 ${sum.diary} 則 · ${esc(sum.spend)}</p><div class="row"><button type="button" class="btn ghost" onclick="Journey.dismissArchive()">先不要</button><button type="button" class="btn" onclick="Journey.startArchive()">收成紀念品</button></div>`;
     TM.openSheet();
   }
   function dismissArchive() { TM.closeSheet(); }
   function startArchive() {
     const t = TM.T();
     if (!t || t.archived) return;
+    if (!kindOk(t.souvenir)) t.souvenir = suggestSouvenir(t, diaryNow());
+    const label = kindLabel(t.souvenir);
     TM.closeSheet();
     play(t, () => {
       t.archived = true;
       t.archivedAt = Date.now();
       t.archiveAsked = true;
       t.metaRev = Date.now();
-      if (TM.getTab && TM.getTab() === 'edit') TM.go('list');
-      else TM.save();
-      try { TM.toast('已收進封存'); } catch (e) {}
+      try { TM.save(); } catch (e) {}
+      if (TM.getTab && TM.getTab() === 'edit' && TM.go) TM.go('list');
+      else if (TM.render) TM.render();
+      try { TM.toast('已收成' + label); } catch (e) {}
     });
   }
   function unarchive() {
@@ -1384,7 +1705,9 @@
     try { TM.toast('已解除封存，可以再改'); } catch (e) {}
   }
   function play(t, done) {
-    const sum = summarize(t, diaryNow());
+    const diary = diaryNow();
+    const preview = Object.assign({}, t, { souvenir: kindOk(t.souvenir) ? t.souvenir : suggestSouvenir(t, diary) });
+    const mem = memoryOf(preview, diary);
     let el = document.querySelector('#archveil');
     if (!el) {
       el = document.createElement('div');
@@ -1392,21 +1715,18 @@
       el.className = 'archveil';
       document.body.appendChild(el);
     }
+    if (el._t) el._t.forEach(clearTimeout);
     el.className = 'archveil';
     el.hidden = false;
-    el.innerHTML = `<div class="archstage"><div class="journal"><div class="journal-spine"></div><b>${esc(t.dest)}</b><small>${esc(t.dep)} – ${esc(t.ret)}</small><span class="jstamp"><b>${esc(t.dest)}</b><small>${esc(String(t.dep).slice(5))}–${esc(String(t.ret).slice(5))}</small></span></div><div class="archsum"><p>${sum.days} 天</p><p>去過 ${sum.visited} 個景點</p><p>美食日記 ${sum.diary} 則</p><p>總花費 ${esc(sum.spend)}</p></div><div class="shelfmini">封存</div></div>`;
-    if (reduced()) {
-      el.querySelector('.jstamp').classList.add('in');
-      el.querySelector('.archsum').classList.add('in');
-      setTimeout(() => { el.hidden = true; done(); }, 700);
-      return;
+    el.innerHTML = `<div class="archstage"><div class="sov-arrive">${souvenirMarkup(preview, diary, { size: 'lg', cap: false, mem })}</div><div class="archsum in"><p>收成一件${esc(mem.label)}</p><p>${esc(mem.when)}</p></div></div>`;
+    const timers = [];
+    el._t = timers;
+    const later = (ms, fn) => { timers.push(setTimeout(fn, ms)); };
+    if (!reduced()) {
+      later(160, () => haptic(18));
+      later(1200, () => el.classList.add('leave'));
     }
-    const stamp = el.querySelector('.jstamp');
-    const summary = el.querySelector('.archsum');
-    setTimeout(() => { stamp.classList.add('thump'); haptic(18); }, 420);
-    setTimeout(() => summary.classList.add('in'), 980);
-    setTimeout(() => el.classList.add('leave'), 2100);
-    setTimeout(() => { el.hidden = true; done(); }, 2800);
+    later(reduced() ? 700 : 1900, () => { el.hidden = true; el.className = 'archveil'; done(); });
   }
   function todayStr() {
     const d = new Date();
@@ -1426,7 +1746,7 @@
     const was = TM.getTab && TM.getTab();
     if (TM.trips) {
       const curId = t.id;
-      document.querySelector('#sheetBody').innerHTML = `<h2>這趟走完了</h2><p>「${esc(t.dest)}」在 ${esc(t.ret)} 結束了。要封存起來嗎？之後還是可以打開來看。</p><div class="row"><button type="button" class="btn ghost" onclick="closeSheet()">先不要</button><button type="button" class="btn" onclick="Journey.promptArchive('${esc(curId)}')">封存行程</button></div>`;
+      document.querySelector('#sheetBody').innerHTML = `<h2>這趟走完了</h2><p>「${esc(t.dest)}」在 ${esc(t.ret)} 結束了。要收成一件紀念品嗎？之後還是可以打開來看。</p><div class="row"><button type="button" class="btn ghost" onclick="closeSheet()">先不要</button><button type="button" class="btn" onclick="Journey.promptArchive('${esc(curId)}')">收成紀念品</button></div>`;
       TM.openSheet();
     }
     void was;
@@ -1447,6 +1767,8 @@
     apply, afterPaint, exportState, importState, setGlobalStyle, globalStyle,
     openAchieve, peek, closeLayer, celebrate, doneCelebrate, openVisitMap, openCityMap, focusVisit, openMappedTrip,
     focusSpot, clearSpot, resetMap, zoomMap,
-    themeSheet, setTripStyle, askArchive, dismissArchive, startArchive, unarchive, promptArchive, maybePrompt
+    themeSheet, setTripStyle, askArchive, dismissArchive, startArchive, unarchive, promptArchive, maybePrompt,
+    SOUVENIRS, AIR_ZH, suggestSouvenir, souvenirOf, memoryOf, souvenirMarkup, shelfHtml,
+    openKeepsakes, openSouvenir, setSouvenir, openKeptTrip, releaseSouvenir, dropSouvenir
   };
 });

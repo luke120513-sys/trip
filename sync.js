@@ -51,7 +51,7 @@
     return JSON.stringify((trip.days || []).map(d => (d || []).map(s => s && s.sid || '')));
   }
   function metaKey(trip) {
-    return JSON.stringify([trip.dest, trip.dep, trip.ret, trip.pax, trip.orig, trip.themeStyle || '', trip.archived ? 1 : 0, +trip.archivedAt || 0]);
+    return JSON.stringify([trip.dest, trip.dep, trip.ret, trip.pax, trip.orig, trip.themeStyle || '', trip.archived ? 1 : 0, +trip.archivedAt || 0, trip.souvenir || '']);
   }
   function indexBy(days, key) {
     const m = new Map();
@@ -167,6 +167,8 @@
     }
     if (L.archiveAsked || R.archiveAsked) L.archiveAsked = true;
     else delete L.archiveAsked;
+    if (meta.souvenir === 'pass' || meta.souvenir === 'card' || meta.souvenir === 'pack' || meta.souvenir === 'figure') L.souvenir = meta.souvenir;
+    else delete L.souvenir;
     if (Array.isArray(R.tasks)) {
       const lv = +L.tasksRev || taskStamp(L.tasks);
       const rv = +R.tasksRev || taskStamp(R.tasks);
