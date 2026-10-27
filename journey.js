@@ -811,7 +811,9 @@
         out.push({
           name: String(s.name || city.name), lat, lng,
           summary: String(s.summary || ''), note: String(s.note || ''),
-          rating: String(s.rating || ''), area: String(s.area || ''), zh: String(s.zh || '')
+          rating: String(s.rating || ''), area: String(s.area || ''), zh: String(s.zh || ''),
+          icon: String(s.icon || ''), ptype: String(s.ptype || ''), meal: String(s.meal || ''),
+          addr: String(s.addr || s.address || '')
         });
       }));
     });
@@ -847,17 +849,19 @@
   function spotStory(spot) {
     const api = loreApi();
     if (api) return api.story(spot || {});
-    return { name: String(spot && spot.name || '景點'), intro: '', trivia: [], rating: '' };
+    return { name: String(spot && spot.name || '景點'), intro: '', trivia: [], rating: '', label: '簡介', address: '', food: false, empty: '這站還沒有收進小檔案。' };
   }
   function spotCardHtml(st) {
     const api = loreApi();
     const html = api && typeof api.cardHtml === 'function' ? api.cardHtml(st) : '';
     if (html) return html;
-    const story = st || { name: '景點', intro: '', trivia: [] };
+    const story = st || { name: '景點', intro: '', trivia: [], label: '簡介' };
     const name = esc(story.name || '景點');
-    const intro = story.intro ? esc(story.intro) : '這站還沒有收進小檔案。';
+    const label = esc(story.label || '簡介');
+    const body = esc(story.intro || story.empty || '這站還沒有收進小檔案。');
     const trivia = (story.trivia || []).filter(Boolean).map(esc).join('<br>');
-    const bits = ['<button type="button" class="spotcard-x" aria-label="關閉" onclick="Journey.clearSpot()">×</button>', '<b class="spotcard-name">' + name + '</b>', '<p class="spotcard-k">簡介</p><p>' + intro + '</p>'];
+    const bits = ['<button type="button" class="spotcard-x" aria-label="關閉" onclick="Journey.clearSpot()">×</button>', '<b class="spotcard-name">' + name + '</b>', '<p class="spotcard-k">' + label + '</p><p>' + body + '</p>'];
+    if (story.address) bits.push('<p class="spotcard-k addr">地址</p><p>' + esc(story.address) + '</p>');
     if (trivia) bits.push('<p class="spotcard-k trivia">冷知識</p><p>' + trivia + '</p>');
     return '<aside class="spotcard" role="dialog" aria-label="' + name + '">' + bits.join('') + '</aside>';
   }

@@ -279,9 +279,9 @@ assert.match(page, /theme-tw/);
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v65/);
+assert.match(sw, /tripmate-v66/);
 assert.match(sw, /journey\.js/);
-assert.match(page, /v2\.22\.0/);
+assert.match(page, /v2\.23\.0/);
 assert.match(page, /openVisitMap/);
 assert.match(page, /class="vmap-entry"/);
 assert.match(page, /\.ach-q/);
@@ -532,6 +532,74 @@ assert.ok(shib.intro);
 assert.ok(shib.trivia.length >= 1 && shib.trivia.length <= 3);
 assert.match(J.spotCardHtml(shib), /冷知識/);
 assert.match(J.spotCardHtml(J.spotStory({ name: '完全沒有的點' })), /還沒有收進小檔案/);
+const addrOnly = J.spotStory({ name: '完全沒有的點', note: '神楽坂通り · 新宿區 · 東京 · 日本' });
+assert.equal(addrOnly.intro, '');
+assert.equal(addrOnly.address, '神楽坂通り · 新宿區 · 東京 · 日本');
+assert.match(J.spotCardHtml(addrOnly), /簡介<\/p><p>這站還沒有收進小檔案。/);
+assert.match(J.spotCardHtml(addrOnly), /地址<\/p><p>神楽坂通り · 新宿區 · 東京 · 日本/);
+const skyAddr = J.spotStory({ name: '晴空塔', summary: '墨田區 · 東京 · 日本', note: '墨田區 · 東京 · 日本' });
+assert.match(skyAddr.intro, /富士山/);
+assert.equal(skyAddr.intro.includes('墨田'), false);
+assert.equal(skyAddr.address, '墨田區 · 東京 · 日本');
+assert.equal(grill.food, true);
+assert.equal(grill.label, '必點');
+assert.match(grill.intro, /和牛|燒肉/);
+assert.equal(grill.intro.includes('晴空塔'), false);
+assert.match(J.spotCardHtml(grill), /必點/);
+assert.equal(J.spotCardHtml(grill).includes('簡介'), false);
+const fugu = J.spotStory({ name: '玄品ふぐ', note: '港區 · 東京都', icon: 'food' });
+assert.match(fugu.intro, /河豚/);
+assert.equal(fugu.intro.includes('港區'), false);
+assert.equal(fugu.address, '港區 · 東京都');
+const fuguCard = J.spotCardHtml(fugu);
+assert.match(fuguCard, /必點<\/p><p>[^<]*河豚/);
+assert.match(fuguCard, /地址<\/p><p>港區 · 東京都/);
+assert.equal(fuguCard.includes('簡介'), false);
+const minn = J.spotStory({ name: 'MINN 西葛西', note: '東京都江戶川區西葛西' });
+assert.equal(minn.intro, '');
+assert.match(minn.address, /江戶川/);
+assert.match(J.spotCardHtml(minn), /簡介<\/p><p>這站還沒有收進小檔案。/);
+assert.match(J.spotCardHtml(minn), /地址<\/p><p>東京都江戶川區西葛西/);
+const bareFood = J.spotStory({ name: '沒聽過的食堂', icon: 'food', note: '港區 · 東京都' });
+assert.equal(bareFood.intro, '');
+assert.equal(bareFood.label, '必點');
+assert.match(J.spotCardHtml(bareFood), /必點<\/p><p>這家還沒有必點紀錄。/);
+const afuri = J.spotStory({ name: 'AFURI 阿夫利', summary: '清爽柚子鹽拉麵，新宿／原宿／澀谷皆有店。' });
+assert.equal(afuri.label, '必點');
+assert.match(afuri.intro, /柚子鹽拉麵/);
+assert.equal(afuri.intro.includes('皆有店'), false);
+const ginza = J.spotStory({ name: '銀座' });
+assert.equal(ginza.food, false);
+assert.equal(ginza.label, '簡介');
+assert.match(ginza.intro, /百貨|精品/);
+[
+  ['淺草今半', /壽喜燒|黑毛和牛/],
+  ['銀座 篝', /雞白湯/],
+  ['六歌仙', /燒肉/],
+  ['牛舌の檸檬', /牛舌/],
+  ['HARBS 水果千層', /千層/],
+  ['牛かつもと村', /石板|炸牛排/],
+  ['名代 宇奈とと', /鰻/],
+  ['大和壽司（豐洲市場）', /鮪/],
+  ['六厘舍', /沾麵/],
+  ['煉瓦亭', /蛋包飯|炸豬排/],
+  ['麵屋翔 本店', /拉麵/],
+  ['無敵家拉麵', /拉麵/],
+  ['五代目花山烏冬', /烏龍/],
+  ['喫茶You 蛋包飯', /蛋包飯/],
+  ['壽司三昧 築地', /壽司/],
+  ['鳥藤 親子丼', /親子丼/],
+  ['肉的大山 炸肉餅', /炸肉餅/]
+].forEach(([name, re]) => {
+  const st = J.spotStory({ name, ptype: '餐廳', note: '港區 · 東京都' });
+  assert.equal(st.label, '必點', name);
+  assert.match(st.intro, re, name + ' ' + st.intro);
+  assert.equal(st.intro.includes('港區'), false, name);
+  const html = J.spotCardHtml(st);
+  assert.match(html, /必點/, name);
+  assert.equal(html.includes('簡介'), false, name);
+  assert.match(html, /地址/, name);
+});
 
 const wideCard = J.placeCard({ x: 211, y: 193 }, { w: 640, h: 420 }, { w: 220, h: 140 });
 assert.ok(wideCard.left > 211);
