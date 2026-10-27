@@ -469,7 +469,7 @@
     chicken: '<circle cx="28" cy="36" r="14" fill="#e6b15a"/><circle cx="42" cy="32" r="10" fill="#f0d090"/><path d="M18 40 q10 10 22 4" fill="none" stroke="#c4903a" stroke-width="2"/>',
     soup: '<ellipse cx="32" cy="44" rx="20" ry="12" fill="#f7f4ee"/><ellipse cx="32" cy="40" rx="16" ry="8" fill="#fbfaf6"/><path d="M24 34 v12 M32 32 v12 M40 36 v10" fill="none" stroke="#5d8a3e" stroke-width="2"/>',
     citrus: '<circle cx="32" cy="36" r="16" fill="#f0a020"/><path d="M32 20 v8" fill="none" stroke="#5d8a3e" stroke-width="2"/><ellipse cx="32" cy="18" rx="3" ry="5" fill="#5d8a3e"/>',
-    noodle: '<ellipse cx="32" cy="44" rx="22" ry="12" fill="#c4896a"/><ellipse cx="32" cy="40" rx="17" ry="8" fill="#e6c49a"/><path d="M18 38 q8 -6 14 0 t14 0" fill="none" stroke="#f7f1e4" stroke-width="2"/><rect x="24" y="32" width="12" height="6" rx="2" fill="#7a4328"/>',
+    noodle: '<ellipse cx="32" cy="42" rx="20" ry="11" fill="#c4896a"/><ellipse cx="32" cy="38" rx="15" ry="7" fill="#e6c49a"/><path d="M18 36 H46 M20 39 H44 M22 42 H42" fill="none" stroke="#f7f1e4" stroke-width="1.6" stroke-linecap="round"/><rect x="26" y="31" width="12" height="5" rx="1.5" fill="#7a4328"/>',
     cake: '<circle cx="32" cy="34" r="16" fill="#f3ddb0"/><circle cx="32" cy="34" r="6" fill="#e0b15e"/><circle cx="32" cy="34" r="16" fill="none" stroke="#e0c48a" stroke-width="2"/>',
     soup2: '<ellipse cx="32" cy="44" rx="20" ry="12" fill="#ead8c8"/><ellipse cx="32" cy="40" rx="16" ry="8" fill="#f7f1ea"/><rect x="22" y="34" width="14" height="6" rx="1" fill="#a65d4a"/>',
     tofu: '<ellipse cx="32" cy="46" rx="20" ry="10" fill="#f7f4ee"/><ellipse cx="32" cy="38" rx="16" ry="12" fill="#fbfaf6"/><path d="M18 36 Q32 48 46 36" fill="#6b3a2a"/>',
@@ -563,7 +563,7 @@
   }
   function nameLayout(name) {
     const n = Array.from(String(name || '')).length;
-    if (n <= 2) return { size: 26, y: 124, spacing: 5 };
+    if (n <= 2) return { size: 26, y: 124, spacing: 1 };
     if (n === 3) return { size: 18, y: 122, spacing: 2 };
     if (n === 4) return { size: 15, y: 120, spacing: 1 };
     return { size: 12, y: 118, spacing: 0.3 };
@@ -579,7 +579,7 @@
     const lay = nameLayout(mem.dest);
     const arc = m.known ? m.land : '到此一遊';
     const flowerY = mem.year ? 148 : 158;
-    const year = mem.year ? '<text x="100" y="170" text-anchor="middle" fill="#c17a6e" font-size="11" font-weight="700" letter-spacing="2.4">' + esc(mem.year) + '</text>' : '';
+    const year = mem.year ? '<text x="100" y="170" text-anchor="middle" fill="#c17a6e" font-size="11" font-weight="700" letter-spacing="1">' + esc(mem.year) + '</text>' : '';
     return '<span class="sealcard papercard"><svg class="sealart" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet" aria-hidden="true" style="color:#c17a6e"><circle cx="100" cy="100" r="92" fill="none" stroke="#c17a6e" stroke-width="1.15"/><circle cx="100" cy="100" r="84" fill="none" stroke="#c17a6e" stroke-width="2.1" stroke-dasharray="1.15 3.3" stroke-linecap="round"/>' + arcText(arc) + '<g transform="translate(82,48) scale(.54)">' + markIcon(m.mark || 'pin') + '</g><text x="100" y="' + lay.y + '" text-anchor="middle" fill="#a85a4c" font-size="' + lay.size + '" font-weight="800" letter-spacing="' + lay.spacing + '">' + esc(mem.dest || '') + '</text><g transform="translate(100 ' + flowerY + ')">' + sealFlower(m.country) + '</g>' + year + '</svg><span class="paper-foot seal-foot"><svg viewBox="0 0 12 14" width="11" height="13" aria-hidden="true"><path d="M6 1.2C3.8 1.2 2.3 3 2.3 5c0 2.6 3.7 7.2 3.7 7.2S9.7 7.6 9.7 5C9.7 3 8.2 1.2 6 1.2z" fill="none" stroke="currentColor" stroke-width="1.1"/><circle cx="6" cy="5" r="1.15" fill="currentColor"/></svg><span>地標印章</span></span></span>';
   }
   function cityPlate(city, stroke, fill) {
@@ -595,7 +595,7 @@
     return Array.from(String(word || '')).slice(0, 2).map((ch, i) => '<text x="' + x + '" y="' + (y + i * (size + 3)) + '" text-anchor="middle" fill="' + fill + '" font-size="' + size + '" font-weight="800">' + esc(ch) + '</text>').join('');
   }
   function cordLoop(color) {
-    return '<path d="M70 40 C70 14 102 12 102 32 C102 46 78 48 70 40 Z" fill="none" stroke="' + color + '" stroke-width="3.1" stroke-linejoin="round"/>';
+    return '<path d="M70 40 C62 40 50 32 50 22 C50 12 58 6 70 6 C82 6 90 12 90 22 C90 32 78 40 70 40 Z" fill="none" stroke="' + color + '" stroke-width="3.1" stroke-linejoin="round"/>';
   }
   function tassel(color, top) {
     const strands = [-14, -7, 0, 7, 14].map(dx => '<path d="M70 ' + (top + 9) + ' L' + (70 + dx) + ' ' + (top + 40 - Math.abs(dx) * 0.25) + '" stroke="' + color + '" stroke-width="1.35" stroke-linecap="round"/>').join('');
@@ -610,7 +610,7 @@
     if (country === 'jp') {
       body = cordLoop('#b4332a') +
         '<circle cx="70" cy="48" r="5" fill="#e6c56a"/><circle cx="70" cy="54" r="1.5" fill="#e6c56a"/>' +
-        '<path d="M34 68 L70 50 L106 68 L114 162 H26 Z" fill="#c43737" stroke="' + gold + '" stroke-width="2"/>' +
+        '<path d="M34 68 L70 50 L106 68 V162 H34 Z" fill="#c43737" stroke="' + gold + '" stroke-width="2"/>' +
         '<path d="M40 78 q6 -6 12 0 q6 -6 12 0" fill="none" stroke="' + gold + '" stroke-width="1.4"/>' +
         '<path d="M86 74 q5 -5 10 0 q5 -5 10 0" fill="none" stroke="' + gold + '" stroke-width="1.3"/>' +
         '<g fill="none" stroke="' + gold + '" stroke-width="2" stroke-linecap="round"><path d="M50 84 h40"/><path d="M54 80 h32"/><path d="M54 92 h32"/><path d="M60 92 v26 M80 92 v26"/></g>' +
@@ -626,7 +626,7 @@
         cityPlate(city, gold, 'none') +
         tassel('#f3ead8', 158);
     } else if (country === 'kr') {
-      body = '<path d="M70 16 c-16 8-18 20 0 26 16-6 16-18 0-26" fill="none" stroke="#8e2438" stroke-width="3.2" stroke-linecap="round"/>' +
+      body = '<path d="M70 10 C62 10 54 18 56 26 C58 34 64 38 70 38 C76 38 82 34 84 26 C86 18 78 10 70 10 Z" fill="none" stroke="#8e2438" stroke-width="3.2" stroke-linecap="round"/>' +
         '<circle cx="70" cy="36" r="6" fill="none" stroke="' + gold + '" stroke-width="2"/>' +
         '<circle cx="70" cy="36" r="2.2" fill="' + gold + '"/>' +
         '<rect x="34" y="68" width="72" height="96" rx="18" fill="#8e2438" stroke="' + gold + '" stroke-width="2"/>' +
@@ -677,7 +677,7 @@
     const seal = chars.length > 0 && chars.length <= 3
       ? '<rect x="124" y="72" width="16" height="16" fill="#b4332a"/><text x="132" y="84" text-anchor="middle" fill="#f6e0c0" font-size="10" font-weight="800">旅</text>'
       : '';
-    return '<span class="emacard papercard"><svg class="emaart" viewBox="0 0 200 228" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M100 6 C118 16 124 32 100 42 C76 32 82 16 100 6" fill="none" stroke="#b4332a" stroke-width="3.2" stroke-linecap="round"/><path d="M94 20 c6 5 6 12 0 16" fill="none" stroke="#b4332a" stroke-width="2.3"/><path d="M64 46 H136 L170 206 H30 Z" fill="#e7c99a" stroke="#c4a36e" stroke-width="2"/><path d="M70 54 H130 L160 198 H40 Z" fill="#f0dcb4"/><circle cx="100" cy="62" r="3.4" fill="#f6f1e7"/>' + plaqueName(mem.dest) + seal + '<clipPath id="' + clip + '"><path d="M70 54 H130 L160 198 H40 Z"/></clipPath><g clip-path="url(#' + clip + ')" transform="translate(52,126) scale(.74)">' + scene + '</g></svg><span class="paper-foot ema-foot"><span class="ema-pill">' + esc(voice.plaque) + '</span></span></span>';
+    return '<span class="emacard papercard"><svg class="emaart" viewBox="0 0 200 228" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M100 6 C118 16 124 32 100 42 C76 32 82 16 100 6" fill="none" stroke="#b4332a" stroke-width="3.2" stroke-linecap="round"/><circle cx="100" cy="24" r="5" fill="none" stroke="#b4332a" stroke-width="2.2"/><rect x="46" y="50" width="108" height="156" rx="8" fill="#e7c99a" stroke="#c4a36e" stroke-width="2"/><rect x="54" y="58" width="92" height="140" rx="4" fill="#f0dcb4"/><circle cx="100" cy="70" r="3.4" fill="#f6f1e7"/>' + plaqueName(mem.dest) + seal + '<clipPath id="' + clip + '"><rect x="54" y="58" width="92" height="140" rx="4"/></clipPath><g clip-path="url(#' + clip + ')" transform="translate(54,146) scale(.71875)">' + scene + '</g></svg><span class="paper-foot ema-foot"><span class="ema-pill">' + esc(voice.plaque) + '</span></span></span>';
   }
   function souvenirMarkup(trip, diary, opt) {
     opt = opt || {};
@@ -695,24 +695,26 @@
     const poke = size === 'lg' ? ' sov-poke' : '';
     return '<span class="sov sov-' + mem.kind + ' sov-' + size + poke + ' tone-' + mem.tone + '"><span class="sov-body">' + body + '</span>' + cap + '</span>';
   }
+  function motionNodes(sov) {
+    return sov.querySelectorAll('.sov-body,.charmart,.emaart,.sealart,.pinart,.bp,.mcard-stamp');
+  }
   function settleSouvenir(sov) {
     if (!sov) return;
     sov.classList.remove('sov-poke');
-    const body = sov.querySelector('.sov-body');
-    if (!body) return;
-    body.style.animation = 'none';
-    body.style.transform = 'none';
+    motionNodes(sov).forEach(function (el) {
+      el.style.animation = 'none';
+      el.style.transform = 'none';
+    });
   }
   function pokeSouvenir(el) {
     const root = el && el.querySelector ? el : null;
     const sov = root && (root.classList && root.classList.contains('sov') ? root : root.querySelector('.sov'));
     if (!sov || reduced()) return;
-    const body = sov.querySelector('.sov-body');
     sov.classList.remove('sov-poke');
-    if (body) {
-      body.style.animation = '';
-      body.style.transform = '';
-    }
+    motionNodes(sov).forEach(function (node) {
+      node.style.animation = '';
+      node.style.transform = '';
+    });
     void sov.offsetWidth;
     sov.classList.add('sov-poke');
     clearTimeout(sov._settle);

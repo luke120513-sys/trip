@@ -502,7 +502,7 @@ html.dark .sovhit{background:#1c2530;box-shadow:none;border:1px solid var(--line
 .mcard-dest{position:relative;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin:16px 0 0;font-size:26px;line-height:1.2;max-height:2.4em}
 .mcard-foot{position:absolute;left:12px;right:12px;bottom:12px;display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
 .mcard-sub{min-width:0;font-size:12px;font-weight:800;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.mcard-stamp{flex:none;width:54px;height:54px;border-radius:50%;border:2px solid rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;font-weight:900;line-height:1.15;transform:rotate(-14deg);background:rgba(255,255,255,.08)}
+.mcard-stamp{flex:none;width:54px;height:54px;border-radius:50%;border:2px solid rgba(255,255,255,.92);display:flex;align-items:center;justify-content:center;text-align:center;font-size:11px;font-weight:900;line-height:1.15;transform:none;background:rgba(255,255,255,.08)}
 .sov-lg .mcard{width:min(240px,100%);height:300px;margin:0 auto;padding-bottom:92px}
 .sov-lg .mcard-dest{font-size:34px;margin-top:28px}
 .sov-lg .mcard-stamp{width:72px;height:72px;font-size:14px}
@@ -514,7 +514,7 @@ html.dark .sovhit{background:#1c2530;box-shadow:none;border:1px solid var(--line
 .seal-foot{margin-top:2px;letter-spacing:.18em;font-size:13px}
 .charmart{width:78%;aspect-ratio:140/214;margin:4px auto 0;transform-origin:50% 8%;animation:charmsway 4.2s ease-in-out infinite}
 .charm-foot{flex-direction:column;margin-top:8px}
-.charm-foot b{color:#b0893e;font-size:28px;letter-spacing:.28em;line-height:1.1}
+.charm-foot b{color:#b0893e;font-size:28px;letter-spacing:.28em;padding-left:.28em;line-height:1.1}
 .charm-foot i{display:block;width:72px;height:8px;margin-top:2px;position:relative}
 .charm-foot i:before,.charm-foot i:after{content:"";position:absolute;top:4px;width:26px;height:1px;background:#c6a36a}
 .charm-foot i:before{left:0}
@@ -574,18 +574,18 @@ html.dark .sovstory{box-shadow:none;border:1px solid var(--line)}
 @keyframes sovin{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
 @keyframes pagein{from{opacity:0}to{opacity:1}}
 @keyframes storyin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-@keyframes passflutter{0%,68%,100%{transform:rotate(0deg)}80%{transform:rotate(.4deg)}90%{transform:rotate(-.3deg)}}
+@keyframes passflutter{0%,68%,100%{transform:translateY(0)}80%{transform:translateY(-1.5px)}}
 @keyframes perfedge{0%,70%,100%{transform:translateY(0)}84%{transform:translateY(1.5px)}}
 @keyframes cardshine{0%,62%{transform:translateX(0);opacity:0}74%{opacity:1}100%{transform:translateX(430%);opacity:0}}
-@keyframes charmsway{0%,64%,100%{transform:rotate(0deg)}76%{transform:rotate(-1.2deg)}88%{transform:rotate(1.2deg)}}
-@keyframes emaswing{0%,64%,100%{transform:rotate(0deg)}76%{transform:rotate(-1deg)}88%{transform:rotate(1deg)}}
+@keyframes charmsway{0%,64%,100%{transform:translateX(0)}76%{transform:translateX(-2px)}88%{transform:translateX(2px)}}
+@keyframes emaswing{0%,64%,100%{transform:translateX(0)}76%{transform:translateX(-2px)}88%{transform:translateX(2px)}}
 @keyframes badgeglow{0%,100%{opacity:.22}50%{opacity:.72}}
-@keyframes passpoke{0%{transform:rotate(0deg)}35%{transform:rotate(-1deg)}65%{transform:rotate(.5deg)}100%{transform:rotate(0deg)}}
+@keyframes passpoke{0%{transform:translateY(0)}40%{transform:translateY(-2px)}100%{transform:translateY(0)}}
 @keyframes cardpoke{0%{transform:scale(1)}40%{transform:scale(.97)}70%{transform:scale(1.025)}100%{transform:scale(1)}}
-@keyframes stampdown{0%{transform:translateY(-8px) scale(1)}58%{transform:translateY(1px) scale(1)}100%{transform:translateY(0) scale(1)}}
-@keyframes charmpoke{0%{transform:rotate(0deg)}30%{transform:rotate(-3.5deg)}60%{transform:rotate(2.5deg)}100%{transform:rotate(0deg)}}
+@keyframes stampdown{0%{transform:translateY(-8px)}58%{transform:translateY(1px)}100%{transform:translateY(0)}}
+@keyframes charmpoke{0%{transform:translateY(0)}35%{transform:translateY(-3px)}100%{transform:translateY(0)}}
 @keyframes badgepoke{0%{transform:scale(1)}40%{transform:scale(.96)}70%{transform:scale(1.03)}100%{transform:scale(1)}}
-@keyframes emapoke{0%{transform:rotate(0deg)}34%{transform:rotate(3deg)}66%{transform:rotate(-2deg)}100%{transform:rotate(0deg)}}
+@keyframes emapoke{0%{transform:translateY(0)}35%{transform:translateY(-3px)}100%{transform:translateY(0)}}
 .sov-arrive,.sovstage .sov{animation:sovin .36s ease forwards}
 .sovpage{animation:pagein .28s ease}
 .sovstory{animation:storyin .36s ease both}
@@ -781,7 +781,7 @@ addEventListener('load',()=>(window.requestIdleCallback||setTimeout)(()=>setTime
 let impP=null;function openImport(){return (impP||(impP=new Promise((ok,no)=>{const e=document.createElement('script');e.src='importer.js';e.onload=ok;e.onerror=()=>{impP=null;no()};document.head.append(e)}))).then(()=>importSheet()).catch(()=>toast('載入失敗，請稍後再試'))}
 function ticketTodayCount(t){if(!t||typeof Tickets==='undefined'||!Tickets.isToday)return 0;const today=Tickets.todayYmd();return (t.tickets||[]).filter(x=>!x.used&&Tickets.isToday(x,t,today)).length}
 function render(){const on=k=>k===tab||(k==='list'&&(tab==='edit'||tab==='new'));const nToday=ticketTodayCount(T());$('#nav').innerHTML=TABS.map(([k,n])=>{const badge=k==='expense'&&nToday?`<b class="nb">${nToday>99?'99+':nToday}</b>`:'';const label=k==='expense'&&nToday?` aria-label="支出與票券，今天 ${nToday} 張"`:'';const wide=n.length>2?' wide':'';return `<button class="${on(k)?'on':''}${wide}" onclick="go('${k}')"${label}><span class="nic">${badge}<svg viewBox="0 0 24 24">${TI[k]}</svg></span>${n}</button>`}).join('');$('#app').innerHTML=V[tab]()+foot();if(tab==='edit'){bindDays();bindSort();const tt=T();if(tt)wxLoad(tt);if(typeof fillLive==='function')fillLive();maybeAutoShift()}if(tab==='deals'||tab==='edit')loadDeals();if(tab==='expense'&&expPane!=='tix'&&typeof paintExp==='function')paintExp();if(tab==='food'&&typeof paintFood==='function')paintFood();if(tab==='more'&&typeof paintAccount==='function')paintAccount();if(tab==='more'&&typeof paintBackupHint==='function')paintBackupHint();xswLinks();if(window.Journey)Journey.afterPaint()}
-const foot=()=>{const t=T(),fly=t?flyUrl(t):`${BASE}flysave/?from=trip`,fan=t?fanUrl(t):`${BASE}fansave/?from=trip`;return `<footer><div class="fb"><a class="cb" href="${SPONSOR_URL}" target="_blank" rel="noopener"><img src="icons/coffee-trip.svg" alt="" width="40" height="40">贊助</a><a class="cb" href="#" onclick="shareSite();return false"><img src="icons/share-trip.svg" alt="" width="40" height="40">分享</a></div><div class="fl"><a href="#" onclick="info('about');return false">關於我們</a><i>|</i><a href="#" onclick="info('privacy');return false">隱私權政策</a><i>|</i><a href="#" onclick="info('terms');return false">服務條款</a></div><div class="fs"><a class="sfly" id="sfly" href="${fly}"><img src="icons/fly-fly.svg" alt="" width="24" height="24">飛省 查機票</a><a class="sfan" id="sfan" href="${fan}"><img src="icons/hotel-fan.svg" alt="" width="24" height="24">飯省 找飯店</a></div><div class="vw" id="vw"${VW?``:` hidden`}>${VW?`👀 累計瀏覽 ${VW.toLocaleString()}`:``}</div><div class="copy">© 2026 旅伴 TripMate・推薦景點資料截至 2026-10-19・v2.24.1</div></footer>`};
+const foot=()=>{const t=T(),fly=t?flyUrl(t):`${BASE}flysave/?from=trip`,fan=t?fanUrl(t):`${BASE}fansave/?from=trip`;return `<footer><div class="fb"><a class="cb" href="${SPONSOR_URL}" target="_blank" rel="noopener"><img src="icons/coffee-trip.svg" alt="" width="40" height="40">贊助</a><a class="cb" href="#" onclick="shareSite();return false"><img src="icons/share-trip.svg" alt="" width="40" height="40">分享</a></div><div class="fl"><a href="#" onclick="info('about');return false">關於我們</a><i>|</i><a href="#" onclick="info('privacy');return false">隱私權政策</a><i>|</i><a href="#" onclick="info('terms');return false">服務條款</a></div><div class="fs"><a class="sfly" id="sfly" href="${fly}"><img src="icons/fly-fly.svg" alt="" width="24" height="24">飛省 查機票</a><a class="sfan" id="sfan" href="${fan}"><img src="icons/hotel-fan.svg" alt="" width="24" height="24">飯省 找飯店</a></div><div class="vw" id="vw"${VW?``:` hidden`}>${VW?`👀 累計瀏覽 ${VW.toLocaleString()}`:``}</div><div class="copy">© 2026 旅伴 TripMate・推薦景點資料截至 2026-10-19・v2.24.2</div></footer>`};
 const V={
 list:()=>{const card=t=>`<div class="card${t.archived?' shelf':''}" onclick="cur='${t.id}';dayIx=0;save();go('edit')" style="cursor:pointer"><div class="row"><div>${ui('suitcase')}<b>${esc(t.dest)}</b> <span class="mut">${esc(t.dep)} → ${esc(t.ret)} · ${esc(t.pax)} 人</span></div><span style="flex:0" onclick="event.stopPropagation()">${ib('del',`delTrip('${t.id}')`,'刪除')}</span></div><div class="mut">${t.archived?'已封存 · ':''}${(t.days||[]).flat().length} 個景點</div></div>`;const live=trips.filter(t=>!t.archived),arch=trips.filter(t=>t.archived);const head=`<div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">我的行程</h2><button class="btn sm" style="flex:0" onclick="go('new')">＋ 新增行程</button></div><div class="row" style="margin:8px 0"><button class="btn ghost sm" style="flex:0" onclick="openImport()">匯入行程</button></div>`;const liveHtml=live.length?live.map(card).join(''):(arch.length?`<div class="card"><p>沒有進行中的行程。</p><button class="btn" onclick="go('new')">建立新行程</button></div>`:`<div class="card"><p>還沒有行程。</p><button class="btn" onclick="go('new')">建立第一個行程</button></div>`);const been=window.Journey?`<button type="button" class="vmap-entry" onclick="Journey.openVisitMap()"><span class="vmap-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6l6-2 4 2 6-2v14l-6 2-4-2-6 2z"/><path d="M10 4v14M14 6v14"/></svg></span><span><b>去過的地方</b><small>${esc(Journey.visitBrief())}</small></span></button>`:'';const keeps=window.Journey&&Journey.shelfHtml?Journey.shelfHtml(arch):(arch.length?`<h3 class="shelfhead">封存</h3>${arch.map(card).join('')}`:'');return head+been+liveHtml+keeps},
 new:()=>{let d=new Date(Date.now()+14*864e5).toISOString().slice(0,10),r=new Date(Date.now()+18*864e5).toISOString().slice(0,10);const ok=x=>x&&/^\d{4}-\d\d-\d\d$/.test(x)&&x>=new Date().toISOString().slice(0,10);if(PF){if(ok(PF.dep))d=PF.dep;if(ok(PF.ret)&&PF.ret>=d)r=PF.ret;else if(ok(PF.dep)){const x=new Date(d);x.setDate(x.getDate()+3);r=x.toISOString().slice(0,10)}}

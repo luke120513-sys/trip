@@ -279,9 +279,9 @@ assert.match(page, /theme-tw/);
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v68/);
+assert.match(sw, /tripmate-v69/);
 assert.match(sw, /journey\.js/);
-assert.match(page, /v2\.24\.1/);
+assert.match(page, /v2\.24\.2/);
 assert.match(page, /openVisitMap/);
 assert.match(page, /class="vmap-entry"/);
 assert.match(page, /\.ach-q/);
@@ -694,5 +694,11 @@ const six = ['pass', 'card', 'stamp', 'charm', 'badge', 'plaque'].map((souvenir,
 const sixWall = J.shelfHtml(six);
 ['sov-pass', 'sov-card', 'sov-stamp', 'sov-charm', 'sov-badge', 'sov-plaque'].forEach(k => assert.match(sixWall, new RegExp(k)));
 assert.equal(/sov-pack|sov-figure|禮包|手辦/.test(sixWall), false);
+const sovCss = page.slice(page.indexOf('.sovshelf'), page.indexOf('@media (prefers-reduced-motion'));
+assert.equal(/rotate\(/.test(sovCss), false);
+[['pass', '東京'], ['card', '京都'], ['stamp', '大阪'], ['charm', '首爾'], ['badge', '台北'], ['plaque', '花蓮']].forEach(([kind, dest]) => {
+  const html = J.souvenirMarkup(trip({ dest, souvenir: kind }), [], { size: 'lg' });
+  assert.equal(/rotate\(|skew[XY]?\(/.test(html), false, kind);
+});
 
 console.log('journey tests ok');
