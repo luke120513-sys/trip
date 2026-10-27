@@ -4,13 +4,13 @@
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.Journey = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
-  const HOME = { TPE: 1, TSA: 1, KHH: 1, RMQ: 1, TNN: 1, HUN: 1, TTT: 1, CYI: 1, PIF: 1 };
+  const HOME = { TPE: 1, TSA: 1, KHH: 1, RMQ: 1, TNN: 1, HUN: 1, TTT: 1, CYI: 1, PIF: 1, KNH: 1, LZN: 1, MFK: 1, KYD: 1, GNI: 1 };
   const JP_AIR = { NRT: 1, HND: 1, KIX: 1, ITM: 1, UKB: 1, NGO: 1, CTS: 1, FUK: 1, OKA: 1, KOJ: 1, HIJ: 1, SDJ: 1, KMQ: 1, TAK: 1, KMJ: 1, FSZ: 1, OKJ: 1, TOY: 1, KIJ: 1, AOJ: 1, MMB: 1, AKJ: 1 };
   const KR_AIR = { ICN: 1, GMP: 1, PUS: 1, CJU: 1, TAE: 1, KWJ: 1, CJJ: 1, RSU: 1 };
-  const CITY_AIR = { NRT: 'tyo', HND: 'tyo', KIX: 'osa', ITM: 'osa', UKB: 'osa', FUK: 'fuk', OKA: 'oka', CTS: 'spk', ICN: 'sel', GMP: 'sel', PUS: 'pus', CJU: 'cju', TPE: 'tpe', TSA: 'tpe', RMQ: 'txg', TNN: 'tnn', KHH: 'khh', HUN: 'hul', TTT: 'ttt', CYI: 'cyi', PIF: 'ktn' };
+  const CITY_AIR = { NRT: 'tyo', HND: 'tyo', KIX: 'osa', ITM: 'osa', UKB: 'osa', FUK: 'fuk', OKA: 'oka', CTS: 'spk', ICN: 'sel', GMP: 'sel', PUS: 'pus', CJU: 'cju', TPE: 'tpe', TSA: 'tpe', RMQ: 'txg', TNN: 'tnn', KHH: 'khh', HUN: 'hul', TTT: 'ttt', CYI: 'cyi', PIF: 'ktn', KNH: 'kmn', LZN: 'mzu', MFK: 'mzu', KYD: 'lny', GNI: 'lud' };
   const JP_WORDS = ['日本', '東京', '大阪', '京都', '福岡', '札幌', '沖繩', '名古屋', '奈良', '神戶', '神戸', '橫濱', '横浜', '鎌倉', '箱根', '北海道', '廣島', '広島', '金澤', '金沢', '淺草', '浅草', '新宿', '澀谷', '渋谷', '上野', '晴空塔', '東京鐵塔', '東京塔', '道頓堀', '心齋橋', '心斎橋', '伏見稻荷', '伏見稲荷', '清水寺', '金閣寺', '嵐山', 'Tokyo', 'Osaka', 'Kyoto', 'Japan', 'Sapporo', 'Okinawa', 'Hiroshima', 'Nara', 'Kobe', 'Yokohama'];
   const KR_WORDS = ['韓國', '首爾', '釜山', '濟州', '仁川', '大邱', '光州', '慶州', '江陵', '明洞', '弘大', '弘益', '景福宮', '昌德宮', '昌慶宮', '德壽宮', '北村', '韓屋', 'Seoul', 'Busan', 'Korea', 'Jeju', 'Incheon', 'Myeongdong', 'Hongdae'];
-  const TW_WORDS = ['台灣', '臺灣', '台北', '臺北', '新北', '台中', '臺中', '台南', '臺南', '高雄', '花蓮', '台東', '臺東', '嘉義', '阿里山', '墾丁', '屏東', '宜蘭', '南投', '日月潭', '太魯閣', '九份', '野柳', '淡水', '駁二', '七星潭', '三仙台', '伯朗大道', '鵝鑾鼻', '傳藝', '九族', 'Taipei', 'Taichung', 'Tainan', 'Kaohsiung', 'Hualien', 'Taitung', 'Chiayi', 'Alishan', 'Kenting', 'Pingtung', 'Yilan', 'Nantou', 'Taiwan', 'Sun Moon Lake'];
+  const TW_WORDS = ['台灣', '臺灣', '台北', '臺北', '新北', '台中', '臺中', '台南', '臺南', '高雄', '花蓮', '台東', '臺東', '嘉義', '阿里山', '墾丁', '屏東', '宜蘭', '南投', '日月潭', '太魯閣', '九份', '野柳', '淡水', '駁二', '七星潭', '三仙台', '伯朗大道', '鵝鑾鼻', '傳藝', '九族', '金門', '馬祖', '蘭嶼', '綠島', 'Taipei', 'Taichung', 'Tainan', 'Kaohsiung', 'Hualien', 'Taitung', 'Chiayi', 'Alishan', 'Kenting', 'Pingtung', 'Yilan', 'Nantou', 'Taiwan', 'Sun Moon Lake', 'Kinmen', 'Matsu', 'Lanyu', 'Green Island'];
   const STYLES = [['auto', '自動（依目的地）'], ['jp', '日本'], ['kr', '韓國'], ['tw', '台灣'], ['plain', '系統預設']];
   const STYLE_SHORT = { auto: '自動', jp: '日本', kr: '韓國', tw: '台灣', plain: '系統預設' };
   /* 加一座城市：在這裡放一筆，再加 city 欄位相同的卡片即可。box 是 [南, 西, 北, 東]，不要跟別的城市重疊。 */
@@ -29,11 +29,15 @@
     { id: 'tnn', country: 'tw', name: '台南', color: '#8C3A4A', box: [22.88, 120.05, 23.12, 120.32], words: ['台南', '臺南', '奇美', '赤嵌', '赤崁', '安平', '億載', 'Tainan'] },
     { id: 'khh', country: 'tw', name: '高雄', color: '#0F4C81', box: [22.48, 120.22, 22.85, 120.42], words: ['高雄', '駁二', '蓮池潭', '打狗', '美麗島', '鹽埕', '旗津', 'Kaohsiung'] },
     { id: 'hul', country: 'tw', name: '花蓮', color: '#1B7A4A', box: [23.75, 121.35, 24.35, 121.80], words: ['花蓮', '太魯閣', '七星潭', '池南', 'Hualien', 'Taroko'] },
-    { id: 'ttt', country: 'tw', name: '台東', color: '#C4922A', box: [22.50, 120.85, 23.45, 121.60], words: ['台東', '臺東', '三仙台', '伯朗', '池上', '知本', 'Taitung'] },
+    { id: 'ttt', country: 'tw', name: '台東', color: '#C4922A', box: [22.50, 120.85, 23.45, 121.44], words: ['台東', '臺東', '三仙台', '伯朗', '池上', '知本', 'Taitung'] },
     { id: 'cyi', country: 'tw', name: '嘉義', color: '#4A5D23', box: [23.30, 120.30, 23.68, 120.84], words: ['嘉義', '阿里山', 'Alishan', 'Chiayi'] },
     { id: 'ktn', country: 'tw', name: '墾丁', color: '#E26D5A', box: [21.85, 120.62, 22.40, 120.95], words: ['墾丁', '屏東', '鵝鑾鼻', '海生館', '海洋生物博物館', '恆春', 'Kenting', 'Eluanbi'] },
     { id: 'yil', country: 'tw', name: '宜蘭', color: '#5C7C99', box: [24.40, 121.45, 24.95, 122.05], words: ['宜蘭', '傳藝', '礁溪', '羅東', 'Yilan'] },
-    { id: 'nto', country: 'tw', name: '南投', color: '#6B7C3A', box: [23.70, 120.55, 24.01, 121.15], words: ['南投', '日月潭', '九族', '魚池', 'Sun Moon'] }
+    { id: 'nto', country: 'tw', name: '南投', color: '#6B7C3A', box: [23.70, 120.55, 24.01, 121.15], words: ['南投', '日月潭', '九族', '魚池', 'Sun Moon'] },
+    { id: 'kmn', country: 'tw', name: '金門', color: '#D36B4F', box: [24.35, 118.15, 24.55, 118.55], words: ['金門', '烈嶼', '莒光樓', 'Kinmen'] },
+    { id: 'mzu', country: 'tw', name: '馬祖', color: '#3E8E8A', box: [25.92, 119.90, 26.42, 120.55], words: ['馬祖', '南竿', '北竿', '東引', '莒光', 'Matsu'] },
+    { id: 'lud', country: 'tw', name: '綠島', color: '#2E9B57', box: [22.60, 121.46, 22.72, 121.56], words: ['綠島', 'Green Island'] },
+    { id: 'lny', country: 'tw', name: '蘭嶼', color: '#7A62C4', box: [21.98, 121.48, 22.12, 121.62], words: ['蘭嶼', 'Lanyu', 'Orchid Island'] }
   ];
   const COUNTRIES = [
     { id: 'jp', name: '日本' },
@@ -643,7 +647,8 @@
     tpe: [25.0330, 121.5654], txg: [24.1477, 120.6736], tnn: [22.9999, 120.2270],
     khh: [22.6273, 120.3014], hul: [23.9872, 121.6015], ttt: [22.7583, 121.1444],
     cyi: [23.4801, 120.4491], ktn: [21.9466, 120.7987], yil: [24.7021, 121.7377],
-    nto: [23.9609, 120.9719]
+    nto: [23.9609, 120.9719], kmn: [24.449, 118.376], mzu: [26.160, 119.950],
+    lud: [22.661, 121.493], lny: [22.047, 121.549]
   };
   const VIEWS = {
     jp: [[24.20, 122.90], [45.70, 145.90]],
@@ -746,23 +751,24 @@
   function cityMapMarkup(cityId, spots) {
     const geo = typeof globalThis !== 'undefined' ? globalThis.VISIT_GEO : null;
     if (!geo) return '';
-    if (cityId === 'tyo' && geo.tyo23) {
-      const pack = geo.tyo23;
+    const city = CITIES.find(c => c.id === cityId);
+    const pack = (geo.detail && geo.detail[cityId]) || (cityId === 'tyo' ? geo.tyo23 : null);
+    if (pack && pack.parts) {
       const sea = `<rect class="sea" width="100%" height="100%" fill="${pack.sea}"/>`;
       const parts = pack.parts.map(p => `<path class="vreg quiet" fill="${p.color}" d="${p.d}"/>`).join('');
-      return `<svg class="vmap vmap-detail" viewBox="${pack.view}" role="img" aria-label="東京分區地圖">${sea}${parts}${labelChips(pack.labels, {}, false)}${pinMarkup(pack.proj, spots)}</svg>`;
+      const title = cityId === 'tyo' ? '東京分區地圖' : (city ? city.name : '') + '分區地圖';
+      return `<svg class="vmap vmap-detail" viewBox="${pack.view}" role="img" aria-label="${esc(title)}">${sea}${parts}${labelChips(pack.labels, {}, false)}${pinMarkup(pack.proj, spots)}</svg>`;
     }
-    const city = CITIES.find(c => c.id === cityId);
     if (!city) return '';
-    const pack = geo[city.country];
-    const frame = pack && pack.frames && pack.frames[cityId];
-    if (pack && pack.proj && frame) {
+    const countryPack = geo[city.country];
+    const frame = countryPack && countryPack.frames && countryPack.frames[cityId];
+    if (countryPack && countryPack.proj && frame) {
       const pad = 26;
       const vb = [frame[0] - pad, frame[1] - pad, frame[2] - frame[0] + pad * 2, frame[3] - frame[1] + pad * 2];
-      const sea = `<rect class="sea" x="${vb[0]}" y="${vb[1]}" width="${vb[2]}" height="${vb[3]}" fill="${pack.sea}"/>`;
-      const parts = pack.parts.map(p => `<path class="vreg quiet" fill="${p.id === cityId ? p.color : mixHex(p.color, '#F7F9FC', 0.5)}" d="${p.d}"/>`).join('');
-      const labels = labelChips((pack.labels || []).filter(l => l.x >= vb[0] && l.x <= vb[0] + vb[2] && l.y >= vb[1] && l.y <= vb[1] + vb[3]), { [cityId]: true }, false);
-      return `<svg class="vmap vmap-detail" viewBox="${vb.map(n => Math.round(n * 10) / 10).join(' ')}" role="img" aria-label="${esc(city.name)}地圖">${sea}${parts}${labels}${pinMarkup(pack.proj, spots)}</svg>`;
+      const sea = `<rect class="sea" x="${vb[0]}" y="${vb[1]}" width="${vb[2]}" height="${vb[3]}" fill="${countryPack.sea}"/>`;
+      const parts = countryPack.parts.map(p => `<path class="vreg quiet" fill="${p.id === cityId ? p.color : mixHex(p.color, '#F7F9FC', 0.5)}" d="${p.d}"/>`).join('');
+      const labels = labelChips((countryPack.labels || []).filter(l => l.x >= vb[0] && l.x <= vb[0] + vb[2] && l.y >= vb[1] && l.y <= vb[1] + vb[3]), { [cityId]: true }, false);
+      return `<svg class="vmap vmap-detail" viewBox="${vb.map(n => Math.round(n * 10) / 10).join(' ')}" role="img" aria-label="${esc(city.name)}地圖">${sea}${parts}${labels}${pinMarkup(countryPack.proj, spots)}</svg>`;
     }
     const box = city.box;
     const proj = { s: box[0] - 0.08, w: box[1] - 0.08, n: box[2] + 0.08, e: box[3] + 0.08, x: 28, y: 36, bw: 284, bh: 320 };
@@ -778,7 +784,7 @@
     const rows = spots.length
       ? spots.map(s => `<div class="vtrip"><b>${esc(s.name)}</b></div>`).join('')
       : '<div class="vempty"><b>這座城市還沒有帶座標的景點</b><p>行程裡的景點若有位置，會標在地圖上。</p></div>';
-    const hint = id === 'tyo' ? '東京 23 區。這幾趟行程的景點會標在區上。' : '放大這個城市。有座標的景點會標出來。';
+    const hint = id === 'tyo' ? '東京 23 區。這幾趟行程的景點會標在區上。' : '放大這個地方。有座標的景點會標在圖上。';
     const layer = layerEl();
     layer.innerHTML = `<div class="achpage vmap-page"><div class="row" style="align-items:center"><button type="button" class="btn ghost sm" style="flex:0" onclick="Journey.openVisitMap('${city.country}')">返回</button><h2 style="margin:0">${esc(city.name)}</h2></div><p class="mut achhint">${hint}</p><div class="vmap-card">${cityMapMarkup(id, spots)}</div><div class="vlist"><div class="cityhead"><h3>景點</h3><span>${spots.length}</span></div>${rows}</div></div>`;
     layer.hidden = false;

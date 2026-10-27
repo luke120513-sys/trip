@@ -238,9 +238,9 @@ assert.match(page, /theme-tw/);
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v61/);
+assert.match(sw, /tripmate-v62/);
 assert.match(sw, /journey\.js/);
-assert.match(page, /v2\.18\.0/);
+assert.match(page, /v2\.19\.0/);
 assert.match(page, /openVisitMap/);
 assert.match(page, /class="vmap-entry"/);
 assert.match(page, /\.ach-q/);
@@ -298,15 +298,18 @@ assert.ok(jpPins.find(p => p.id === 'oka').lat < 28);
 const twPins = J.mapPins('tw', places);
 assert.equal(twPins.find(p => p.id === 'tpe').on, true);
 assert.equal(twPins.find(p => p.id === 'hul').on, true);
-assert.equal(twPins.length, 10);
+assert.equal(twPins.length, 14);
 assert.ok(twPins.find(p => p.id === 'tpe').lng > 121 && twPins.find(p => p.id === 'tpe').lng < 122);
 const twMap = J.visitMapMarkup('tw', places);
 assert.match(twMap, /台灣地圖/);
 assert.match(twMap, /class="vreg on" data-id="tpe"/);
 assert.match(twMap, /class="vreg on" data-id="hul"/);
 assert.match(twMap, /class="vreg" data-id="khh"/);
-['台北', '台中', '台南', '高雄', '花蓮', '台東', '嘉義', '墾丁', '宜蘭', '南投', '桃園', '新竹', '苗栗', '彰化', '雲林', '澎湖'].forEach(name => {
+['台北', '台中', '台南', '高雄', '花蓮', '台東', '嘉義', '墾丁', '宜蘭', '南投', '桃園', '新竹', '苗栗', '彰化', '雲林', '澎湖', '金門', '馬祖', '蘭嶼', '綠島'].forEach(name => {
   assert.match(twMap, new RegExp('>' + name + '<'));
+});
+['kmn', 'mzu', 'lud', 'lny'].forEach(id => {
+  assert.match(twMap, new RegExp('data-id="' + id + '"'));
 });
 assert.equal(/<text\b[^>]*>\s*<\/text>/.test(twMap), false);
 assert.equal(/<text\b[^>]*>\s*<\/text>/.test(jpMap), false);
@@ -316,6 +319,28 @@ assert.match(tokyoDetail, /東京分區地圖/);
 assert.match(tokyoDetail, /淺草寺/);
 assert.match(tokyoDetail, /澀谷十字路口/);
 assert.equal(/<text\b[^>]*>\s*<\/text>/.test(tokyoDetail), false);
+const tpeDetail = J.cityMapMarkup('tpe', [{ name: '故宮博物院', lat: 25.1023, lng: 121.5485 }]);
+assert.match(tpeDetail, /台北分區地圖/);
+['大安區', '士林區', '瑞芳區', '淡水區'].forEach(name => assert.match(tpeDetail, new RegExp(name)));
+assert.match(tpeDetail, /故宮博物院/);
+const selDetail = J.cityMapMarkup('sel', [{ name: '景福宮', lat: 37.5796, lng: 126.977 }]);
+assert.match(selDetail, /首爾分區地圖/);
+assert.match(selDetail, /鍾路區/);
+assert.match(selDetail, /景福宮/);
+const osaDetail = J.cityMapMarkup('osa', [{ name: '大阪城', lat: 34.6873, lng: 135.5262 }]);
+assert.match(osaDetail, /大阪分區地圖/);
+assert.match(osaDetail, /中央區/);
+assert.match(osaDetail, /大阪城/);
+const kinmenDetail = J.cityMapMarkup('kmn', [{ name: '莒光樓', lat: 24.433, lng: 118.318 }]);
+assert.match(kinmenDetail, /金門分區地圖/);
+assert.match(kinmenDetail, /金城鎮/);
+assert.match(kinmenDetail, /莒光樓/);
+J.CITIES.forEach(c => {
+  const svg = J.cityMapMarkup(c.id, []);
+  assert.match(svg, /<svg/, c.id);
+  assert.match(svg, /[\u4e00-\u9fff]/, c.id);
+  assert.equal(/<text\b[^>]*>\s*<\/text>/.test(svg), false, c.id);
+});
 assert.equal(J.visitMapMarkup('nope', places), '');
 assert.equal(J.mapPins('nope', places).length, 0);
 J.CITIES.forEach(c => {
@@ -354,6 +379,27 @@ assert.equal(selBy.sel.on, true);
 assert.equal(selBy.tpe.on, false);
 const taipeiStay = trip({ dest: '台北', orig: 'TPE', days: [[{ name: '故宮博物院' }]] });
 assert.equal(Object.fromEntries(J.visitedPlaces([taipeiStay]).map(p => [p.id, p])).tpe.on, true);
+const islands = trip({
+  dest: '金門',
+  days: [[{ name: '綠島朝日溫泉', lat: 22.662, lng: 121.493 }, { name: '蘭嶼', lat: 22.047, lng: 121.55 }], [{ name: '南竿' }]]
+});
+const islandBy = Object.fromEntries(J.visitedPlaces([islands]).map(p => [p.id, p]));
+assert.equal(islandBy.kmn.on, true);
+assert.equal(islandBy.lud.on, true);
+assert.equal(islandBy.lny.on, true);
+assert.equal(islandBy.mzu.on, true);
+assert.equal(islandBy.ttt.on, false);
+const onlyGreen = trip({ dest: '綠島', days: [[]] });
+const greenBy = Object.fromEntries(J.visitedPlaces([onlyGreen]).map(p => [p.id, p]));
+assert.equal(greenBy.lud.on, true);
+assert.equal(greenBy.ttt.on, false);
+const fromKinmen = trip({
+  dest: '東京', orig: 'KNH',
+  days: [[{ kind: 'flight', name: 'AE KNH→NRT', from: 'KNH', to: 'NRT', leg: 'out' }]]
+});
+const kinmenHome = Object.fromEntries(J.visitedPlaces([fromKinmen]).map(p => [p.id, p]));
+assert.equal(kinmenHome.tyo.on, true);
+assert.equal(kinmenHome.kmn.on, false);
 
 const store = {};
 globalThis.TM = {
