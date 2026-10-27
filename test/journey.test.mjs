@@ -279,9 +279,9 @@ assert.match(page, /theme-tw/);
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v72/);
+assert.match(sw, /tripmate-v73/);
 assert.match(sw, /journey\.js/);
-assert.match(page, /v2\.25\.0/);
+assert.match(page, /v2\.26\.0/);
 assert.match(page, /controllerchange/);
 assert.match(page, /發現新版本/);
 assert.match(page, /SKIP_WAITING/);
@@ -922,5 +922,53 @@ assert.match(tainanCharm, /平安符/);
 assert.equal(/御守/.test(tainanCharm), false);
 assert.match(page, /packpoke/);
 assert.match(page, /perspective:900px/);
+assert.match(page, /\.sov-poke\.sov-pass \.sov-body/);
+assert.match(page, /\.sov-poke\.sov-stamp \.sov-body/);
+assert.match(page, /\.sov-poke\.sov-charm \.sov-body/);
+assert.match(page, /\.sov-poke\.sov-plaque \.sov-body/);
+assert.match(page, /\.sov-poke\.sov-badge \.sov-body/);
+assert.match(page, /\.sov-poke\.sov-card \.sov-body/);
+assert.match(page, /\.sov-poke\.sov-pack \.sov-body/);
+assert.match(page, /cardlift/);
+assert.match(page, /\.sovset-charm\.is-done \.omibox i/);
+const rigid = J.souvenirMarkup(trip({
+  dest: '東京', souvenir: 'pack', sovLook: 1,
+  days: [[{ name: '淺草寺', icon: 'sightseeing', visited: true }]]
+}), [], { size: 'lg', look: 1 });
+assert.match(rigid, /晴空塔/);
+assert.match(rigid, /東京/);
+assert.match(rigid, /淺草寺/);
+assert.equal(/class="rigid-card">旅伴/.test(rigid), false);
+assert.equal(/rigid-card">旅伴</.test(rigid), false);
+const emaSet = J.recapMarkup(J.memoryOf(trip({ dest: '東京', souvenir: 'plaque' }), []), {}, 'x');
+const pen = /<svg class="emapen"[\s\S]*?<\/svg>/.exec(emaSet);
+const board = /<svg class="emaboard"[\s\S]*?<\/svg>/.exec(emaSet);
+assert.ok(pen && board);
+assert.notEqual(pen[0], board[0]);
+assert.match(pen[0], /L112 78/);
+assert.match(board[0], /<rect /);
+assert.equal(/<rect /.test(pen[0].split('<clipPath')[0]), false);
+const kinds = [
+  ['pack', 'face-pack'],
+  ['pass', 'face-pass'],
+  ['card', 'face-post'],
+  ['stamp', 'face-page'],
+  ['charm', 'face-slip'],
+  ['badge', 'face-medal'],
+  ['plaque', 'face-wood']
+];
+kinds.forEach(([kind, face]) => {
+  const html = J.recapMarkup(J.memoryOf(trip({
+    dest: '東京', souvenir: kind,
+    days: [[{ name: '淺草寺', icon: 'sightseeing', visited: true }]]
+  }), []), {}, 'x');
+  assert.match(html, new RegExp(face), kind);
+  assert.match(html, /drawcard/, kind);
+  assert.equal(/class="drawcard"[^>]*>\s*<span class="drawk"/.test(html), false, kind);
+});
+const charmDraw = J.recapMarkup(J.memoryOf(trip({ dest: '京都', souvenir: 'charm' }), []), {}, 'x');
+assert.match(charmDraw, /face-slip/);
+assert.match(charmDraw, /slip-head/);
+assert.equal(/face-pack|face-post|face-pass/.test(charmDraw), false);
 
 console.log('journey tests ok');

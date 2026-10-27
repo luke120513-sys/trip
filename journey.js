@@ -400,7 +400,8 @@
       : '<span class="bp-route"><span class="bp-end"><b>' + esc(mem.dest) + '</b></span></span>';
     const b = motifBits(mem);
     const chip = b.known ? '<span class="bp-land">' + esc(b.city) + ' · ' + esc(b.land) + '</span>' : '';
-    return '<span class="bp"><span class="bp-top"><span>旅伴</span><b>登機證</b></span>' + route + '<span class="bp-meta">' + meta.map(x => '<span>' + esc(x) + '</span>').join('') + '</span>' + chip + back + '<span class="bp-bar" aria-hidden="true"></span></span>';
+    const art = b.known ? '<span class="bp-art">' + sceneSvg(b.scene) + '<small>' + esc(b.land) + '</small></span>' : '';
+    return '<span class="bp"><span class="bp-top"><span>旅伴</span><b>登機證</b></span>' + route + '<span class="bp-meta">' + meta.map(x => '<span>' + esc(x) + '</span>').join('') + '</span>' + art + chip + back + '<span class="bp-bar" aria-hidden="true"></span></span>';
   }
   function cardHtml(mem) {
     const faceWhen = (mem.when || '').split(' · ')[0] || '這幾天';
@@ -598,7 +599,7 @@
     const arc = m.known ? m.land : '到此一遊';
     const flowerY = mem.year ? 148 : 158;
     const year = mem.year ? '<text x="100" y="170" text-anchor="middle" fill="#c17a6e" font-size="11" font-weight="700" letter-spacing="1">' + esc(mem.year) + '</text>' : '';
-    return '<span class="sealcard papercard"><svg class="sealart" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet" aria-hidden="true" style="color:#c17a6e"><circle cx="100" cy="100" r="92" fill="none" stroke="#c17a6e" stroke-width="1.15"/><circle cx="100" cy="100" r="84" fill="none" stroke="#c17a6e" stroke-width="2.1" stroke-dasharray="1.15 3.3" stroke-linecap="round"/>' + arcText(arc) + '<g transform="translate(100,65.28) scale(.54) translate(-32,-32)">' + markIcon(m.mark || 'pin') + '</g><text x="100" y="' + lay.y + '" text-anchor="middle" fill="#a85a4c" font-size="' + lay.size + '" font-weight="800" letter-spacing="' + lay.spacing + '">' + esc(mem.dest || '') + '</text><g transform="translate(100 ' + flowerY + ')">' + sealFlower(m.country) + '</g>' + year + '</svg><span class="paper-foot seal-foot"><svg viewBox="0 0 12 14" width="11" height="13" aria-hidden="true"><path d="M6 1.2C3.8 1.2 2.3 3 2.3 5c0 2.6 3.7 7.2 3.7 7.2S9.7 7.6 9.7 5C9.7 3 8.2 1.2 6 1.2z" fill="none" stroke="currentColor" stroke-width="1.1"/><circle cx="6" cy="5" r="1.15" fill="currentColor"/></svg><span>地標印章</span></span></span>';
+    return '<span class="sealcard papercard"><svg class="sealart" viewBox="0 0 200 200" preserveAspectRatio="xMidYMid meet" aria-hidden="true" style="color:#c17a6e"><circle cx="100" cy="100" r="92" fill="#fff8f6" stroke="#c17a6e" stroke-width="1.15"/><circle cx="100" cy="100" r="84" fill="none" stroke="#c17a6e" stroke-width="2.1" stroke-dasharray="1.15 3.3" stroke-linecap="round"/><ellipse cx="46" cy="58" rx="16" ry="6" fill="#f6d5d2"/><ellipse cx="154" cy="62" rx="14" ry="5" fill="#f6d5d2"/><circle cx="38" cy="150" r="3.2" fill="#e7a0b0"/><circle cx="46" cy="146" r="2.4" fill="#e7a0b0"/><circle cx="162" cy="148" r="3" fill="#e7a0b0"/>' + arcText(arc) + '<g transform="translate(100,65.28) scale(.54) translate(-32,-32)">' + markIcon(m.mark || 'pin') + '</g><text x="100" y="' + lay.y + '" text-anchor="middle" fill="#a85a4c" font-size="' + lay.size + '" font-weight="800" letter-spacing="' + lay.spacing + '">' + esc(mem.dest || '') + '</text><g transform="translate(100 ' + flowerY + ')">' + sealFlower(m.country) + '</g>' + year + '</svg><span class="paper-foot seal-foot"><svg viewBox="0 0 12 14" width="11" height="13" aria-hidden="true"><path d="M6 1.2C3.8 1.2 2.3 3 2.3 5c0 2.6 3.7 7.2 3.7 7.2S9.7 7.6 9.7 5C9.7 3 8.2 1.2 6 1.2z" fill="none" stroke="currentColor" stroke-width="1.1"/><circle cx="6" cy="5" r="1.15" fill="currentColor"/></svg><span>地標印章</span></span></span>';
   }
   function cityPlate(city, stroke, fill) {
     const chars = Array.from(String(city || ''));
@@ -619,28 +620,34 @@
     const strands = [-14, -7, 0, 7, 14].map(dx => '<path d="M70 ' + (top + 9) + ' L' + (70 + dx) + ' ' + (top + 40 - Math.abs(dx) * 0.25) + '" stroke="' + color + '" stroke-width="1.35" stroke-linecap="round"/>').join('');
     return '<path d="M63 ' + top + ' h14 v9 h-14 z" fill="' + color + '"/>' + strands;
   }
+  function sideTassel(x, top, color) {
+    const strands = [-5, 0, 5].map(dx => '<path d="M' + x + ' ' + (top + 7) + ' L' + (x + dx) + ' ' + (top + 26) + '" stroke="' + color + '" stroke-width="1.25" stroke-linecap="round"/>').join('');
+    return '<path d="M' + (x - 5) + ' ' + top + ' h10 v7 h-10 z" fill="' + color + '"/>' + strands;
+  }
   function charmSvg(mem) {
     const country = (mem.motif && mem.motif.country) || '';
     const voice = mem.voice || VOICE.plain;
     const city = mem.dest || '';
     const gold = '#e6c98a';
     let body = '';
+    const motifMark = '<g transform="translate(48,86) scale(.5)" style="color:' + gold + '">' + markIcon((mem.motif && mem.motif.mark) || 'pin') + '</g>';
+    const sideBloom = '<g fill="#f6c1cc"><circle cx="40" cy="78" r="2.2"/><circle cx="44" cy="81" r="2.2"/><circle cx="37" cy="82" r="2"/><circle cx="100" cy="76" r="2.2"/><circle cx="104" cy="80" r="2"/><circle cx="97" cy="81" r="2.1"/></g>';
     if (country === 'jp') {
       body = cordLoop('#b4332a') +
         '<circle cx="70" cy="48" r="5" fill="#e6c56a"/><circle cx="70" cy="54" r="1.5" fill="#e6c56a"/>' +
         '<path d="M34 68 L70 50 L106 68 V162 H34 Z" fill="#c43737" stroke="' + gold + '" stroke-width="2"/>' +
-        '<path d="M40 78 q6 -6 12 0 q6 -6 12 0" fill="none" stroke="' + gold + '" stroke-width="1.4"/>' +
-        '<path d="M86 74 q5 -5 10 0 q5 -5 10 0" fill="none" stroke="' + gold + '" stroke-width="1.3"/>' +
-        '<g fill="none" stroke="' + gold + '" stroke-width="2" stroke-linecap="round"><path d="M50 84 h40"/><path d="M54 80 h32"/><path d="M54 92 h32"/><path d="M60 92 v26 M80 92 v26"/></g>' +
-        vertWord(voice.word, 70, 108, '#f6e6c0', 13) +
+        '<path d="M42 86 h56 v46 H42 Z" fill="#a82e2e" stroke="' + gold + '" stroke-width="1.2"/>' +
+        sideBloom + motifMark +
         cityPlate(city, gold, 'none') +
-        tassel('#f7f4ee', 158);
+        sideTassel(24, 92, '#e6c56a') + sideTassel(116, 92, '#e6c56a') +
+        tassel('#e6c56a', 158);
     } else if (country === 'tw') {
       body = cordLoop('#a63b34') +
         '<path d="M34 82 h72 v80 H34 Z" fill="#a63b34" stroke="' + gold + '" stroke-width="2"/>' +
         '<path d="M34 82 L70 64 L106 82" fill="#8d312c" stroke="' + gold + '" stroke-width="2"/>' +
         '<g fill="#e7a0b0"><circle cx="96" cy="78" r="2.3"/><circle cx="100.2" cy="81.2" r="2.3"/><circle cx="98" cy="85.2" r="2.3"/><circle cx="93.8" cy="85.2" r="2.3"/><circle cx="91.6" cy="81.2" r="2.3"/><circle cx="96" cy="82" r="1.3" fill="#e6c56a"/></g>' +
-        vertWord(voice.word, 70, 112, '#f6e6c0', 16) +
+        motifMark +
+        vertWord(voice.word, 70, 118, '#f6e6c0', 13) +
         cityPlate(city, gold, 'none') +
         tassel('#f3ead8', 158);
     } else if (country === 'kr') {
@@ -649,7 +656,8 @@
         '<circle cx="70" cy="36" r="2.2" fill="' + gold + '"/>' +
         '<rect x="34" y="68" width="72" height="96" rx="18" fill="#8e2438" stroke="' + gold + '" stroke-width="2"/>' +
         '<circle cx="70" cy="86" r="7" fill="#f4efe6"/><path d="M70 79 a7 7 0 0 1 0 14 a3.5 3.5 0 0 1 0-7 a3.5 3.5 0 0 0 0-7" fill="#8e2438"/><circle cx="70" cy="82.5" r="1.3" fill="#8e2438"/><circle cx="70" cy="89.5" r="1.3" fill="#f4efe6"/>' +
-        vertWord(voice.word, 70, 108, '#f6e6c0', 14) +
+        motifMark +
+        vertWord(voice.word, 70, 116, '#f6e6c0', 12) +
         cityPlate(city, gold, 'none') +
         tassel('#f7f4ee', 160);
     } else {
@@ -805,30 +813,32 @@
     const meta = passMetaLine(mem);
     const route = passRoute(mem);
     const metaHtml = '<span class="bp-meta">' + meta.map(x => '<span>' + esc(x) + '</span>').join('') + '</span>';
+    const scene = sceneSvg(b.scene);
     if (look === 1) {
-      return '<span class="foldpass"><span class="fold-left"><span class="bp-top"><span>旅伴</span><b>登機證</b></span>' + route + metaHtml + barcodeSvg(mem.no || b.city) + '</span><span class="fold-right">' + sceneSvg(b.scene) + '<b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span></span>';
+      return '<span class="foldpass"><span class="fold-left"><span class="bp-top"><span>旅伴</span><b>登機證</b></span>' + route + metaHtml + '<span class="bp-land">' + esc(b.city) + ' · ' + esc(b.land) + '</span>' + barcodeSvg(mem.no || b.city) + '<span class="fold-chip">ONE-WAY</span></span><span class="fold-right">' + scene + '<b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small><em>' + esc(b.en) + '</em></span></span>';
     }
     if (look === 2) {
-      return '<span class="phone"><span class="phone-top"><b>旅伴</b><span>電子登機證</span></span><span class="phone-city"><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span>' + route + metaHtml + '<span class="phone-qr">' + qrSvg(b.city + (mem.no || '')) + '</span><span class="phone-tip">請於起飛前完成登機</span></span>';
+      return '<span class="phone"><span class="phone-notch" aria-hidden="true"></span><span class="phone-top"><b>09:41</b><span>電子登機證</span></span><span class="phone-city"><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span>' + route + metaHtml + '<span class="phone-qr">' + qrSvg(b.city + (mem.no || '')) + '</span><span class="phone-tip">請於起飛前 40 分鐘完成登機</span></span>';
     }
     if (look === 3) {
-      return '<span class="booklet"><span class="book-cover"><b>旅伴</b><span>我的旅行日記</span><small>收集每一段旅程</small><i></i></span><span class="book-card"><b>' + esc(b.city) + '旅程</b>' + route + sceneSvg(b.scene) + '<small>' + esc(b.land) + '</small></span></span>';
+      return '<span class="booklet"><span class="book-cover"><span class="book-plane" aria-hidden="true"></span><b>旅伴</b><span>我的旅行日記</span><small>收集每一段旅程</small><i></i></span><span class="book-pocket"><span class="book-card"><b>' + esc(b.city) + '旅程</b>' + route + scene + '<small>' + esc(b.land) + '</small></span><span class="book-dots" aria-hidden="true"><i></i><i></i><i></i></span></span></span>';
     }
-    return '<span class="sleeve"><span class="sleeve-hole" aria-hidden="true"></span><span class="sleeve-card">' + route + sceneSvg(b.scene) + '<b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small><em>紀念票卡</em></span></span>';
+    return '<span class="sleeve"><span class="sleeve-hole" aria-hidden="true"></span><span class="sleeve-card">' + route + scene + '<b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small><em>紀念票卡' + (b.en ? ' · ' + esc(b.en) : '') + '</em></span></span>';
   }
   function stampLook(mem, look) {
     const b = motifBits(mem);
     const ink = '#c4473c';
+    const mark = markIcon(b.mark);
     if (look === 1) {
-      return '<span class="sqseal"><svg viewBox="0 0 200 200" aria-hidden="true"><rect x="16" y="16" width="168" height="168" fill="none" stroke="' + ink + '" stroke-width="7"/><rect x="28" y="28" width="144" height="144" fill="none" stroke="' + ink + '" stroke-width="2"/><g transform="translate(68,40) scale(.9)" style="color:' + ink + '">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 100, 128, 28, ink) + '<text x="100" y="156" text-anchor="middle" fill="' + ink + '" font-size="13" font-weight="700">' + esc(b.land) + '</text></svg></span>';
+      return '<span class="sqseal"><svg viewBox="0 0 220 220" aria-hidden="true"><rect x="8" y="8" width="204" height="204" fill="#fff7f4"/><rect x="14" y="14" width="192" height="192" fill="none" stroke="' + ink + '" stroke-width="8"/><rect x="28" y="28" width="164" height="164" fill="none" stroke="' + ink + '" stroke-width="2"/><g transform="translate(36,48) scale(1.35)" style="color:' + ink + '">' + mark + '</g>' + cityLine(b.city, 168, 86, 22, ink) + '<text x="110" y="196" text-anchor="middle" fill="' + ink + '" font-size="13" font-weight="700">' + esc(b.land) + '</text><circle cx="40" cy="180" r="4" fill="' + ink + '"/><circle cx="50" cy="174" r="3" fill="' + ink + '"/></svg></span>';
     }
     if (look === 2) {
-      return '<span class="passpage"><span class="passpage-top"><b>旅伴</b><span>TripMate</span></span><span class="mini-seal" style="color:' + ink + '">' + markSvg(b.mark, ink) + '<b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span><span class="passpage-note">這趟的地標印記</span></span>';
+      return '<span class="passpage"><span class="passpage-top"><b>旅伴 TripMate</b><span>護照</span></span><span class="pass-seals"><span class="mini-seal" style="color:' + ink + '">' + markSvg(b.mark, ink) + '<b>' + esc(b.city) + '</b></span><span class="mini-seal seal-b" style="color:#2a6f9a">' + markSvg(b.mark, '#2a6f9a') + '<small>' + esc(b.land) + '</small></span><span class="mini-seal seal-c" style="color:#3e6b4a">' + dishSvg(b.dish) + '<small>' + esc(b.food) + '</small></span></span><span class="passpage-note">收集地標印記 · ' + esc(b.land) + '</span></span>';
     }
     if (look === 3) {
-      return '<span class="inkset"><span class="ink-wood"><span class="ink-pad" aria-hidden="true"></span><span class="ink-tool"><i></i><span>' + markSvg(b.mark, '#6b4630') + '</span></span></span><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span>';
+      return '<span class="inkset"><span class="ink-wood"><span class="ink-latch" aria-hidden="true"></span><span class="ink-pad" aria-hidden="true"></span><span class="ink-tool"><i></i><span>' + markSvg(b.mark, '#6b4630') + '</span></span></span><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span>';
     }
-    return '<span class="foilseal"><svg viewBox="0 0 200 200" aria-hidden="true"><path d="M18 36 V18 H36 M164 18 H182 V36 M18 164 V182 H36 M164 182 H182 V164" fill="none" stroke="#c6a15a" stroke-width="2"/><g transform="translate(68,36) scale(.95)" style="color:#b0893e">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 100, 132, 28, '#8a6a32') + '<text x="100" y="162" text-anchor="middle" fill="#b0893e" font-size="13" font-weight="700">' + esc(b.land) + '</text></svg></span>';
+    return '<span class="foilseal"><svg viewBox="0 0 220 240" aria-hidden="true"><rect width="220" height="240" rx="16" fill="#f8efd4"/><rect x="10" y="10" width="200" height="220" rx="12" fill="none" stroke="#c6a15a" stroke-width="1.4"/><path d="M22 36 V18 H40 M180 18 H198 V36 M22 204 V222 H40 M180 222 H198 V204" fill="none" stroke="#b0893e" stroke-width="2"/><ellipse cx="48" cy="48" rx="16" ry="6" fill="#fff"/><ellipse cx="170" cy="44" rx="14" ry="5" fill="#fff"/><g transform="translate(78,52) scale(1.05)" style="color:#b0893e">' + mark + '</g>' + cityLine(b.city, 110, 156, 28, '#8a6a32') + '<text x="110" y="182" text-anchor="middle" fill="#b0893e" font-size="13" font-weight="700">' + esc(b.land) + '</text><circle cx="46" cy="200" r="4" fill="#e7b7c0"/><circle cx="174" cy="196" r="3.4" fill="#e7b7c0"/></svg></span>';
   }
   function charmArt(mem) {
     return '<svg class="charmart" viewBox="0 0 140 214" preserveAspectRatio="xMidYMid meet" aria-hidden="true">' + charmSvg(mem) + '</svg>';
@@ -839,17 +849,21 @@
     const ink = inkOf(mem);
     const cap = '<span class="paper-extra charm-cap">' + esc(voice.charm) + '</span>';
     if (look === 1) {
-      return '<span class="envcard"><svg viewBox="0 0 240 168" aria-hidden="true"><rect x="14" y="28" width="212" height="124" rx="10" fill="' + ink.soft + '" stroke="' + ink.line + '" stroke-width="2"/><path d="M14 36 L120 104 L226 36" fill="#fffdf8" stroke="' + ink.line + '" stroke-width="2"/><circle cx="120" cy="78" r="16" fill="' + ink.gold + '" stroke="' + ink.deep + '" stroke-width="2"/><g transform="translate(104,62) scale(.42)" style="color:' + ink.deep + '">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 120, 132, 22, ink.deep) + '<text x="120" y="148" text-anchor="middle" fill="' + ink.line + '" font-size="11" font-weight="800" letter-spacing="1">' + esc(b.land) + '</text></svg>' + cap + '</span>';
+      return '<span class="envcard"><svg viewBox="0 0 260 188" aria-hidden="true"><rect x="16" y="40" width="228" height="132" rx="12" fill="' + ink.soft + '" stroke="' + ink.line + '" stroke-width="2"/><path d="M16 50 L130 118 L244 50 V40 H16 Z" fill="#f7f1e6" stroke="' + ink.line + '" stroke-width="2"/><path d="M28 168 L130 108 L232 168" fill="none" stroke="' + ink.line + '" stroke-width="1.2"/><g transform="translate(28,78) scale(.55)" style="color:' + ink.deep + '">' + markIcon(b.mark) + '</g><circle cx="130" cy="86" r="18" fill="' + ink.gold + '" stroke="' + ink.deep + '" stroke-width="2"/><circle cx="130" cy="80" r="3.2" fill="' + ink.deep + '"/><circle cx="136" cy="86" r="3.2" fill="' + ink.deep + '"/><circle cx="124" cy="86" r="3.2" fill="' + ink.deep + '"/><circle cx="128" cy="93" r="3" fill="' + ink.deep + '"/><circle cx="134" cy="92" r="3" fill="' + ink.deep + '"/><circle cx="130" cy="86" r="2.2" fill="#fff6d8"/>' + cityLine(b.city, 188, 132, 20, ink.deep) + '<text x="188" y="150" text-anchor="middle" fill="' + ink.line + '" font-size="11" font-weight="800">' + esc(b.land) + '</text></svg>' + cap + '</span>';
     }
     if (look === 2) {
       const rackName = b.country === 'jp' ? '神社掛排' : '木架掛排';
-      return '<span class="rackcard"><span class="rack-bar" aria-hidden="true"></span><span class="rack-hook">' + charmArt(mem) + '<b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span><span class="paper-extra">' + esc(rackName) + '・' + esc(voice.charm) + '</span></span>';
+      const labels = [b.city, b.land, (mem.spots && mem.spots[0]) || b.food];
+      const hooks = labels.map(function (lab, i) {
+        return '<span class="rack-hook rack-' + i + '">' + charmArt(mem) + '<b>' + esc(lab) + '</b></span>';
+      }).join('');
+      return '<span class="rackcard"><span class="rack-bar" aria-hidden="true"></span><span class="rack-row">' + hooks + '</span><span class="paper-extra">' + esc(rackName) + '・' + esc(voice.charm) + '・' + esc(b.land) + '</span></span>';
     }
     if (look === 3) {
-      return '<span class="showcard"><span class="show-hole" aria-hidden="true"></span><span class="show-row"><span class="show-bubble">' + charmArt(mem) + '</span><span class="show-side">' + sceneSvg(b.scene) + '<b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span></span><span class="show-foot">✿ ' + esc(voice.charm) + ' · 旅伴</span></span>';
+      return '<span class="showcard"><span class="show-hole" aria-hidden="true"></span><span class="show-row"><span class="show-bubble">' + charmArt(mem) + '</span><span class="show-side">' + sceneSvg(b.scene) + '<b>' + esc(b.city) + '</b><small>' + esc(b.en) + '</small><em>' + esc(b.land) + '</em></span></span><span class="show-foot">✿ ' + esc(voice.charm) + ' · ' + esc(b.land) + '</span></span>';
     }
     if (b.country === 'tw') {
-      return '<span class="fancard"><svg viewBox="0 0 220 196" aria-hidden="true"><path d="M28 86 Q36 34 110 26 Q184 34 192 86 Q206 124 168 142 H52 Q14 124 28 86 Z" fill="#c4473c"/><path d="M46 90 Q58 52 110 46 Q162 52 174 90 Q184 116 156 130 H64 Q36 116 46 90 Z" fill="#b4332a"/><path d="M78 58 q8 6 0 12 M110 48 q8 8 0 14 M142 58 q8 6 0 12" fill="none" stroke="' + ink.gold + '" stroke-width="2"/><g transform="translate(86,70) scale(.7)" style="color:' + ink.gold + '">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 110, 132, 26, '#fff6e4') + '<text x="110" y="150" text-anchor="middle" fill="' + ink.gold + '" font-size="11" font-weight="800">' + esc(b.land) + '</text><path d="M110 142 v18" stroke="' + ink.gold + '" stroke-width="2"/><path d="M100 168 h20 l-4 16 h-12 z" fill="' + ink.gold + '"/></svg><span class="paper-extra">' + esc(voice.charm) + '・' + esc(b.land) + '</span></span>';
+      return '<span class="fancard"><svg viewBox="0 0 220 200" aria-hidden="true"><ellipse cx="40" cy="28" rx="18" ry="7" fill="#f6e2b0"/><ellipse cx="168" cy="24" rx="16" ry="6" fill="#fff"/><path d="M28 86 Q36 34 110 26 Q184 34 192 86 Q206 124 168 142 H52 Q14 124 28 86 Z" fill="#c4473c"/><path d="M46 90 Q58 52 110 46 Q162 52 174 90 Q184 116 156 130 H64 Q36 116 46 90 Z" fill="#b4332a"/><path d="M70 62 q10 8 0 14 M110 50 q12 10 0 16 M150 62 q10 8 0 14" fill="none" stroke="' + ink.gold + '" stroke-width="2"/><g transform="translate(86,68) scale(.72)" style="color:' + ink.gold + '">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 110, 128, 24, '#fff6e4') + '<text x="110" y="146" text-anchor="middle" fill="' + ink.gold + '" font-size="11" font-weight="800">' + esc(b.land) + '</text><path d="M110 150 v14" stroke="' + ink.gold + '" stroke-width="2"/><path d="M98 168 h24 l-5 16 h-14 z" fill="' + ink.gold + '"/><circle cx="110" cy="164" r="3" fill="#b4332a"/></svg><span class="paper-extra">' + esc(voice.charm) + '・' + esc(b.land) + '</span></span>';
     }
     if (b.country === 'kr') {
       return '<span class="kcharm"><svg viewBox="0 0 160 210" aria-hidden="true"><rect x="28" y="16" width="104" height="160" rx="8" fill="#fbf6ee" stroke="' + ink.main + '" stroke-width="3"/><circle cx="80" cy="52" r="16" fill="#f4efe6"/><path d="M80 36 a16 16 0 0 1 0 32 a8 8 0 0 1 0-16 a8 8 0 0 0 0-16" fill="' + ink.main + '"/><circle cx="80" cy="46" r="2.2" fill="' + ink.main + '"/><circle cx="80" cy="58" r="2.2" fill="#f4efe6"/>' + cityLine(b.city, 80, 100, 22, ink.deep) + '<text x="80" y="124" text-anchor="middle" fill="' + ink.main + '" font-size="13" font-weight="800">' + esc(voice.word) + '</text><text x="80" y="146" text-anchor="middle" fill="#8a7564" font-size="12" font-weight="700">' + esc(b.land) + '</text><path d="M80 176 v16" stroke="' + ink.main + '" stroke-width="2"/><path d="M68 196 h24 l-6 10 h-12 z" fill="' + ink.main + '"/></svg>' + cap + '</span>';
@@ -862,36 +876,44 @@
   function cardLook(mem, look) {
     const b = motifBits(mem);
     const ink = inkOf(mem);
+    const scene = sceneSvg(b.scene);
     if (look === 1) {
-      return '<span class="foilpost"><svg viewBox="0 0 240 168" aria-hidden="true"><rect width="240" height="168" rx="16" fill="#fbf6ee"/><g transform="translate(88,18) scale(1)" style="color:#b0893e">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 120, 108, 26, '#8a6a32') + '<text x="120" y="132" text-anchor="middle" fill="#b0893e" font-size="13" font-weight="700">' + esc(b.land) + '</text><text x="120" y="152" text-anchor="middle" fill="#c6a15a" font-size="11" font-weight="800" letter-spacing="1">' + esc(b.en) + '</text></svg></span>';
+      return '<span class="foilpost"><svg viewBox="0 0 260 180" aria-hidden="true"><rect width="260" height="180" rx="16" fill="#f8efd4"/><rect x="8" y="8" width="244" height="164" rx="12" fill="#fbf6ee" stroke="#e0c48a" stroke-width="1.4"/><ellipse cx="40" cy="36" rx="18" ry="7" fill="#f3e0b0"/><ellipse cx="210" cy="32" rx="16" ry="6" fill="#f3e0b0"/><circle cx="200" cy="28" r="10" fill="#f0d48a"/><g transform="translate(98,16) scale(.9)" style="color:#b0893e">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 130, 112, 26, '#8a6a32') + '<text x="130" y="136" text-anchor="middle" fill="#b0893e" font-size="13" font-weight="700">' + esc(b.land) + '</text><text x="130" y="156" text-anchor="middle" fill="#c6a15a" font-size="11" font-weight="800" letter-spacing="1">' + esc(b.en) + '</text></svg></span>';
     }
     if (look === 2) {
-      return '<span class="scratchcard"><b>' + esc(b.city) + '</b><span class="scratch-win">' + sceneSvg(b.scene) + '<span class="scratch-flake">刮開看看</span></span><small>' + esc(b.land) + '</small></span>';
+      return '<span class="scratchcard"><b>' + esc(b.city) + '</b><span class="scratch-win">' + scene + '<span class="scratch-flake"><i>刮開看看</i></span></span><small>' + esc(b.land) + '</small></span>';
     }
     if (look === 3) {
-      return '<span class="popupcard"><span class="pop-side"></span><span class="pop-mid">' + markSvg(b.mark, ink.main) + '<b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span><span class="pop-side"></span></span>';
+      return '<span class="popupcard"><span class="pop-side">' + scene + '</span><span class="pop-mid">' + markSvg(b.mark, ink.main) + '<b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span><span class="pop-side">' + scene + '</span></span>';
     }
-    return '<span class="framecard"><span class="frame-wood"><span class="frame-inner">' + sceneSvg(b.scene) + '</span><i aria-hidden="true"></i></span><span class="frame-stand" aria-hidden="true"></span><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span>';
+    return '<span class="framecard"><span class="frame-wood"><span class="frame-inner">' + scene + '</span><i aria-hidden="true"></i></span><span class="frame-stand" aria-hidden="true"></span><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span>';
   }
   function badgeLook(mem, look) {
     const b = motifBits(mem);
     const ink = inkOf(mem);
     if (look === 1) {
-      return '<span class="shieldbadge"><svg viewBox="0 0 180 200" aria-hidden="true"><path d="M90 12 L156 36 V96 C156 140 126 170 90 188 C54 170 24 140 24 96 V36 Z" fill="' + (b.country === 'kr' ? '#1f6b45' : '#2f6a4a') + '"/><path d="M90 28 L140 46 V96 C140 128 116 152 90 168 C64 152 40 128 40 96 V46 Z" fill="#f4efe4"/><g transform="translate(58,52) scale(.95)" style="color:' + ink.deep + '">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 90, 148, 18, '#1c140f') + '<text x="90" y="168" text-anchor="middle" fill="' + ink.line + '" font-size="11" font-weight="800">' + esc(b.land) + '</text></svg><small class="paper-extra">' + esc(b.land) + '</small></span>';
+      const felt = b.country === 'kr' ? '#1f6b45' : '#2f6a4a';
+      return '<span class="shieldbadge"><svg viewBox="0 0 180 210" aria-hidden="true"><path d="M90 8 L158 34 V100 C158 148 124 176 90 196 C56 176 22 148 22 100 V34 Z" fill="' + felt + '"/><path d="M90 24 L142 44 V100 C142 136 116 160 90 176 C64 160 38 136 38 100 V44 Z" fill="#f4efe4"/><path d="M40 70 q20 -16 40 0" fill="none" stroke="' + felt + '" stroke-width="2"/><path d="M24 150 q30 16 66 0" fill="none" stroke="#7eb0d4" stroke-width="3"/><g transform="translate(58,58) scale(.95)" style="color:' + ink.deep + '">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 90, 150, 18, '#1c140f') + '<text x="90" y="170" text-anchor="middle" fill="' + ink.line + '" font-size="11" font-weight="800">' + esc(b.land) + '</text><circle cx="48" cy="48" r="3" fill="#f3c1cb"/><circle cx="132" cy="52" r="2.6" fill="#f3c1cb"/></svg><small class="paper-extra">' + esc(b.city) + ' · ' + esc(b.land) + '</small></span>';
     }
     if (look === 2) {
       return '<span class="hexbadge"><span class="hex-shell"><span class="hex-face">' + sceneSvg(b.scene) + '<span class="hex-dish">' + dishSvg(b.dish) + '</span><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span></span></span>';
     }
     if (look === 3) {
-      return '<span class="pinboard"><span class="pin-oval">' + markSvg(b.mark, ink.main) + '<b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span><span class="paper-extra">別針收藏・' + esc(b.food) + '</span></span>';
+      const pins = [[b.city, ink.main, b.land], [b.land, '#2a6f9a', b.city], [b.food, '#c45b73', b.city], [(mem.spots && mem.spots[0]) || b.en || b.food, '#3e6b4a', b.land]];
+      return '<span class="pinboard">' + pins.map(function (p) {
+        return '<span class="pin-oval" style="color:' + p[1] + '">' + markSvg(b.mark, p[1]) + '<b>' + esc(p[0]) + '</b></span>';
+      }).join('') + '<span class="paper-extra">別針收藏・' + esc(b.food) + '・' + esc(b.land) + '</span></span>';
     }
-    return '<span class="tinbadge"><span class="tin-lid">' + dishSvg(b.dish) + '<b>' + esc(b.city) + '</b><small>' + esc(b.food) + '</small></span><span class="tin-side">' + esc(b.land) + '</span></span>';
+    return '<span class="tinbadge"><span class="tin-row"><span class="tin-lid tin-open">' + dishSvg(b.dish) + '</span><span class="tin-lid">' + dishSvg(b.dish) + '<b>' + esc(b.city) + '</b><small>' + esc(b.food) + '</small></span></span><span class="tin-leaf" aria-hidden="true"></span><span class="tin-side">' + esc(b.land) + ' · ' + esc(b.food) + '</span></span>';
   }
   function plaqueSmall(mem) {
     const b = motifBits(mem);
     const voice = mem.voice || VOICE.plain;
     const land = b.known ? '<text x="100" y="176" text-anchor="middle" fill="#8a5a3c" font-size="12" font-weight="700">' + esc(b.land) + '</text>' : '';
-    return '<span class="emacard papercard"><svg class="emaart" viewBox="0 0 200 228" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path class="ema-cord" d="M100 6 C116 16 122 30 100 38 C78 30 84 16 100 6" fill="none" stroke="#b4332a" stroke-width="3" stroke-linecap="round"/><circle cx="100" cy="20" r="4.2" fill="none" stroke="#b4332a" stroke-width="2"/><path d="M100 40 L178 96 L154 200 L46 200 L22 96 Z" fill="#e7c99a" stroke="#c4a36e" stroke-width="2"/><path d="M100 54 L164 102 L146 188 L54 188 L36 102 Z" fill="#f3e0c4"/>' + plaqueName(mem.dest) + land + '</svg><span class="paper-foot ema-foot"><span class="ema-pill">' + esc(voice.plaque) + '</span></span></span>';
+    const clip = sovId('penta');
+    const scene = SCENE[b.scene] || SCENE.hills;
+    const art = '<clipPath id="' + clip + '"><path d="M64 128 L136 148 L128 188 L72 188 Z"/></clipPath><g clip-path="url(#' + clip + ')"><g transform="translate(52,120) scale(.62)">' + scene + '</g></g>';
+    return '<span class="emacard papercard"><svg class="emaart ema-pent" viewBox="0 0 200 228" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path class="ema-cord" d="M100 6 C116 16 122 30 100 38 C78 30 84 16 100 6" fill="none" stroke="#b4332a" stroke-width="3" stroke-linecap="round"/><circle cx="100" cy="20" r="4.2" fill="none" stroke="#b4332a" stroke-width="2"/><path d="M100 40 L178 96 L154 200 L46 200 L22 96 Z" fill="#e7c99a" stroke="#c4a36e" stroke-width="2"/><path d="M100 54 L164 102 L146 188 L54 188 L36 102 Z" fill="#f3e0c4"/>' + art + plaqueName(mem.dest) + land + '<circle cx="48" cy="118" r="3.2" fill="#f3c1cb"/><circle cx="156" cy="116" r="2.8" fill="#f3c1cb"/></svg><span class="paper-foot ema-foot"><span class="ema-pill">' + esc(voice.plaque) + '</span></span></span>';
   }
   function plaqueLook(mem, look) {
     const b = motifBits(mem);
@@ -899,29 +921,45 @@
     const ink = inkOf(mem);
     if (look === 2) {
       const rack = b.country === 'jp' ? '神社掛牆' : '木架掛牆';
-      return '<span class="emawall"><span class="ema-rail" aria-hidden="true"></span><span class="ema-hang"><svg viewBox="0 0 120 150" aria-hidden="true"><path d="M60 4 v16" stroke="#b4332a" stroke-width="2"/><circle cx="60" cy="8" r="4" fill="none" stroke="#b4332a"/><rect x="18" y="22" width="84" height="112" rx="8" fill="#f0dcb4" stroke="#c4a36e" stroke-width="2"/><g transform="translate(28,36) scale(.7)" style="color:' + ink.deep + '">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 60, 112, 16, '#2a2118') + '</svg><small>' + esc(b.land) + '</small></span><span class="paper-extra">' + esc(rack) + '・' + esc(voice.plaque) + '</span></span>';
+      const labels = [b.city, (mem.spots && mem.spots[0]) || b.food, b.land];
+      const pegs = labels.map(function (lab) {
+        return '<span class="ema-hang"><svg viewBox="0 0 86 118" aria-hidden="true"><path d="M43 2 v12" stroke="#b4332a" stroke-width="2"/><circle cx="43" cy="6" r="3.2" fill="none" stroke="#b4332a"/><rect x="8" y="18" width="70" height="92" rx="6" fill="#f3e0c4" stroke="#c4a36e" stroke-width="2"/><rect x="14" y="26" width="58" height="40" rx="3" fill="#f7f1e6"/><g transform="translate(27,28) scale(.48)" style="color:' + ink.deep + '">' + markIcon(b.mark) + '</g>' + cityLine(lab, 43, 90, 11, '#2a2118') + '</svg></span>';
+      }).join('');
+      return '<span class="emawall"><span class="ema-rail" aria-hidden="true"></span><span class="ema-row">' + pegs + '</span><span class="paper-extra">' + esc(rack) + '・' + esc(voice.plaque) + '・' + esc(b.land) + '</span></span>';
     }
     if (look === 3) {
-      return '<span class="wishtag"><svg viewBox="0 0 220 200" aria-hidden="true"><path d="M18 70 Q28 24 110 16 Q192 24 202 70 L184 150 H36 Z" fill="#e7a0a8"/><path d="M40 74 Q52 40 110 34 Q168 40 180 74 L168 136 H52 Z" fill="#f6d5d8"/><g transform="translate(78,58) scale(.7)" style="color:#8d312c">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 110, 122, 22, '#8d312c') + '<text x="110" y="146" text-anchor="middle" fill="#a85a4c" font-size="12" font-weight="800">心想事成</text><text x="110" y="184" text-anchor="middle" fill="#8a7564" font-size="12" font-weight="700">' + esc(b.land) + '</text></svg><span class="paper-extra">許願牌</span></span>';
+      return '<span class="wishtag"><svg viewBox="0 0 220 210" aria-hidden="true"><ellipse cx="36" cy="24" rx="16" ry="6" fill="#f6e2b0"/><path d="M18 78 Q28 28 110 18 Q192 28 202 78 L186 158 H34 Z" fill="#e7a0a8"/><path d="M40 82 Q52 46 110 38 Q168 46 180 82 L168 144 H52 Z" fill="#f6d5d8"/><g transform="translate(78,58) scale(.7)" style="color:#8d312c">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 110, 128, 22, '#8d312c') + '<text x="110" y="150" text-anchor="middle" fill="#a85a4c" font-size="12" font-weight="800">心想事成</text><text x="110" y="190" text-anchor="middle" fill="#8a7564" font-size="12" font-weight="700">' + esc(b.land) + '</text></svg><span class="paper-extra">許願牌 · ' + esc(b.land) + '</span></span>';
     }
-    return '<span class="praytag"><svg viewBox="0 0 180 220" aria-hidden="true"><path d="M90 8 C78 8 70 20 74 30 C78 40 90 46 90 46 C90 46 102 40 106 30 C110 20 102 8 90 8 Z" fill="none" stroke="#c4785a" stroke-width="3"/><rect x="28" y="40" width="124" height="140" rx="16" fill="#f3e0c0" stroke="#c4a36e" stroke-width="2"/><g transform="translate(58,52) scale(.85)" style="color:#8c3030">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 90, 130, 20, '#3a2a22') + '<text x="90" y="156" text-anchor="middle" fill="#8c3030" font-size="14" font-weight="800">祈福</text><path d="M90 180 v14" stroke="#3d6b8a" stroke-width="2"/><path d="M78 198 h24 l-6 12 h-12 z" fill="#c45b73"/></svg><span class="paper-extra">' + esc(b.land) + '</span></span>';
+    return '<span class="praytag"><svg viewBox="0 0 180 230" aria-hidden="true"><path d="M90 8 C78 8 70 20 74 30 C78 40 90 46 90 46 C90 46 102 40 106 30 C110 20 102 8 90 8 Z" fill="none" stroke="#c4785a" stroke-width="3"/><rect x="24" y="42" width="132" height="146" rx="18" fill="#f6e4c8" stroke="#c4a36e" stroke-width="2"/><rect x="36" y="54" width="108" height="52" rx="8" fill="#fbf6ee"/><g transform="translate(58,56) scale(.7)" style="color:#8c3030">' + markIcon(b.mark) + '</g>' + cityLine(b.city, 90, 136, 20, '#3a2a22') + '<text x="90" y="160" text-anchor="middle" fill="#8c3030" font-size="14" font-weight="800">祈福</text><path d="M90 188 v16" stroke="#3d6b8a" stroke-width="2"/><path d="M74 208 h32 l-8 14 h-16 z" fill="#c45b73"/><circle cx="90" cy="204" r="3" fill="#e6c56a"/></svg><span class="paper-extra">' + esc(b.city) + ' · ' + esc(b.land) + '</span></span>';
+  }
+  function packFaces(mem) {
+    const b = motifBits(mem);
+    const third = (mem.spots && mem.spots[0]) || (mem.eats && mem.eats[0]) || b.food;
+    return [b.city, b.land, third];
   }
   function packLook(mem, look) {
     const b = motifBits(mem);
     const ink = inkOf(mem);
+    const scene = sceneSvg(b.scene);
+    const faces = packFaces(mem);
     if (look === 1) {
-      return '<span class="rigidbox"><span class="rigid-win"><span class="rigid-card">旅伴</span><span class="rigid-card">旅伴</span><span class="rigid-card on">' + esc(b.city) + '</span></span><b>旅伴 TripMate</b><small>' + esc(b.land) + '</small></span>';
+      const cards = [
+        '<span class="rigid-card">' + scene + '<b>' + esc(faces[0]) + '</b></span>',
+        '<span class="rigid-card">' + markSvg(b.mark, ink.main) + '<b>' + esc(faces[1]) + '</b></span>',
+        '<span class="rigid-card on">' + dishSvg(b.dish) + '<b>' + esc(faces[2]) + '</b></span>'
+      ].join('');
+      return '<span class="rigidbox"><span class="rigid-win">' + cards + '</span><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small><em>收藏卡匣</em></span>';
     }
     if (look === 2) {
-      return '<span class="drawerbox"><span class="drawer-tray"><span>旅伴</span><span>' + esc(b.city) + '</span></span><span class="drawer-face">' + sceneSvg(b.scene) + '</span><small>' + esc(b.land) + '</small></span>';
+      return '<span class="drawerbox"><span class="drawer-tray"><span>' + esc(faces[0]) + '</span><span>' + esc(faces[1]) + '</span><span>' + esc(faces[2]) + '</span></span><span class="drawer-face">' + scene + '</span><small>' + esc(b.land) + '</small></span>';
     }
     if (look === 3) {
-      return '<span class="clearpack"><span class="clear-card"><b>旅伴</b><small>TripMate</small></span><span class="clear-card on">' + markSvg(b.mark, ink.main) + '<b>' + esc(b.city) + '</b></span><small>' + esc(b.land) + '</small></span>';
+      return '<span class="clearpack"><span class="clear-card">' + scene + '<b>' + esc(b.land) + '</b></span><span class="clear-card on">' + markSvg(b.mark, ink.main) + '<b>' + esc(b.city) + '</b></span><small>' + esc(b.food) + ' · ' + esc(b.land) + '</small></span>';
     }
     if (look === 4) {
-      return '<span class="citypack">' + sceneSvg(b.scene) + '<b>' + esc(b.city) + '</b><small>' + esc(b.en) + '</small><em>城市限定封</em><i>' + esc(b.land) + '</i></span>';
+      return '<span class="citypack">' + scene + '<span class="city-seal" aria-hidden="true">限定</span><b>' + esc(b.city) + '</b><small>' + esc(b.en) + '</small><em>城市限定封</em><i>' + esc(b.land) + '</i></span>';
     }
-    return '<span class="softpack"><span class="soft-notch" aria-hidden="true"></span><b>' + esc(b.city) + '</b><small>' + esc(b.en) + '</small>' + dishSvg(b.dish) + '<em>' + esc(b.food) + '</em><span>卡包</span><i>' + esc(b.land) + '</i></span>';
+    return '<span class="softpack"><span class="soft-notch" aria-hidden="true"></span><span class="soft-scene">' + scene + '</span><b>' + esc(b.city) + '</b><small>' + esc(b.en) + '</small>' + dishSvg(b.dish) + '<em>' + esc(b.food) + '</em><span>卡包</span><i>' + esc(b.land) + '</i></span>';
   }
   function souvenirBody(mem) {
     const look = mem.look || 0;
@@ -933,24 +971,35 @@
     if (mem.kind === 'pack') return packLook(mem, look);
     return look === 0 ? cardHtml(mem) : cardLook(mem, look);
   }
-  function badgeShape(kind, dish) {
-    const icon = '<g transform="translate(16,16) scale(.5)">' + (DISH[dish] || DISH.case) + '</g>';
-    if (kind === 'shield') return '<svg viewBox="0 0 80 80" aria-hidden="true"><path d="M40 6 L66 18 V42 C66 58 54 70 40 74 C26 70 14 58 14 42 V18 Z" fill="#fffdf8" stroke="#c6a36a" stroke-width="2"/>' + icon + '</svg>';
-    if (kind === 'hex') return '<svg viewBox="0 0 80 80" aria-hidden="true"><polygon points="40,6 68,22 68,54 40,70 12,54 12,22" fill="#fffdf8" stroke="#c6a36a" stroke-width="2"/>' + icon + '</svg>';
-    return '<svg viewBox="0 0 80 80" aria-hidden="true"><circle cx="40" cy="40" r="26" fill="#fffdf8" stroke="#c6a36a" stroke-width="2"/>' + icon + '</svg>';
+  function badgeShape(kind, dish, city) {
+    const icon = '<g transform="translate(16,12) scale(.48)">' + (DISH[dish] || DISH.case) + '</g>';
+    const name = '<text x="40" y="66" text-anchor="middle" fill="#3a2a22" font-size="9" font-weight="800">' + esc(Array.from(String(city || '')).slice(0, 4).join('')) + '</text>';
+    if (kind === 'shield') return '<svg viewBox="0 0 80 86" aria-hidden="true"><path d="M40 4 L68 16 V40 C68 58 56 72 40 80 C24 72 12 58 12 40 V16 Z" fill="#1f6b45" stroke="#c6a36a" stroke-width="2"/><path d="M40 14 L60 22 V40 C60 54 50 64 40 70 C30 64 20 54 20 40 V22 Z" fill="#f4efe4"/>' + icon + name + '</svg>';
+    if (kind === 'hex') return '<svg viewBox="0 0 80 86" aria-hidden="true"><polygon points="40,4 70,20 70,52 40,70 10,52 10,20" fill="#d5e8f4" stroke="#9bb8cc" stroke-width="2"/><polygon points="40,12 62,24 62,48 40,60 18,48 18,24" fill="#fffdf8"/>' + icon + name + '</svg>';
+    return '<svg viewBox="0 0 80 86" aria-hidden="true"><circle cx="40" cy="36" r="28" fill="#fffdf8" stroke="#e7d3b4" stroke-width="6"/><circle cx="40" cy="36" r="22" fill="#fffaf3" stroke="#c6a36a" stroke-width="1.4"/>' + icon + name + '</svg>';
   }
   function badgeVariants(mem) {
     const m = mem.motif || {};
     const face = m.known ? m.food : (mem.dest || '旅途');
     const rows = [['card', 'round', '卡紙 · 圓形'], ['felt', 'shield', '毛氈 · 盾形'], ['blister', 'hex', '吸塑 · 六角']];
     return '<span class="badge-vars">' + rows.map(function (row) {
-      return '<span class="bvar mount-' + row[0] + ' bface-' + row[1] + '" data-lab="' + row[2] + '">' + badgeShape(row[1], m.dish) + '<small>' + esc(row[2]) + '</small><b>' + esc(face) + '</b></span>';
+      return '<span class="bvar mount-' + row[0] + ' bface-' + row[1] + '" data-lab="' + row[2] + '">' + badgeShape(row[1], m.dish, mem.dest) + '<small>' + esc(row[2]) + '</small><b>' + esc(face) + '</b></span>';
     }).join('') + '</span>';
   }
-  function emaPenSvg(land) {
-    const chars = Array.from(String(land || '')).slice(0, 4).join('');
-    const size = Array.from(chars).length > 3 ? 11 : 14;
-    return '<svg class="emapen" viewBox="0 0 100 132" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M50 4 C62 12 66 22 50 28 C34 22 38 12 50 4" fill="none" stroke="#b4332a" stroke-width="2.4" stroke-linecap="round"/><circle cx="50" cy="16" r="3.2" fill="none" stroke="#b4332a" stroke-width="1.6"/><path d="M16 50 L50 30 L84 50 V112 H16 Z" fill="#e7c99a" stroke="#c4a36e" stroke-width="2"/><path d="M24 56 L50 42 L76 56 V104 H24 Z" fill="#f0dcb4"/><text x="50" y="86" text-anchor="middle" fill="#2a2118" font-size="' + size + '" font-weight="800">' + esc(chars) + '</text></svg>';
+  function emaPenSvg(mem) {
+    const b = motifBits(mem);
+    const chars = Array.from(String(b.land || mem.dest || '')).slice(0, 4).join('');
+    const size = Array.from(chars).length > 3 ? 10 : 12;
+    const clip = sovId('pen');
+    const scene = SCENE[b.scene] || SCENE.hills;
+    return '<svg class="emapen" viewBox="0 0 120 168" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M60 4 C74 14 78 26 60 34 C42 26 46 14 60 4" fill="none" stroke="#b4332a" stroke-width="2.6" stroke-linecap="round"/><circle cx="60" cy="18" r="3.4" fill="none" stroke="#b4332a" stroke-width="1.6"/><path d="M60 36 L112 78 L98 158 H22 L8 78 Z" fill="#e7c99a" stroke="#c4a36e" stroke-width="2"/><path d="M60 50 L100 84 L90 148 H30 L20 84 Z" fill="#f6e7c8"/><clipPath id="' + clip + '"><path d="M36 96 L84 108 L78 146 H42 Z"/></clipPath><g clip-path="url(#' + clip + ')"><g transform="translate(24,88) scale(.58)">' + scene + '</g></g><text x="60" y="78" text-anchor="middle" fill="#2a2118" font-size="' + size + '" font-weight="800">' + esc(chars) + '</text></svg>';
+  }
+  function emaBoardSvg(mem) {
+    const b = motifBits(mem);
+    const clip = sovId('board');
+    const scene = SCENE[b.scene] || SCENE.hills;
+    const city = Array.from(String(b.city || '')).slice(0, 6).join('');
+    return '<svg class="emaboard" viewBox="0 0 220 140" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M110 2 C122 10 126 18 110 24 C94 18 98 10 110 2" fill="none" stroke="#b4332a" stroke-width="2.4"/><circle cx="110" cy="12" r="3" fill="none" stroke="#b4332a"/><rect x="8" y="28" width="204" height="104" rx="12" fill="#e7c99a" stroke="#c4a36e" stroke-width="2"/><clipPath id="' + clip + '"><rect x="16" y="36" width="188" height="68" rx="8"/></clipPath><g clip-path="url(#' + clip + ')"><g transform="translate(16,36) scale(1.47)">' + scene + '</g></g><rect x="16" y="104" width="188" height="20" rx="4" fill="#f6e7c8"/><text x="110" y="118" text-anchor="middle" fill="#2a2118" font-size="15" font-weight="800">' + esc(city) + '</text></svg>';
   }
   function emaRackSvg(mem) {
     const land = (mem.motif && mem.motif.known && mem.motif.land) || mem.dest || '';
@@ -962,9 +1011,7 @@
     return '<svg class="emarack" viewBox="0 0 228 100" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><rect x="8" y="12" width="212" height="6" rx="2" fill="#8a6244"/>' + pegs + '</svg>';
   }
   function emaVariants(mem) {
-    const land = (mem.motif && mem.motif.known && mem.motif.land) || mem.dest || '';
-    const pen = emaPenSvg(land);
-    return '<span class="ema-vars"><span class="ema-pair"><span class="bvar ema-sm" data-lab="小的單掛">' + pen + '<small>小</small></span><span class="bvar ema-lgv" data-lab="大的單掛">' + pen + '<small>大 · 單掛</small></span></span>' + emaRackSvg(mem) + '<small class="ema-racklab">掛牆</small></span>';
+    return '<span class="ema-vars"><span class="ema-pair"><span class="bvar ema-sm" data-lab="小五角牌">' + emaPenSvg(mem) + '<small>小</small></span><span class="bvar ema-lgv" data-lab="大牌單掛">' + emaBoardSvg(mem) + '<small>大 · 單掛</small></span></span>' + emaRackSvg(mem) + '<small class="ema-racklab">掛牆</small></span>';
   }
   function souvenirMarkup(trip, diary, opt) {
     opt = opt || {};
@@ -1094,9 +1141,64 @@
     if (out.length < 3 && mem.line) out.push({ k: '留一句', t: mem.line, d: '' });
     return out.slice(0, 6);
   }
+  function shortChars(s, n) {
+    return Array.from(String(s || '')).slice(0, n).join('');
+  }
+  function drawMedalSvg(shape, mem, title) {
+    const b = motifBits(mem);
+    const ink = inkOf(mem);
+    const icon = '<g transform="translate(36,18) scale(.38)">' + markIcon(b.mark) + '</g>';
+    const label = esc(shortChars(title, 4));
+    if (shape === 'shield') {
+      return '<svg class="medalart" viewBox="0 0 120 140" aria-hidden="true" style="color:' + ink.main + '"><path d="M60 6 L104 24 V62 C104 90 84 112 60 124 C36 112 16 90 16 62 V24 Z" fill="' + ink.main + '"/><path d="M60 16 L94 30 V62 C94 84 78 102 60 112 C42 102 26 84 26 62 V30 Z" fill="#fffdf8"/><path d="M60 16 L94 30 V44 H26 V30 Z" fill="' + ink.gold + '" opacity=".45"/>' + icon + '<text x="60" y="100" text-anchor="middle" fill="#3a2a22" font-size="12" font-weight="800">' + label + '</text></svg>';
+    }
+    if (shape === 'hex') {
+      return '<svg class="medalart" viewBox="0 0 120 132" aria-hidden="true" style="color:' + ink.main + '"><polygon points="60,4 110,32 110,88 60,116 10,88 10,32" fill="' + ink.gold + '"/><polygon points="60,14 100,36 100,84 60,106 20,84 20,36" fill="#fffdf8" stroke="' + ink.main + '" stroke-width="2"/>' + icon + '<text x="60" y="92" text-anchor="middle" fill="#3a2a22" font-size="12" font-weight="800">' + label + '</text></svg>';
+    }
+    return '<svg class="medalart" viewBox="0 0 120 132" aria-hidden="true" style="color:' + ink.main + '"><circle cx="60" cy="52" r="48" fill="' + ink.gold + '"/><circle cx="60" cy="52" r="40" fill="#fffdf8" stroke="' + ink.main + '" stroke-width="3"/><circle cx="60" cy="52" r="34" fill="none" stroke="' + ink.gold + '" stroke-width="1.6"/>' + icon + '<text x="60" y="80" text-anchor="middle" fill="#3a2a22" font-size="12" font-weight="800">' + label + '</text><path d="M38 104 h44 l-8 14 H46 Z" fill="' + ink.main + '"/></svg>';
+  }
+  function drawWishSvg(mem, title, land) {
+    const b = motifBits(mem);
+    const clip = sovId('wish');
+    const scene = SCENE[b.scene] || SCENE.hills;
+    const chars = esc(shortChars(title, 6));
+    const fs = Array.from(String(title || '')).length > 4 ? 11 : 14;
+    return '<svg class="wishpen" viewBox="0 0 120 176" preserveAspectRatio="xMidYMid meet" aria-hidden="true"><path d="M60 4 C74 14 78 26 60 34 C42 26 46 14 60 4" fill="none" stroke="#b4332a" stroke-width="2.6" stroke-linecap="round"/><circle cx="60" cy="18" r="3.4" fill="none" stroke="#b4332a" stroke-width="1.6"/><path d="M60 36 L112 78 L98 166 H22 L8 78 Z" fill="#e7c99a" stroke="#c4a36e" stroke-width="2"/><path d="M60 50 L100 84 L90 156 H30 L20 84 Z" fill="#f6e7c8"/><clipPath id="' + clip + '"><path d="M34 96 L86 108 L80 136 H40 Z"/></clipPath><g clip-path="url(#' + clip + ')"><g transform="translate(22,88) scale(.55)">' + scene + '</g></g><text x="60" y="76" text-anchor="middle" fill="#2a2118" font-size="' + fs + '" font-weight="800">' + chars + '</text><text x="60" y="152" text-anchor="middle" fill="#8a5a32" font-size="11" font-weight="800">' + esc(shortChars(land, 6)) + '</text></svg>';
+  }
+  function drawFace(mem, it, n) {
+    const kind = mem.kind || 'card';
+    const b = motifBits(mem);
+    const ink = inkOf(mem);
+    const title = it.t || '';
+    const kicker = it.k || '';
+    const detail = it.d || '';
+    const scene = '<span class="face-scene">' + sceneSvg(b.scene) + '</span>';
+    const tone = b.country || 'plain';
+    if (kind === 'pack') {
+      return '<span class="face face-pack tone-' + tone + '"><span class="pack-rim">' + scene + '<span class="face-mark">' + markSvg(b.mark, ink.main) + '</span><b>' + esc(title) + '</b><small>' + esc(kicker) + (detail ? ' · ' + esc(detail) : '') + '</small><i>' + esc(b.city) + ' · ' + esc(b.land) + '</i></span></span>';
+    }
+    if (kind === 'pass') {
+      return '<span class="face face-pass"><span class="ticket-main"><small>' + esc(kicker) + '</small><b>' + esc(title) + '</b><em>' + esc(detail || b.land) + '</em>' + scene + '</span><span class="face-perf" aria-hidden="true"></span><span class="ticket-stub"><i>' + esc(b.city) + '</i>' + barcodeSvg(title + (b.city || '')) + '</span></span>';
+    }
+    if (kind === 'stamp') {
+      return '<span class="face face-page"><span class="page-hole" aria-hidden="true"></span><span class="face-seal" style="color:' + ink.main + '">' + markSvg(b.mark, ink.main) + '<b>' + esc(shortChars(title, 4)) + '</b></span><small>' + esc(title) + '</small><em>' + esc(b.land) + (kicker ? ' · ' + esc(kicker) : '') + '</em></span>';
+    }
+    if (kind === 'charm') {
+      const word = (mem.voice && mem.voice.word) || '祈福';
+      return '<span class="face face-slip tone-' + tone + '"><span class="slip-cord" aria-hidden="true"></span><span class="slip-head">' + esc(word) + '</span><span class="slip-art">' + markSvg(b.mark, ink.main) + '</span><b>' + esc(shortChars(title, 8)) + '</b><small>' + esc(b.land) + '</small><i>' + esc(kicker) + '</i><span class="slip-foot">紙籤</span></span>';
+    }
+    if (kind === 'badge') {
+      const shape = ['round', 'shield', 'hex'][(n || 0) % 3];
+      return '<span class="face face-medal tone-' + tone + '"><span class="medal medal-' + shape + '">' + drawMedalSvg(shape, mem, title) + '</span><b>' + esc(title) + '</b><small>' + esc(b.land) + '</small><i>' + esc(kicker) + '</i></span>';
+    }
+    if (kind === 'plaque') {
+      return '<span class="face face-wood">' + drawWishSvg(mem, title, b.land) + '</span>';
+    }
+    return '<span class="face face-post tone-' + tone + '">' + scene + '<span class="post-write"><span class="face-stamp" aria-hidden="true">到此<br>一遊</span><b>' + esc(title) + '</b><small>' + esc(detail || b.land) + '</small><i>' + esc(b.city) + '</i></span></span>';
+  }
   function settlePile(mem) {
-    return '<div class="drawpile">' + settleItems(mem).map(function (it) {
-      return '<button type="button" class="drawcard" hidden><span class="drawk">' + esc(it.k) + '</span><b>' + esc(it.t) + '</b>' + (it.d ? '<small>' + esc(it.d) + '</small>' : '') + '</button>';
+    return '<div class="drawpile">' + settleItems(mem).map(function (it, n) {
+      return '<button type="button" class="drawcard draw-' + (mem.kind || 'card') + '" hidden>' + drawFace(mem, it, n) + '</button>';
     }).join('') + '</div>';
   }
   function packStage(mem) {
@@ -1119,10 +1221,10 @@
     mem = mem || {};
     const kind = mem.kind || 'card';
     if (kind === 'badge') {
-      return '<div class="sovset sovset-badge" data-kind="badge">' + badgeVariants(mem) + '<p class="sethint" data-idle="圓形、盾形、六角，配卡紙、毛氈或吸塑">圓形、盾形、六角，配卡紙、毛氈或吸塑</p><button type="button" class="btn ghost sm setgo" onclick="Journey.settleAct(this)">換一種掛法</button></div>';
+      return '<div class="sovset sovset-badge" data-kind="badge">' + badgeVariants(mem) + '<p class="sethint" data-idle="圓形、盾形、六角，配卡紙、毛氈或吸塑">圓形、盾形、六角，配卡紙、毛氈或吸塑</p><button type="button" class="btn ghost sm setgo" onclick="Journey.settleAct(this)">換一種掛法</button>' + settlePile(mem) + '</div>';
     }
     if (kind === 'plaque') {
-      return '<div class="sovset sovset-plaque" data-kind="plaque">' + emaVariants(mem) + '<p class="sethint" data-idle="小牌、大牌單掛，或掛上一排">小牌、大牌單掛，或掛上一排</p><button type="button" class="btn ghost sm setgo" onclick="Journey.settleAct(this)">看下一掛</button></div>';
+      return '<div class="sovset sovset-plaque" data-kind="plaque">' + emaVariants(mem) + '<p class="sethint" data-idle="小牌、大牌單掛，或掛上一排">小牌、大牌單掛，或掛上一排</p><button type="button" class="btn ghost sm setgo" onclick="Journey.settleAct(this)">看下一掛</button>' + settlePile(mem) + '</div>';
     }
     const idle = kind === 'pack' ? '點一下，撕開卡包'
       : kind === 'pass' ? '點一下，撕下存根'
@@ -1178,7 +1280,11 @@
     const box = btn && btn.closest ? btn.closest('.sovset') : null;
     if (!box) return;
     const kind = box.getAttribute('data-kind') || '';
-    if (kind === 'badge' || kind === 'plaque') { cycleMount(box); return; }
+    if (kind === 'badge' || kind === 'plaque') {
+      cycleMount(box);
+      if (!drawOne(box)) box.classList.add('is-done');
+      return;
+    }
     const hint = box.querySelector('.sethint');
     if (!box.classList.contains('is-torn')) {
       box.classList.add('is-torn');
@@ -1186,12 +1292,14 @@
       return;
     }
     const more = drawOne(box);
+    if (!more) box.classList.add('is-done');
     if (hint) hint.textContent = more ? drawHint(kind) : doneHint(kind);
   }
   function resetSettle(layer) {
     if (!layer || !layer.querySelectorAll) return;
     layer.querySelectorAll('.sovset').forEach(function (box) {
       box.classList.remove('is-torn');
+      box.classList.remove('is-done');
       box.querySelectorAll('.is-on').forEach(function (n) { n.classList.remove('is-on'); });
       box.querySelectorAll('.drawcard').forEach(function (el) { el.hidden = true; });
       const hint = box.querySelector('.sethint');
@@ -2386,42 +2494,72 @@
     const hold = layer.querySelector('.sovstage .sov-hold');
     const stage = layer.querySelector('.sovplay');
     if (!hold || !stage) return;
-    let tx = 0, ty = 0, cx = 0, cy = 0, raf = 0, base = null;
+    let tx = 0, ty = 0, cx = 0, cy = 0, raf = 0, base = null, oriLive = false;
     function frame() {
       raf = 0;
-      cx += (tx - cx) * 0.18;
-      cy += (ty - cy) * 0.18;
-      const rx = Math.max(-12, Math.min(12, cx));
-      const ry = Math.max(-12, Math.min(12, cy));
-      hold.style.transform = 'rotateX(' + (-ry).toFixed(2) + 'deg) rotateY(' + rx.toFixed(2) + 'deg) translate3d(' + (rx * 0.35).toFixed(2) + 'px,' + (ry * 0.25).toFixed(2) + 'px,0)';
-      if (Math.abs(tx - cx) > 0.08 || Math.abs(ty - cy) > 0.08) raf = requestAnimationFrame(frame);
+      cx += (tx - cx) * 0.16;
+      cy += (ty - cy) * 0.16;
+      const rx = Math.max(-16, Math.min(16, cx));
+      const ry = Math.max(-14, Math.min(14, cy));
+      if (Math.abs(rx) < 0.08 && Math.abs(ry) < 0.08) hold.style.transform = '';
+      else hold.style.transform = 'rotateX(' + (-ry).toFixed(2) + 'deg) rotateY(' + rx.toFixed(2) + 'deg) translate3d(' + (rx * 0.45).toFixed(2) + 'px,' + (ry * 0.3).toFixed(2) + 'px,0)';
+      if (Math.abs(tx - cx) > 0.06 || Math.abs(ty - cy) > 0.06) raf = requestAnimationFrame(frame);
     }
     function kick() { if (!raf) raf = requestAnimationFrame(frame); }
     function onPtr(e) {
+      if (oriLive) return;
       const r = stage.getBoundingClientRect();
       if (!r.width || !r.height) return;
-      tx = ((e.clientX - r.left) / r.width - 0.5) * 24;
-      ty = ((e.clientY - r.top) / r.height - 0.5) * 20;
+      tx = ((e.clientX - r.left) / r.width - 0.5) * 28;
+      ty = ((e.clientY - r.top) / r.height - 0.5) * 22;
       kick();
     }
-    function onLeave() { tx = 0; ty = 0; kick(); }
+    function onLeave() {
+      if (oriLive) return;
+      tx = 0;
+      ty = 0;
+      kick();
+    }
     function onOri(e) {
       if (e.beta == null || e.gamma == null) return;
-      if (!base) base = { b: e.beta, g: e.gamma };
-      tx = (e.gamma - base.g) * 0.45;
-      ty = (e.beta - base.b) * 0.28;
+      if (!base) { base = { b: e.beta, g: e.gamma }; return; }
+      const nx = (e.gamma - base.g) * 0.55;
+      const ny = (e.beta - base.b) * 0.34;
+      if (!oriLive && Math.abs(nx) + Math.abs(ny) < 0.8) return;
+      oriLive = true;
+      tx = nx;
+      ty = ny;
       kick();
     }
     stage.addEventListener('pointermove', onPtr);
     stage.addEventListener('pointerleave', onLeave);
     stage.addEventListener('pointercancel', onLeave);
+    stage.addEventListener('pointerup', onLeave);
     const DOE = window.DeviceOrientationEvent;
-    if (DOE && typeof DOE.requestPermission === 'function') {
-      DOE.requestPermission().then(function (state) {
-        if (state === 'granted') window.addEventListener('deviceorientation', onOri);
-      }).catch(function () {});
-    } else if (DOE) window.addEventListener('deviceorientation', onOri);
+    const ask = layer.querySelector('.tiltgo');
     holdTilt = { stage: stage, hold: hold, onPtr: onPtr, onLeave: onLeave, onOri: onOri, get raf() { return raf; }, set raf(v) { raf = v; } };
+    if (DOE && typeof DOE.requestPermission === 'function') {
+      if (ask) ask.hidden = false;
+    } else if (DOE) {
+      window.addEventListener('deviceorientation', onOri);
+      if (ask) ask.hidden = true;
+    } else if (ask) ask.hidden = true;
+  }
+  function permitTilt(btn) {
+    const h = holdTilt;
+    const DOE = typeof window !== 'undefined' && window.DeviceOrientationEvent;
+    if (!h || !DOE) return;
+    function grant() {
+      window.addEventListener('deviceorientation', h.onOri);
+      if (btn) btn.hidden = true;
+    }
+    if (typeof DOE.requestPermission === 'function') {
+      DOE.requestPermission().then(function (state) {
+        if (state === 'granted') grant();
+      }).catch(function () {});
+      return;
+    }
+    grant();
   }
   function closeLayer() {
     stopHold();
@@ -2512,7 +2650,7 @@
     const layer = layerEl();
     layer.classList.remove('sov-settled');
     layer.classList.add('sov-playing');
-    layer.innerHTML = '<div class="achpage sovpage"><button type="button" class="btn ghost sm" onclick="Journey.openKeepsakes()">返回收藏</button><div class="sovstage"><button type="button" class="sovplay" onclick="Journey.replaySouvenir()" aria-label="再看一次這件' + esc(mem.label) + '">' + souvenirMarkup(t, diary, { size: 'lg', cap: false, mem: mem }) + '</button></div>' + recapMarkup(mem, tallyTrip(t, diary), sid) + '</div>';    layer.hidden = false;
+    layer.innerHTML = '<div class="achpage sovpage"><button type="button" class="btn ghost sm" onclick="Journey.openKeepsakes()">返回收藏</button><div class="sovstage"><button type="button" class="sovplay" onclick="Journey.replaySouvenir()" aria-label="再看一次這件' + esc(mem.label) + '">' + souvenirMarkup(t, diary, { size: 'lg', cap: false, mem: mem }) + '</button></div><button type="button" class="btn ghost sm tiltgo" hidden onclick="Journey.permitTilt(this)">讓它跟著手機傾</button>' + recapMarkup(mem, tallyTrip(t, diary), sid) + '</div>';    layer.hidden = false;
     armTilt(layer);
     playSouvenir(layer.querySelector('.sov'), function () { revealRecap(layer); });
   }
@@ -2672,6 +2810,6 @@
     focusSpot, clearSpot, resetMap, zoomMap,
     themeSheet, setTripStyle, askArchive, dismissArchive, startArchive, unarchive, promptArchive, maybePrompt,
     SOUVENIRS, LOOKS, AIR_ZH, suggestSouvenir, souvenirOf, memoryOf, souvenirMarkup, shelfHtml, motifOf, lookTitle,
-    openKeepsakes, openSouvenir, setSouvenir, setLook, openKeptTrip, releaseSouvenir, dropSouvenir, pokeSouvenir, replaySouvenir, recapMarkup, tallyTrip, settleAct
+    openKeepsakes, openSouvenir, setSouvenir, setLook, openKeptTrip, releaseSouvenir, dropSouvenir, pokeSouvenir, replaySouvenir, recapMarkup, tallyTrip, settleAct, permitTilt
   };
 });
