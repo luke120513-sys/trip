@@ -1090,7 +1090,8 @@
     const label = (b.city || '') + (b.land ? ' ' + b.land : '');
     const src = postcardPrint(b.mark);
     if (src) {
-      return '<span class="post post-print post-live" data-mark="' + esc(b.mark) + '"><img class="postimg" src="' + src + '" alt="' + esc(label) + '" draggable="false"></span>';
+      const frank = src.replace('.jpg', '-stamp.png');
+      return '<span class="post post-print post-live" data-mark="' + esc(b.mark) + '" role="img" aria-label="' + esc(label) + '"><span class="post-card"><img class="post-base" src="' + src + '" alt="" draggable="false"><span class="post-window"><img class="postimg" src="' + src + '" alt="" draggable="false"></span><img class="post-frank" src="' + frank + '" alt="" draggable="false"></span></span>';
     }
     const id = sovId('post');
     return '<span class="post"><svg class="postart" viewBox="0 0 360 220" role="img" aria-label="' + esc(label) + '" data-mark="' + esc(b.mark) + '"><rect width="360" height="220" rx="18" fill="#f7f2e8"/><clipPath id="' + id + '"><rect x="14" y="14" width="332" height="168" rx="12"/></clipPath><g clip-path="url(#' + id + ')">' + postcardScene(b, id) + '</g>' + postcardStamp(b) + '</svg></span>';
