@@ -1090,7 +1090,7 @@
     const label = (b.city || '') + (b.land ? ' ' + b.land : '');
     const src = postcardPrint(b.mark);
     if (src) {
-      return '<span class="post post-print" data-mark="' + esc(b.mark) + '"><img class="postimg" src="' + src + '" alt="' + esc(label) + '" draggable="false"></span>';
+      return '<span class="post post-print post-live" data-mark="' + esc(b.mark) + '"><img class="postimg" src="' + src + '" alt="' + esc(label) + '" draggable="false"></span>';
     }
     const id = sovId('post');
     return '<span class="post"><svg class="postart" viewBox="0 0 360 220" role="img" aria-label="' + esc(label) + '" data-mark="' + esc(b.mark) + '"><rect width="360" height="220" rx="18" fill="#f7f2e8"/><clipPath id="' + id + '"><rect x="14" y="14" width="332" height="168" rx="12"/></clipPath><g clip-path="url(#' + id + ')">' + postcardScene(b, id) + '</g>' + postcardStamp(b) + '</svg></span>';
@@ -1246,9 +1246,35 @@
     }
     return '<span class="sovcap"><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span>';
   }
+  function objectPrint(mem) {
+    const mark = (mem.motif && mem.motif.mark) || '';
+    const look = mem.look || 0;
+    if (look !== 0) return '';
+    const city = mark === 'gorge' ? 'hul' : mark === 'skytree' ? 'tyo' : '';
+    if (!city) return '';
+    const file = { charm: 'charm', stamp: 'stamp', pass: 'pass', pack: 'pack', badge: 'badge', plaque: 'ema' }[mem.kind];
+    if (!file) return '';
+    if (city === 'tyo' && file !== 'charm' && file !== 'stamp') return '';
+    if (city === 'hul' && file === 'pass' && mem.by !== 'land') return '';
+    return 'assets/keepsakes/' + file + '-' + city + '.jpg';
+  }
+  function printFace(mem, src) {
+    const b = motifBits(mem);
+    const label = (b.city || '') + (b.land ? ' ' + b.land : '');
+    return '<span class="post post-print" data-mark="' + esc(b.mark) + '"><img class="postimg" src="' + src + '" alt="' + esc(label) + '" draggable="false"></span>';
+  }
   function souvenirBody(mem) {
     if (mem.kind === 'card' && (mem.look || 0) === 0) return postcardHtml(mem);
-    return boardFace(mem);
+    const src = objectPrint(mem);
+    if (src) return printFace(mem, src);
+    const look = mem.look || 0;
+    if (mem.kind === 'pass') return look === 0 ? passHtml(mem) : passLook(mem, look);
+    if (mem.kind === 'stamp') return look === 0 ? stampHtml(mem) : stampLook(mem, look);
+    if (mem.kind === 'charm') return look === 0 ? charmHtml(mem) : charmLook(mem, look);
+    if (mem.kind === 'badge') return look === 0 ? badgeHtml(mem) : badgeLook(mem, look);
+    if (mem.kind === 'plaque') return look === 0 ? plaqueSmall(mem) : (look === 1 ? plaqueHtml(mem) : plaqueLook(mem, look));
+    if (mem.kind === 'pack') return packLook(mem, look);
+    return look === 0 ? cardHtml(mem) : cardLook(mem, look);
   }
   function badgeShape(kind, dish, city) {
     const icon = '<g transform="translate(16,12) scale(.48)">' + (DISH[dish] || DISH.case) + '</g>';

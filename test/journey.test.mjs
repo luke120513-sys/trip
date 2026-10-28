@@ -279,11 +279,11 @@ assert.match(page, /theme-tw/);
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v80/);
+assert.match(sw, /tripmate-v81/);
 assert.match(sw, /journey\.js/);
 assert.match(sw, /post-gorge\.jpg/);
 assert.match(sw, /post-skytree\.jpg/);
-assert.match(page, /v2\.26\.7/);
+assert.match(page, /v2\.26\.8/);
 assert.match(page, /controllerchange/);
 assert.match(page, /發現新版本/);
 assert.match(page, /SKIP_WAITING/);
@@ -733,6 +733,7 @@ assert.match(kyotoCard, /data-mark="torii"/);
 assert.match(kyotoCard, /清水寺/);
 assert.equal(/mcard-shine|card-0\.webp|BOARD|④/.test(kyotoCard), false);
 const hulPost = J.souvenirMarkup(trip({ dest: '花蓮', souvenir: 'card', days: [[{ name: '太魯閣', icon: 'nature', visited: true }]] }), [], { size: 'lg' });
+assert.match(hulPost, /post-live/);
 assert.match(hulPost, /assets\/keepsakes\/post-gorge\.jpg/);
 assert.match(hulPost, /data-mark="gorge"/);
 assert.equal(/postart/.test(hulPost), false);
@@ -752,9 +753,10 @@ const tokyoStamp = J.souvenirMarkup(trip({ dest: '東京', souvenir: 'stamp' }),
 assert.match(tokyoStamp, /晴空塔/);
 assert.match(tokyoStamp, /sov-poke/);
 assert.equal(/textPath|<textPath|A78,78/.test(tokyoStamp), false);
-assert.match(tokyoStamp, /assets\/keepsakes\/stamp-0\.webp/);
+assert.match(tokyoStamp, /assets\/keepsakes\/stamp-tyo\.jpg/);
+assert.equal(/stamp-0\.webp|stamp-hul/.test(tokyoStamp), false);
 const tokyoPlaque = J.souvenirMarkup(trip({ dest: '東京', souvenir: 'plaque', sovLook: 1 }), [], { size: 'lg', look: 1 });
-assert.match(tokyoPlaque, /assets\/keepsakes\/ema-1\.webp/);
+assert.equal(/ema-1\.webp|ema-0\.webp/.test(tokyoPlaque), false);
 assert.match(tokyoPlaque, /晴空塔/);
 J.CITIES.forEach(c => {
   const stamp = J.souvenirMarkup(trip({ dest: c.name, souvenir: 'stamp' }), [], { size: 'mini' });
@@ -872,7 +874,7 @@ assert.match(recap, /再看一次/);
 assert.match(recap, /返回收藏/);
 assert.match(recap, /hidden/);
 assert.match(recap, /地標印章/);
-assert.match(J.souvenirMarkup(trip({ dest: '花蓮', souvenir: 'plaque' }), [], { size: 'lg' }), /assets\/keepsakes\/ema-0\.webp/);
+assert.match(J.souvenirMarkup(trip({ dest: '花蓮', souvenir: 'plaque' }), [], { size: 'lg' }), /assets\/keepsakes\/ema-hul\.jpg/);
 assert.equal(/boardplate/.test(J.souvenirMarkup(trip({ dest: '花蓮', souvenir: 'plaque' }), [], { size: 'lg' })), false);
 [['pass', '東京'], ['card', '京都'], ['stamp', '大阪'], ['charm', '首爾'], ['badge', '台北'], ['plaque', '花蓮'], ['pack', '大阪']].forEach(([kind, dest]) => {
   const html = J.souvenirMarkup(trip({ dest, souvenir: kind }), [], { size: 'lg' });
