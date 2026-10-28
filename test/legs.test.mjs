@@ -222,7 +222,7 @@ assert.equal(Legs.fromTransitousAll({ itineraries: [] }).length, 0);
 
 const sw = readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
 const html = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v77/);
+assert.match(sw, /tripmate-v78/);
 assert.ok(sw.includes('legs.js'));
 assert.ok(html.includes('legs.js'));
 assert.ok(html.includes('daysum'));

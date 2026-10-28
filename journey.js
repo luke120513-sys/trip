@@ -1077,29 +1077,31 @@
   }
   function boardFace(mem) {
     const look = mem.look || 0;
+    const img = '<img class="boardimg" src="' + boardSrc(mem.kind, look) + '" alt="" draggable="false">';
+    const shine = mem.kind === 'card' && look === 0 ? '<span class="mcard-shine" aria-hidden="true"></span>' : '';
+    return '<span class="boardface">' + img + shine + '</span>';
+  }
+  function boardCap(mem) {
     const b = motifBits(mem);
     const voice = mem.voice || VOICE.plain;
-    const img = '<img class="boardimg" src="' + boardSrc(mem.kind, look) + '" alt="" draggable="false">';
-    let plate = '<span class="boardplate"><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span>';
-    let cord = '';
     if (mem.kind === 'pass') {
-      plate = '<span class="boardplate boardplate-pass">' + passRoute(mem) + '<small class="boardsub">' + esc(b.city) + ' · ' + esc(b.land) + '</small></span>';
-    } else if (mem.kind === 'charm') {
-      plate = '<span class="boardplate"><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small><em>' + esc(voice.charm) + '</em></span>';
-    } else if (mem.kind === 'pack') {
-      const faces = packFaces(mem);
-      plate = '<span class="boardplate"><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small><span class="boardpack">卡包</span><i>' + esc(b.food) + '</i><i class="boardspot">' + esc(faces[2] || '') + '</i></span>';
-    } else if (mem.kind === 'badge') {
-      plate = '<span class="boardplate"><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small><i>' + esc(b.food) + '</i></span>';
-    } else if (mem.kind === 'plaque') {
-      if (look === 0) {
-        cord = '<svg class="boardcord" viewBox="0 0 40 16" aria-hidden="true"><path class="ema-cord" d="M20 2 C28 6 30 12 20 14 C10 12 12 6 20 2" fill="none" stroke="#b4332a" stroke-width="1.4" stroke-linecap="round"/></svg><svg class="boardname" viewBox="0 0 200 228" aria-hidden="true">' + plaqueName(mem.dest) + '</svg>';
-      }
-      plate = '<span class="boardplate"><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small><em class="ema-pill">' + esc(voice.plaque) + '</em></span>';
-    } else if (mem.kind === 'card' && look === 0) {
-      plate = '<span class="mcard-shine" aria-hidden="true"></span>' + plate;
+      return '<span class="sovcap">' + passRoute(mem) + '<small>' + esc(b.city) + ' · ' + esc(b.land) + '</small><small>' + esc(mem.label) + '</small></span>';
     }
-    return '<span class="boardface">' + img + cord + plate + '</span>';
+    if (mem.kind === 'charm') {
+      return '<span class="sovcap"><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small><small>' + esc(voice.charm) + '</small></span>';
+    }
+    if (mem.kind === 'pack') {
+      const faces = packFaces(mem);
+      const spot = faces[2] ? '<small>' + esc(faces[2]) + '</small>' : '';
+      return '<span class="sovcap"><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small><small>卡包</small><small>' + esc(b.food) + '</small>' + spot + '</span>';
+    }
+    if (mem.kind === 'badge') {
+      return '<span class="sovcap"><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small><small>' + esc(b.food) + '</small></span>';
+    }
+    if (mem.kind === 'plaque') {
+      return '<span class="sovcap"><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small><small>' + esc(voice.plaque) + '</small></span>';
+    }
+    return '<span class="sovcap"><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span>';
   }
   function souvenirBody(mem) {
     return boardFace(mem);
@@ -1156,9 +1158,7 @@
     mem.lookKey = lookKey(mem.kind, mem.look || 0);
     const size = opt.size === 'lg' ? 'lg' : 'mini';
     const body = souvenirBody(mem);
-    const cap = opt.cap === false ? '' : (mem.kind === 'pass'
-      ? '<span class="sovcap"><b>' + esc(mem.dest) + '</b><small>' + esc(mem.label) + '</small></span>'
-      : '<span class="sovcap"><small>' + esc(mem.label) + '</small></span>');
+    const cap = boardCap(mem);
     const poke = size === 'lg' ? ' sov-poke' : '';
     return '<span class="sov sov-' + mem.kind + ' sov-' + size + poke + ' tone-' + mem.tone + ' look-' + mem.lookKey + '" data-look="' + mem.lookKey + '" aria-label="' + esc((mem.dest || '') + '的' + (mem.label || '紀念品')) + '"><span class="sov-hold"><span class="sov-body">' + body + '</span></span>' + cap + '</span>';
   }
