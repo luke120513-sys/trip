@@ -549,8 +549,11 @@ html.dark .sovhit{background:#1c2530;box-shadow:none;border:1px solid var(--line
 .ema-foot{display:flex;flex-direction:column;align-items:center;gap:6px;margin-top:10px}
 .ema-pill{display:inline-flex;align-items:center;justify-content:center;min-width:88px;padding:6px 14px;border:1.5px solid #c4b49a;border-radius:999px;background:#fbf7f0;color:#6e5344;font-size:14px;font-weight:800;letter-spacing:.12em}
 .ema-land{display:block;margin-top:6px;color:#8a7564;font-weight:800;font-size:12px;text-align:center}
-.sov-lg.sov-stamp,.sov-lg.sov-badge{width:min(340px,100%);margin:0 auto}
-.sov-lg.sov-charm,.sov-lg.sov-plaque{width:min(280px,100%);margin:0 auto}
+.sov-lg.sov-stamp{width:min(340px,100%);margin:0 auto}
+.sov-lg.sov-badge,.sov-lg.sov-charm,.sov-lg.sov-plaque{width:min(280px,100%);margin:0 auto}
+.sov-badge .post-print{width:auto;max-width:100%;margin:0 auto}
+.sov-lg.sov-badge .postimg{width:auto;max-width:100%;max-height:400px;margin:0 auto}
+.sov-mini.sov-badge .postimg{width:auto;max-width:100%;max-height:300px;margin:0 auto}
 .sov-lg .badge-title{font-size:26px}
 .sov-lg .charmart{width:min(210px,86%)}
 .sov-lg .emaart{width:min(230px,92%)}
@@ -728,8 +731,7 @@ html.dark .sovhit{background:#1c2530;box-shadow:none;border:1px solid var(--line
 .sov-poke.sov-pass .sov-body:after{content:"";position:absolute;left:0;top:-6px;bottom:-6px;width:14px;pointer-events:none;background:radial-gradient(circle at 0 12px,transparent 5px,rgba(215,180,138,.95) 6px,rgba(215,180,138,.95) 7px,transparent 8px);background-size:100% 24px;animation:perftear 1.2s ease-out both}
 .sov-poke.sov-pass .bp:after{animation:perftear 1.2s ease-out forwards}
 .sov-poke.sov-card .sov-body{animation:cardlift 1.24s ease-out both}
-.sov-poke.sov-card .sov-body:before{content:"";position:absolute;top:-8%;bottom:-8%;left:-48%;width:40%;background:linear-gradient(115deg,transparent,rgba(255,255,255,.75),transparent);animation:cardpoke 1.24s ease-out both;pointer-events:none;z-index:3}
-.sov-poke.sov-card .mcard-shine{animation:cardpoke 1.24s ease-out forwards}
+.sov-poke.sov-card .mcard-shine{animation:none;opacity:0}
 .sov-poke.sov-card .mcard-stamp{animation:cardstamp 1.12s cubic-bezier(.2,.8,.2,1) forwards}
 .sov-poke.sov-stamp .sov-body{animation:stampdown 1.36s cubic-bezier(.2,.7,.2,1) both;transform-origin:50% 42%}
 .sov-poke.sov-stamp .sov-body:after{content:"";position:absolute;left:50%;top:42%;width:72%;aspect-ratio:1;border-radius:50%;background:radial-gradient(circle,rgba(193,122,110,.28),rgba(193,122,110,0) 68%);animation:inkhit 1.36s ease-out both;pointer-events:none}
@@ -738,14 +740,14 @@ html.dark .sovhit{background:#1c2530;box-shadow:none;border:1px solid var(--line
 .sov-poke.sov-charm .sov-body{animation:charmpoke 1.34s ease-in-out both}
 .sov-poke.sov-charm .charm-foot i{animation:cordflick 1.16s ease-in-out forwards}
 .sov-poke.sov-badge .sov-body{animation:badgepoke 1.28s cubic-bezier(.2,.8,.2,1) both}
-.sov-poke.sov-badge .sov-body:before{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.88) 50%,transparent 70%);animation:metalflash 1.15s ease-out both;pointer-events:none;z-index:3}
+.sov-poke.sov-badge .sov-body:before{content:none}
 .sov-poke.sov-badge .badge-case{animation:badgepoke 1.28s cubic-bezier(.2,.8,.2,1) forwards}
 .sov-poke.sov-badge .badge-case:after{animation:badgeglow .36s ease-in-out 3}
-.sov-poke.sov-badge .badge-case:before{content:"";position:absolute;inset:0;border-radius:inherit;background:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.95) 50%,transparent 70%);animation:metalflash 1.15s ease-out forwards;pointer-events:none;z-index:2}
+.sov-poke.sov-badge .badge-case:before{content:none}
 .sov-poke.sov-plaque .sov-body{animation:emapoke 1.34s ease-in-out both}
 .sov-poke.sov-plaque .ema-cord{animation:cordbow 1.05s ease-in-out;transform-box:fill-box;transform-origin:center}
 .sov-poke.sov-pack .sov-body{animation:packpoke 1.2s cubic-bezier(.2,.8,.2,1) both}
-.sov-poke.sov-pack .sov-body:after{content:"";position:absolute;left:8%;right:8%;top:46%;height:4px;border-radius:2px;background:repeating-linear-gradient(90deg,#e7b15a 0 7px,transparent 7px 11px);animation:packtear 1.2s ease-out both;pointer-events:none;z-index:2}
+.sov-poke.sov-pack .sov-body:after{content:none}
 .packart{width:min(220px,86%);margin:0 auto;aspect-ratio:200/250;animation:packfloat 5.4s ease-in-out infinite}
 .sov-lg.sov-pack{width:min(280px,100%);margin:0 auto}
 .sov-poke.sov-pack .packart{animation:packpoke 1.2s cubic-bezier(.2,.8,.2,1) forwards}
@@ -1067,8 +1069,23 @@ html.dark .sovstory{box-shadow:none;border:1px solid var(--line)}
 .look-gloss .mcard-stamp{background:rgba(255,253,248,.92);color:#8d312c}
 .boardface{position:relative;display:block;width:100%;line-height:0}
 .boardimg{display:block;width:100%;height:auto;border-radius:16px;filter:drop-shadow(0 8px 10px rgba(80,50,20,.16))}
-.boardface .mcard-shine{position:absolute;top:0;bottom:0;left:0;width:28%;z-index:3;pointer-events:none;background:linear-gradient(100deg,transparent,rgba(255,255,255,.72),transparent)}
 .sov-lg .boardface{max-width:340px;margin:0 auto}
+.post{display:block;width:min(340px,92%);margin:0 auto}
+.postart{display:block;width:100%;height:auto;filter:drop-shadow(0 8px 10px rgba(80,50,20,.16))}
+.post-print{width:min(360px,100%);background:transparent}
+.postimg{display:block;width:100%;height:auto;border-radius:14px}
+.post-live{border-radius:16px}
+.post-card{position:relative;display:block;width:100%;line-height:0;border-radius:16px;overflow:hidden}
+.post-base{display:block;width:100%;height:auto;border-radius:0}
+.post-window{position:absolute;z-index:1;overflow:hidden;left:var(--wl);top:var(--wt);width:var(--ww);height:var(--wh)}
+.post-stamp,.post-cancel{position:absolute;z-index:2;height:auto;pointer-events:none}
+.post-stamp{left:var(--sl);top:var(--st);width:var(--sw)}
+.post-cancel{left:var(--cl);top:var(--ct);width:var(--cw)}
+.post-live[data-mark="gorge"]{--wl:3.897%;--wt:5.714%;--ww:82.256%;--wh:84.511%;--il:-4.738%;--it:-6.762%;--iw:121.571%;--ih:118.327%;--sl:73.026%;--st:7.068%;--sw:15.179%;--cl:89.026%;--ct:10.481%;--cw:3.692%;--ox:45.026%;--oy:47.97%}
+.post-live[data-mark="skytree"]{--wl:3.818%;--wt:5.037%;--ww:84.518%;--wh:90.074%;--il:-4.517%;--it:-5.592%;--iw:118.319%;--ih:111.02%;--sl:77.731%;--st:8.593%;--sw:12.619%;--cl:90.987%;--ct:14.704%;--cw:7.423%;--ox:46.076%;--oy:50.074%}
+.post-live .post-window .postimg{position:absolute;left:var(--il);top:var(--it);width:var(--iw);height:var(--ih);max-width:none;border-radius:0;transform-origin:var(--ox) var(--oy);animation:postcardlive 16s ease-in-out infinite alternate}
+@keyframes postcardlive{from{transform:scale(1)}to{transform:scale(1.055) translate3d(-1.4%,.6%,0)}}
+.sov-lg .mcard-shine,.boardface .mcard-shine{animation:none;opacity:0}
 .sovcap .bp-route{display:flex;justify-content:center;align-items:flex-end;gap:8px;line-height:1.1;margin-bottom:2px}
 .sovcap .bp-end{display:flex;flex-direction:column;align-items:center}
 .sovcap .bp-end b{font-size:15px;letter-spacing:0}
@@ -1114,6 +1131,7 @@ html.dark .sovstory{box-shadow:none;border:1px solid var(--line)}
  .sovhit,.sovplay{transition:none}
  .vmap-page,.spotpin,.spotpin-dot,.vmap-stage .vmap,.vreg{animation:none!important;transition:none!important}
  .spotpin{opacity:1}
+ .post-live .post-window .postimg{animation:none;transform:none}
  .jstamp.thump,.jstamp.in{opacity:.92;transform:rotate(-14deg) scale(1)}
  .archsum,.archsum.in{opacity:1;transition:none}
 }
@@ -1297,7 +1315,7 @@ addEventListener('load',()=>(window.requestIdleCallback||setTimeout)(()=>setTime
 let impP=null;function openImport(){return (impP||(impP=new Promise((ok,no)=>{const e=document.createElement('script');e.src='importer.js';e.onload=ok;e.onerror=()=>{impP=null;no()};document.head.append(e)}))).then(()=>importSheet()).catch(()=>toast('載入失敗，請稍後再試'))}
 function ticketTodayCount(t){if(!t||typeof Tickets==='undefined'||!Tickets.isToday)return 0;const today=Tickets.todayYmd();return (t.tickets||[]).filter(x=>!x.used&&Tickets.isToday(x,t,today)).length}
 function render(){const on=k=>k===tab||(k==='list'&&(tab==='edit'||tab==='new'));const nToday=ticketTodayCount(T());$('#nav').innerHTML=TABS.map(([k,n])=>{const badge=k==='expense'&&nToday?`<b class="nb">${nToday>99?'99+':nToday}</b>`:'';const label=k==='expense'&&nToday?` aria-label="支出與票券，今天 ${nToday} 張"`:'';const wide=n.length>2?' wide':'';return `<button class="${on(k)?'on':''}${wide}" onclick="go('${k}')"${label}><span class="nic">${badge}<svg viewBox="0 0 24 24">${TI[k]}</svg></span>${n}</button>`}).join('');$('#app').innerHTML=V[tab]()+foot();if(tab==='edit'){bindDays();bindSort();const tt=T();if(tt)wxLoad(tt);if(typeof fillLive==='function')fillLive();maybeAutoShift()}if(tab==='deals'||tab==='edit')loadDeals();if(tab==='expense'&&expPane!=='tix'&&typeof paintExp==='function')paintExp();if(tab==='food'&&typeof paintFood==='function')paintFood();if(tab==='more'&&typeof paintAccount==='function')paintAccount();if(tab==='more'&&typeof paintBackupHint==='function')paintBackupHint();xswLinks();if(window.Journey)Journey.afterPaint()}
-const foot=()=>{const t=T(),fly=t?flyUrl(t):`${BASE}flysave/?from=trip`,fan=t?fanUrl(t):`${BASE}fansave/?from=trip`;return `<footer><div class="fb"><a class="cb" href="${SPONSOR_URL}" target="_blank" rel="noopener"><img src="icons/coffee-trip.svg" alt="" width="40" height="40">贊助</a><a class="cb" href="#" onclick="shareSite();return false"><img src="icons/share-trip.svg" alt="" width="40" height="40">分享</a></div><div class="fl"><a href="#" onclick="info('about');return false">關於我們</a><i>|</i><a href="#" onclick="info('privacy');return false">隱私權政策</a><i>|</i><a href="#" onclick="info('terms');return false">服務條款</a></div><div class="fs"><a class="sfly" id="sfly" href="${fly}"><img src="icons/fly-fly.svg" alt="" width="24" height="24">飛省 查機票</a><a class="sfan" id="sfan" href="${fan}"><img src="icons/hotel-fan.svg" alt="" width="24" height="24">飯省 找飯店</a></div><div class="vw" id="vw"${VW?``:` hidden`}>${VW?`👀 累計瀏覽 ${VW.toLocaleString()}`:``}</div><div class="copy">© 2026 旅伴 TripMate・推薦景點資料截至 2026-10-19・v2.26.5</div></footer>`};
+const foot=()=>{const t=T(),fly=t?flyUrl(t):`${BASE}flysave/?from=trip`,fan=t?fanUrl(t):`${BASE}fansave/?from=trip`;return `<footer><div class="fb"><a class="cb" href="${SPONSOR_URL}" target="_blank" rel="noopener"><img src="icons/coffee-trip.svg" alt="" width="40" height="40">贊助</a><a class="cb" href="#" onclick="shareSite();return false"><img src="icons/share-trip.svg" alt="" width="40" height="40">分享</a></div><div class="fl"><a href="#" onclick="info('about');return false">關於我們</a><i>|</i><a href="#" onclick="info('privacy');return false">隱私權政策</a><i>|</i><a href="#" onclick="info('terms');return false">服務條款</a></div><div class="fs"><a class="sfly" id="sfly" href="${fly}"><img src="icons/fly-fly.svg" alt="" width="24" height="24">飛省 查機票</a><a class="sfan" id="sfan" href="${fan}"><img src="icons/hotel-fan.svg" alt="" width="24" height="24">飯省 找飯店</a></div><div class="vw" id="vw"${VW?``:` hidden`}>${VW?`👀 累計瀏覽 ${VW.toLocaleString()}`:``}</div><div class="copy">© 2026 旅伴 TripMate・推薦景點資料截至 2026-10-19・v2.26.11</div></footer>`};
 const V={
 list:()=>{const card=t=>`<div class="card${t.archived?' shelf':''}" onclick="cur='${t.id}';dayIx=0;save();go('edit')" style="cursor:pointer"><div class="row"><div>${ui('suitcase')}<b>${esc(t.dest)}</b> <span class="mut">${esc(t.dep)} → ${esc(t.ret)} · ${esc(t.pax)} 人</span></div><span style="flex:0" onclick="event.stopPropagation()">${ib('del',`delTrip('${t.id}')`,'刪除')}</span></div><div class="mut">${t.archived?'已封存 · ':''}${(t.days||[]).flat().length} 個景點</div></div>`;const live=trips.filter(t=>!t.archived),arch=trips.filter(t=>t.archived);const head=`<div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">我的行程</h2><button class="btn sm" style="flex:0" onclick="go('new')">＋ 新增行程</button></div><div class="row" style="margin:8px 0"><button class="btn ghost sm" style="flex:0" onclick="openImport()">匯入行程</button></div>`;const liveHtml=live.length?live.map(card).join(''):(arch.length?`<div class="card"><p>沒有進行中的行程。</p><button class="btn" onclick="go('new')">建立新行程</button></div>`:`<div class="card"><p>還沒有行程。</p><button class="btn" onclick="go('new')">建立第一個行程</button></div>`);const been=window.Journey?`<button type="button" class="vmap-entry" onclick="Journey.openVisitMap()"><span class="vmap-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6l6-2 4 2 6-2v14l-6 2-4-2-6 2z"/><path d="M10 4v14M14 6v14"/></svg></span><span><b>去過的地方</b><small>${esc(Journey.visitBrief())}</small></span></button>`:'';const keeps=window.Journey&&Journey.shelfHtml?Journey.shelfHtml(arch):(arch.length?`<h3 class="shelfhead">封存</h3>${arch.map(card).join('')}`:'');return head+been+liveHtml+keeps},
 new:()=>{let d=new Date(Date.now()+14*864e5).toISOString().slice(0,10),r=new Date(Date.now()+18*864e5).toISOString().slice(0,10);const ok=x=>x&&/^\d{4}-\d\d-\d\d$/.test(x)&&x>=new Date().toISOString().slice(0,10);if(PF){if(ok(PF.dep))d=PF.dep;if(ok(PF.ret)&&PF.ret>=d)r=PF.ret;else if(ok(PF.dep)){const x=new Date(d);x.setDate(x.getDate()+3);r=x.toISOString().slice(0,10)}}

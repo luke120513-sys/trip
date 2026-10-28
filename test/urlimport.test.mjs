@@ -70,7 +70,7 @@ assert.ok(importer.includes('盡力辨識'));
 assert.ok(importer.includes('urlimport.js'));
 assert.ok(importer.includes('impCaption'));
 assert.ok(sw.includes('urlimport.js'));
-assert.match(sw, /tripmate-v78/);
+assert.match(sw, /tripmate-v81/);
 {
   const ig = "Title: Post isn't available • Instagram\n\nLog in\n\nPost isn't available\n\nThe link may be broken.\n\nSign up for Instagram";
   assert.equal(U.readerFailed(ig), true);

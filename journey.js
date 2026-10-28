@@ -1078,8 +1078,153 @@
   function boardFace(mem) {
     const look = mem.look || 0;
     const img = '<img class="boardimg" src="' + boardSrc(mem.kind, look) + '" alt="" draggable="false">';
-    const shine = mem.kind === 'card' && look === 0 ? '<span class="mcard-shine" aria-hidden="true"></span>' : '';
-    return '<span class="boardface">' + img + shine + '</span>';
+    return '<span class="boardface">' + img + '</span>';
+  }
+  function postcardPrint(mark) {
+    if (mark === 'gorge') return 'assets/keepsakes/post-gorge.jpg';
+    if (mark === 'skytree') return 'assets/keepsakes/post-skytree.jpg';
+    return '';
+  }
+  function postcardHtml(mem) {
+    const b = motifBits(mem);
+    const label = (b.city || '') + (b.land ? ' ' + b.land : '');
+    const src = postcardPrint(b.mark);
+    if (src) {
+      const stamp = src.replace('.jpg', '-stamp.png');
+      const cancel = src.replace('.jpg', '-cancel.png');
+      return '<span class="post post-print post-live" data-mark="' + esc(b.mark) + '" role="img" aria-label="' + esc(label) + '"><span class="post-card"><img class="post-base" src="' + src + '" alt="" draggable="false"><span class="post-window"><img class="postimg" src="' + src + '" alt="" draggable="false"></span><img class="post-stamp" src="' + stamp + '" alt="" draggable="false"><img class="post-cancel" src="' + cancel + '" alt="" draggable="false"></span></span>';
+    }
+    const id = sovId('post');
+    return '<span class="post"><svg class="postart" viewBox="0 0 360 220" role="img" aria-label="' + esc(label) + '" data-mark="' + esc(b.mark) + '"><rect width="360" height="220" rx="18" fill="#f7f2e8"/><clipPath id="' + id + '"><rect x="14" y="14" width="300" height="168" rx="12"/></clipPath><g clip-path="url(#' + id + ')">' + postcardScene(b, id) + '</g>' + postcardStamp(b) + '</svg></span>';
+  }
+  function postcardScene(b, id) {
+    const mark = b.mark || 'pin';
+    if (mark === 'gorge') return postcardGorge(id);
+    if (mark === 'skytree') return postcardSkytree(id);
+    if (mark === 't101') return postcard101();
+    if (mark === 'castle') return postcardCastle();
+    if (mark === 'torii' || mark === 'shrine') return postcardTorii();
+    if (mark === 'palace') return postcardPalace();
+    if (mark === 'beach') return postcardBeach();
+    if (mark === 'lake') return postcardLake();
+    if (mark === 'peak' || mark === 'arch') return postcardPeak();
+    return postcardMarkCard(b);
+  }
+  function postcardGorge(id) {
+    const sky = id + 'sky';
+    const water = id + 'water';
+    return '<defs><linearGradient id="' + sky + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8ec4e6"/><stop offset=".55" stop-color="#d7ecf6"/><stop offset="1" stop-color="#f6e7cf"/></linearGradient><linearGradient id="' + water + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c7c86"/><stop offset="1" stop-color="#b7ebe4"/></linearGradient></defs>' +
+      '<rect x="14" y="14" width="332" height="168" fill="url(#' + sky + ')"/>' +
+      '<circle cx="78" cy="52" r="16" fill="#f8e7b4"/><circle cx="78" cy="52" r="26" fill="#f8e7b4" opacity=".28"/>' +
+      '<path fill="#b7c4be" d="M14 182 C48 150 36 108 78 86 C112 68 104 40 62 22 L14 14 Z"/>' +
+      '<path fill="#8ea09a" d="M14 182 C40 156 28 120 62 102 C88 88 84 64 58 48 L14 70 Z"/>' +
+      '<path fill="#d5ddd6" d="M52 78 C78 62 96 74 92 96 C78 90 64 98 58 112 Z" opacity=".85"/>' +
+      '<path fill="#aebbb6" d="M346 182 C312 146 324 100 286 78 C250 58 258 32 304 16 L346 14 Z"/>' +
+      '<path fill="#7e928c" d="M346 182 C318 150 330 112 300 96 C276 84 280 60 308 46 L346 64 Z"/>' +
+      '<path fill="#e4ebe6" d="M286 70 C310 56 330 68 328 90 C312 82 296 90 292 106 Z" opacity=".8"/>' +
+      '<path fill="#6e8f62" d="M46 96 c12 -18 28 -10 22 8 c10 -6 18 6 6 14 c-14 4 -24 -4 -28 -22 z"/>' +
+      '<path fill="#4f734c" d="M292 84 c10 -16 24 -8 18 8 c10 -4 16 6 4 12 c-12 2 -20 -4 -22 -20 z"/>' +
+      '<path fill="url(#' + water + ')" d="M118 182 C132 150 150 128 168 108 C176 98 184 98 192 108 C210 128 228 150 242 182 Z"/>' +
+      '<path fill="#e9fbf8" opacity=".55" d="M146 182 C156 158 166 140 176 124 C180 132 184 140 188 124 C198 142 208 160 216 182 Z"/>' +
+      '<path fill="none" stroke="#f4fffd" stroke-width="1.4" opacity=".65" d="M156 168 q12 -6 24 2 M150 176 q16 -5 30 1"/>';
+  }
+  function postcardSkytree(id) {
+    const sky = id + 'sky';
+    return '<defs><linearGradient id="' + sky + '" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a2758"/><stop offset=".7" stop-color="#3a3f86"/><stop offset="1" stop-color="#6a4a6e"/></linearGradient></defs>' +
+      '<rect x="14" y="14" width="332" height="168" fill="url(#' + sky + ')"/>' +
+      '<path d="M64 58 a14 14 0 1 0 22 -8 a11 11 0 1 1 -22 8 z" fill="#f6e7b0"/>' +
+      '<g fill="#fff"><circle cx="150" cy="40" r="1.1"/><circle cx="210" cy="34" r="1"/><circle cx="250" cy="52" r="1.2"/><circle cx="300" cy="42" r="1"/><circle cx="120" cy="70" r="1"/></g>' +
+      '<rect x="14" y="118" width="332" height="64" fill="#16284a"/>' +
+      '<g fill="#2a406c"><rect x="28" y="96" width="16" height="28"/><rect x="48" y="84" width="22" height="40"/><rect x="74" y="100" width="14" height="24"/><rect x="250" y="92" width="18" height="32"/><rect x="274" y="78" width="26" height="46"/><rect x="306" y="98" width="16" height="26"/></g>' +
+      '<g fill="#f3c96a" opacity=".85"><rect x="52" y="92" width="3" height="4"/><rect x="80" y="108" width="3" height="4"/><rect x="282" y="90" width="3" height="4"/><rect x="260" y="104" width="3" height="4"/></g>' +
+      '<path fill="#e7eef8" d="M174 128 L181 42 h10 L198 128 Z"/>' +
+      '<ellipse cx="186" cy="74" rx="22" ry="6" fill="#f7fbff"/><ellipse cx="186" cy="100" rx="15" ry="4.5" fill="#f7fbff"/>' +
+      '<rect x="184" y="30" width="4" height="16" fill="#f7fbff"/>' +
+      '<path fill="#c9d4e6" d="M174 128 L164 146 h44 L198 128 Z"/>' +
+      '<path fill="#f6e2b0" opacity=".35" d="M164 150 h44 l-6 18 h-32 Z"/>' +
+      '<path d="M30 132 h300" stroke="#f6e2b0" stroke-width="1" opacity=".45"/>';
+  }
+  function postcard101() {
+    return '<rect x="16" y="16" width="328" height="164" fill="#d5e6f4"/>' +
+      '<circle cx="292" cy="48" r="14" fill="#f6e2b0"/>' +
+      '<rect x="16" y="124" width="328" height="56" fill="#c5d4c4"/>' +
+      '<rect x="40" y="100" width="22" height="36" fill="#8aa0b4"/><rect x="70" y="88" width="28" height="48" fill="#6e8698"/>' +
+      '<rect x="250" y="96" width="20" height="40" fill="#8aa0b4"/><rect x="278" y="108" width="26" height="28" fill="#9aafb8"/>' +
+      '<path fill="#1e3a5f" d="M168 136 L174 40 h16 L196 136 Z"/>' +
+      '<path fill="#2f5d8a" d="M160 62 h56 v4 h-56 z M156 78 h64 v4 h-64 z M152 96 h72 v4 h-72 z M158 114 h48 v4 h-48 z"/>' +
+      '<rect x="178" y="28" width="8" height="14" fill="#1e3a5f"/>';
+  }
+  function postcardCastle() {
+    return '<rect x="16" y="16" width="328" height="100" fill="#f3e6d4"/>' +
+      '<rect x="16" y="116" width="328" height="64" fill="#7ea4b4"/>' +
+      '<circle cx="78" cy="48" r="12" fill="#f6e2b0"/>' +
+      '<path fill="#f7f4ee" d="M132 128 V78 h22 V58 h28 v20 h22 v50 Z"/>' +
+      '<path fill="#3e6b4a" d="M128 82 h96 l-8 12 H136 Z"/>' +
+      '<path fill="#2f5c40" d="M154 62 h28 l-4 8 h-20 Z"/>' +
+      '<path fill="#8c3030" d="M168 46 h12 v14 h-12 Z"/>' +
+      '<rect x="158" y="100" width="10" height="16" fill="#c4785a"/><rect x="178" y="100" width="10" height="16" fill="#c4785a"/>' +
+      '<path fill="#e7f4f2" d="M150 140 q30 10 60 0" opacity=".8"/>';
+  }
+  function postcardTorii() {
+    return '<rect x="16" y="16" width="328" height="164" fill="#f6eadc"/>' +
+      '<path fill="#8ea484" d="M16 120 L70 70 L120 108 L190 52 L260 100 L344 64 V180 H16 Z"/>' +
+      '<path fill="#6e8a58" d="M16 140 L80 96 L150 128 L230 88 L344 130 V180 H16 Z"/>' +
+      '<circle cx="300" cy="46" r="12" fill="#f6e2b0"/>' +
+      '<path fill="#c4473c" d="M118 150 V86 h18 V70 h36 v16 h18 v64 Z"/>' +
+      '<path fill="#8c3030" d="M110 90 h88 l-6 10 H116 Z"/>' +
+      '<path fill="#f3c1cb" d="M64 108 c6 -8 14 -2 10 6 c6 -2 10 4 2 8 c-6 0 -12 -4 -12 -14 z"/>' +
+      '<path fill="#f3c1cb" d="M250 96 c6 -8 14 -2 10 6 c6 -2 10 4 2 8 c-6 0 -12 -4 -12 -14 z"/>';
+  }
+  function postcardPalace() {
+    return '<rect x="16" y="16" width="328" height="90" fill="#d5e6f2"/>' +
+      '<path fill="#9aab8c" d="M16 110 L60 70 L110 100 L180 58 L250 96 L344 70 V120 H16 Z"/>' +
+      '<rect x="16" y="112" width="328" height="68" fill="#e7d7b8"/>' +
+      '<circle cx="70" cy="46" r="12" fill="#f6e2b0"/>' +
+      '<path fill="#8e2438" d="M132 124 L180 78 L228 124 Z"/>' +
+      '<rect x="146" y="124" width="68" height="40" fill="#f7f1e6"/>' +
+      '<rect x="158" y="132" width="12" height="32" fill="#c4785a"/><rect x="176" y="132" width="12" height="32" fill="#c4785a"/><rect x="194" y="132" width="12" height="32" fill="#c4785a"/>';
+  }
+  function postcardBeach() {
+    return '<rect x="16" y="16" width="328" height="96" fill="#f6e2c4"/>' +
+      '<rect x="16" y="112" width="328" height="68" fill="#3d86b0"/>' +
+      '<circle cx="86" cy="52" r="16" fill="#f0a020"/>' +
+      '<path fill="#f7f4ee" d="M16 124 q40 -16 80 0 t80 0 t80 0 t88 0 v20 H16 Z"/>' +
+      '<path d="M40 150 q20 -8 40 0 t40 0 t40 0" fill="none" stroke="#e7f4f2" stroke-width="2"/>' +
+      '<path fill="#f6f1e7" d="M250 128 l16 28 h-32 Z" opacity=".9"/>';
+  }
+  function postcardLake() {
+    return '<rect x="16" y="16" width="328" height="164" fill="#d5e6f2"/>' +
+      '<circle cx="292" cy="48" r="14" fill="#f6e2b0"/>' +
+      '<path fill="#6e8698" d="M16 100 L48 58 L90 86 L140 48 L190 90 L250 56 L344 96 V120 H16 Z"/>' +
+      '<ellipse cx="180" cy="138" rx="120" ry="28" fill="#3d86b0"/>' +
+      '<ellipse cx="168" cy="134" rx="70" ry="10" fill="#e7f4f2" opacity=".45"/>' +
+      '<path fill="#fff" d="M140 48 l8 12 -12 2 Z"/>';
+  }
+  function postcardPeak() {
+    return '<rect x="16" y="16" width="328" height="100" fill="#d5e6f2"/>' +
+      '<rect x="16" y="116" width="328" height="64" fill="#3d86b0"/>' +
+      '<circle cx="78" cy="48" r="12" fill="#f6e2b0"/>' +
+      '<path fill="#8aa0b4" d="M40 130 L110 48 L150 90 L200 40 L300 130 Z"/>' +
+      '<path fill="#f7f4ee" d="M188 52 L200 40 L214 58 L198 56 Z"/>' +
+      '<path fill="#6e8a58" d="M16 130 L70 100 L130 124 L200 96 L344 128 V150 H16 Z"/>';
+  }
+  function postcardMarkCard(b) {
+    const ink = b.country === 'kr' ? '#8e2438' : b.country === 'tw' ? '#8d312c' : b.country === 'jp' ? '#8c3030' : '#6e5344';
+    return '<rect x="16" y="16" width="328" height="164" fill="#f3e6d4"/>' +
+      '<path fill="#8ea484" d="M16 120 L70 78 L130 108 L200 64 L270 104 L344 76 V180 H16 Z"/>' +
+      '<path fill="#d5e6f2" d="M16 16 h328 v70 H16 Z"/>' +
+      '<circle cx="292" cy="46" r="12" fill="#f6e2b0"/>' +
+      '<g transform="translate(148,58) scale(1.15)" style="color:' + ink + '">' + markIcon(b.mark) + '</g>';
+  }
+  function postcardStamp(b) {
+    const art = b.mark === 'skytree'
+      ? '<path fill="#8a7564" d="M22 40 L24 16 h4 L30 40 Z"/><ellipse cx="26" cy="24" rx="7" ry="2" fill="none" stroke="#8a7564" stroke-width="1"/>'
+      : b.mark === 'gorge'
+        ? '<path fill="#8ea09a" d="M8 40 C14 28 16 22 22 26 C18 32 16 36 14 40 Z"/><path fill="#7e928c" d="M44 40 C38 26 34 18 28 24 C32 30 36 36 38 40 Z"/><path fill="#3d9aaa" d="M18 40 C22 32 26 30 30 34 C28 36 24 38 22 40 Z"/>'
+        : '<path fill="#c47a4a" d="M10 38 L26 16 L42 38 Z"/><circle cx="34" cy="16" r="4" fill="#e0b15a"/>';
+    return '<path d="M336 40c8 2 14 1 18 -1M334 50c10 2 16 1 20 -1M336 60c8 2 12 1 14 0" fill="none" stroke="#b7a48e" stroke-width="1.5" stroke-linecap="round"/>' +
+      '<g transform="translate(278,24)"><rect width="52" height="60" rx="3" fill="#f7f1e4" stroke="#c4b49a" stroke-width="1.2"/>' +
+      '<rect x="4" y="4" width="44" height="52" rx="1" fill="none" stroke="#e4d7c4" stroke-width=".8"/>' + art + '</g>';
   }
   function boardCap(mem) {
     const b = motifBits(mem);
@@ -1103,8 +1248,35 @@
     }
     return '<span class="sovcap"><b>' + esc(b.city) + '</b><small>' + esc(b.land) + '</small></span>';
   }
+  function objectPrint(mem) {
+    const mark = (mem.motif && mem.motif.mark) || '';
+    const look = mem.look || 0;
+    if (look !== 0) return '';
+    const city = mark === 'gorge' ? 'hul' : mark === 'skytree' ? 'tyo' : '';
+    if (!city) return '';
+    const file = { charm: 'charm', stamp: 'stamp', pass: 'pass', pack: 'pack', badge: 'badge', plaque: 'ema' }[mem.kind];
+    if (!file) return '';
+    if (city === 'tyo' && file !== 'charm' && file !== 'stamp') return '';
+    if (city === 'hul' && file === 'pass' && mem.by !== 'land') return '';
+    return 'assets/keepsakes/' + file + '-' + city + '.jpg';
+  }
+  function printFace(mem, src) {
+    const b = motifBits(mem);
+    const label = (b.city || '') + (b.land ? ' ' + b.land : '');
+    return '<span class="post post-print" data-mark="' + esc(b.mark) + '"><img class="postimg" src="' + src + '" alt="' + esc(label) + '" draggable="false"></span>';
+  }
   function souvenirBody(mem) {
-    return boardFace(mem);
+    if (mem.kind === 'card' && (mem.look || 0) === 0) return postcardHtml(mem);
+    const src = objectPrint(mem);
+    if (src) return printFace(mem, src);
+    const look = mem.look || 0;
+    if (mem.kind === 'pass') return look === 0 ? passHtml(mem) : passLook(mem, look);
+    if (mem.kind === 'stamp') return look === 0 ? stampHtml(mem) : stampLook(mem, look);
+    if (mem.kind === 'charm') return look === 0 ? charmHtml(mem) : charmLook(mem, look);
+    if (mem.kind === 'badge') return look === 0 ? badgeHtml(mem) : badgeLook(mem, look);
+    if (mem.kind === 'plaque') return look === 0 ? plaqueSmall(mem) : (look === 1 ? plaqueHtml(mem) : plaqueLook(mem, look));
+    if (mem.kind === 'pack') return packLook(mem, look);
+    return look === 0 ? cardHtml(mem) : cardLook(mem, look);
   }
   function badgeShape(kind, dish, city) {
     const icon = '<g transform="translate(16,12) scale(.48)">' + (DISH[dish] || DISH.case) + '</g>';
@@ -2788,7 +2960,7 @@
     const layer = layerEl();
     layer.classList.remove('sov-settled');
     layer.classList.add('sov-playing');
-    layer.innerHTML = '<div class="achpage sovpage"><button type="button" class="btn ghost sm" onclick="Journey.openKeepsakes()">返回收藏</button><div class="sovstage"><button type="button" class="sovplay" onclick="Journey.replaySouvenir()" aria-label="再看一次這件' + esc(mem.label) + '">' + souvenirMarkup(t, diary, { size: 'lg', cap: false, mem: mem }) + '</button></div><button type="button" class="btn ghost sm tiltgo" hidden onclick="Journey.permitTilt(this)">讓它跟著手機傾</button>' + recapMarkup(mem, tallyTrip(t, diary), sid) + '</div>';    layer.hidden = false;
+    layer.innerHTML = '<div class="achpage sovpage"><button type="button" class="btn ghost sm" onclick="Journey.openKeepsakes()">返回收藏</button><div class="sovstage"><button type="button" class="sovplay" onclick="Journey.replaySouvenir()" aria-label="再看一次這件' + esc(mem.label) + '">' + souvenirMarkup(t, diary, { size: 'lg', cap: false, mem: mem }) + '</button></div><button type="button" class="btn ghost sm tiltgo" hidden onclick="Journey.permitTilt(this)">讓它跟著手機傾斜</button>' + recapMarkup(mem, tallyTrip(t, diary), sid) + '</div>';    layer.hidden = false;
     armTilt(layer);
     playSouvenir(layer.querySelector('.sov'), function () { revealRecap(layer); });
   }
