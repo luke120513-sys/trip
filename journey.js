@@ -1080,10 +1080,19 @@
     const img = '<img class="boardimg" src="' + boardSrc(mem.kind, look) + '" alt="" draggable="false">';
     return '<span class="boardface">' + img + '</span>';
   }
+  function postcardPrint(mark) {
+    if (mark === 'gorge') return 'assets/keepsakes/post-gorge.jpg';
+    if (mark === 'skytree') return 'assets/keepsakes/post-skytree.jpg';
+    return '';
+  }
   function postcardHtml(mem) {
     const b = motifBits(mem);
-    const id = sovId('post');
     const label = (b.city || '') + (b.land ? ' ' + b.land : '');
+    const src = postcardPrint(b.mark);
+    if (src) {
+      return '<span class="post post-print" data-mark="' + esc(b.mark) + '"><img class="postimg" src="' + src + '" alt="' + esc(label) + '" draggable="false"></span>';
+    }
+    const id = sovId('post');
     return '<span class="post"><svg class="postart" viewBox="0 0 360 220" role="img" aria-label="' + esc(label) + '" data-mark="' + esc(b.mark) + '"><rect width="360" height="220" rx="18" fill="#f7f2e8"/><clipPath id="' + id + '"><rect x="14" y="14" width="332" height="168" rx="12"/></clipPath><g clip-path="url(#' + id + ')">' + postcardScene(b, id) + '</g>' + postcardStamp(b) + '</svg></span>';
   }
   function postcardScene(b, id) {
