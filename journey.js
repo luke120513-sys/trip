@@ -1090,11 +1090,12 @@
     const label = (b.city || '') + (b.land ? ' ' + b.land : '');
     const src = postcardPrint(b.mark);
     if (src) {
-      const frank = src.replace('.jpg', '-stamp.png');
-      return '<span class="post post-print post-live" data-mark="' + esc(b.mark) + '" role="img" aria-label="' + esc(label) + '"><span class="post-card"><img class="post-base" src="' + src + '" alt="" draggable="false"><span class="post-window"><img class="postimg" src="' + src + '" alt="" draggable="false"></span><img class="post-frank" src="' + frank + '" alt="" draggable="false"></span></span>';
+      const stamp = src.replace('.jpg', '-stamp.png');
+      const cancel = src.replace('.jpg', '-cancel.png');
+      return '<span class="post post-print post-live" data-mark="' + esc(b.mark) + '" role="img" aria-label="' + esc(label) + '"><span class="post-card"><img class="post-base" src="' + src + '" alt="" draggable="false"><span class="post-window"><img class="postimg" src="' + src + '" alt="" draggable="false"></span><img class="post-stamp" src="' + stamp + '" alt="" draggable="false"><img class="post-cancel" src="' + cancel + '" alt="" draggable="false"></span></span>';
     }
     const id = sovId('post');
-    return '<span class="post"><svg class="postart" viewBox="0 0 360 220" role="img" aria-label="' + esc(label) + '" data-mark="' + esc(b.mark) + '"><rect width="360" height="220" rx="18" fill="#f7f2e8"/><clipPath id="' + id + '"><rect x="14" y="14" width="332" height="168" rx="12"/></clipPath><g clip-path="url(#' + id + ')">' + postcardScene(b, id) + '</g>' + postcardStamp(b) + '</svg></span>';
+    return '<span class="post"><svg class="postart" viewBox="0 0 360 220" role="img" aria-label="' + esc(label) + '" data-mark="' + esc(b.mark) + '"><rect width="360" height="220" rx="18" fill="#f7f2e8"/><clipPath id="' + id + '"><rect x="14" y="14" width="300" height="168" rx="12"/></clipPath><g clip-path="url(#' + id + ')">' + postcardScene(b, id) + '</g>' + postcardStamp(b) + '</svg></span>';
   }
   function postcardScene(b, id) {
     const mark = b.mark || 'pin';
@@ -1221,7 +1222,7 @@
       : b.mark === 'gorge'
         ? '<path fill="#8ea09a" d="M8 40 C14 28 16 22 22 26 C18 32 16 36 14 40 Z"/><path fill="#7e928c" d="M44 40 C38 26 34 18 28 24 C32 30 36 36 38 40 Z"/><path fill="#3d9aaa" d="M18 40 C22 32 26 30 30 34 C28 36 24 38 22 40 Z"/>'
         : '<path fill="#c47a4a" d="M10 38 L26 16 L42 38 Z"/><circle cx="34" cy="16" r="4" fill="#e0b15a"/>';
-    return '<path d="M338 38c8 3 12 2 18 -1M336 46c10 3 14 2 20 -1M338 54c8 3 10 2 14 0" fill="none" stroke="#c4b49a" stroke-width="1.3" stroke-linecap="round"/>' +
+    return '<path d="M336 40c8 2 14 1 18 -1M334 50c10 2 16 1 20 -1M336 60c8 2 12 1 14 0" fill="none" stroke="#b7a48e" stroke-width="1.5" stroke-linecap="round"/>' +
       '<g transform="translate(278,24)"><rect width="52" height="60" rx="3" fill="#f7f1e4" stroke="#c4b49a" stroke-width="1.2"/>' +
       '<rect x="4" y="4" width="44" height="52" rx="1" fill="none" stroke="#e4d7c4" stroke-width=".8"/>' + art + '</g>';
   }
