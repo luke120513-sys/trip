@@ -279,7 +279,7 @@ assert.match(page, /theme-tw/);
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v88/);
+assert.match(sw, /tripmate-v89/);
 assert.match(sw, /journey\.js/);
 assert.match(sw, /post-gorge\.jpg/);
 assert.match(sw, /post-skytree\.jpg/);
