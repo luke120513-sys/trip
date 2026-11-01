@@ -502,8 +502,7 @@
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dep || ''));
     return m ? m[1] + '.' + m[2] + '.' + m[3] : '';
   }
-  /* 亮面明信片的紙色。能對上目的地主題的城市，沿用 CITIES.color。
-     台北的照片是 101，紙色用九份燈籠的紅金；墾丁紙色是海水，不是地圖上的珊瑚。 */
+  /* 台北到墾丁用和花蓮、東京同一種奶油紙框。城市顏色只留在郵票和郵戳。 */
   const CARD_FACE = {
     tpe: { paper: '#fbf4e8', edge: '#c9a227', ink: '#9c1c2c', accent: '#c9a227', photo: 'assets/keepsakes/post-taipei.jpg', motifs: ['lantern', 'tower'] },
     txg: { paper: '#fff6ec', edge: '#e07a3d', ink: '#c45a28', accent: '#e07a3d', photo: 'assets/keepsakes/post-taichung.jpg', motifs: ['rainbow', 'sun'] },
@@ -586,16 +585,21 @@
   function sheetStyle(theme) {
     return '--paper:' + theme.paper + ';--edge:' + theme.edge + ';--ink:' + theme.ink + ';--accent:' + theme.accent + ';--map:' + theme.map;
   }
+  const PAINTED = { tpe: 'taipei', txg: 'taichung', tnn: 'tainan', khh: 'kaohsiung', yil: 'yilan', ktn: 'kenting' };
   function postcardHtml(mem) {
     const b = motifBits(mem);
     const label = (b.city || '') + (b.land ? ' ' + b.land : '');
     const mark = b.mark || '';
-    if (mark === 'gorge' || mark === 'skytree') {
-      const src = mark === 'gorge' ? 'assets/keepsakes/post-gorge.jpg' : 'assets/keepsakes/post-skytree.jpg';
+    const painted = PAINTED[(mem.motif && mem.motif.id) || ''] || '';
+    if (mark === 'gorge' || mark === 'skytree' || painted) {
+      const src = painted
+        ? 'assets/keepsakes/post-' + painted + '.jpg'
+        : (mark === 'gorge' ? 'assets/keepsakes/post-gorge.jpg' : 'assets/keepsakes/post-skytree.jpg');
+      const dataMark = painted || mark;
       const stamp = src.replace('.jpg', '-stamp.png');
       const cancel = src.replace('.jpg', '-cancel.png');
       const date = mem.stampDate ? '<small>' + esc(mem.stampDate) + '</small>' : '';
-      return '<span class="post post-print post-live" data-mark="' + esc(mark) + '" role="img" aria-label="' + esc(label) + '"><span class="post-card"><img class="post-base" src="' + src + '" alt="" draggable="false"><span class="post-window"><img class="postimg" src="' + src + '" alt="" draggable="false"></span><img class="post-stamp" src="' + stamp + '" alt="" draggable="false"><img class="post-cancel" src="' + cancel + '" alt="" draggable="false"><span class="post-datemark"><b>' + esc(mem.dest || '') + '</b>' + date + '</span></span></span>';
+      return '<span class="post post-print post-live" data-mark="' + esc(dataMark) + '" role="img" aria-label="' + esc(label) + '"><span class="post-card"><img class="post-base" src="' + src + '" alt="" draggable="false"><span class="post-window"><img class="postimg" src="' + src + '" alt="" draggable="false"></span><img class="post-stamp" src="' + stamp + '" alt="" draggable="false"><img class="post-cancel" src="' + cancel + '" alt="" draggable="false"><span class="post-datemark"><b>' + esc(mem.dest || '') + '</b>' + date + '</span></span></span>';
     }
     const theme = cardTheme(mem);
     const photo = theme.photo

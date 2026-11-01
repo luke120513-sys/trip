@@ -279,11 +279,11 @@ assert.match(page, /theme-tw/);
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v90/);
+assert.match(sw, /tripmate-v91/);
 assert.match(sw, /journey\.js/);
 assert.match(sw, /post-gorge\.jpg/);
 assert.match(sw, /post-skytree\.jpg/);
-assert.match(page, /v2\.27\.0/);
+assert.match(page, /v2\.27\.1/);
 assert.match(page, /controllerchange/);
 assert.match(page, /發現新版本/);
 assert.match(page, /SKIP_WAITING/);
@@ -736,26 +736,26 @@ assert.match(tokyoCard, /data-mark="skytree"/);
 assert.equal(/post-sheet|post-gorge/.test(tokyoCard), false);
 assert.match(tokyoCard, /晴空塔/);
 const cityCards = {
-  台北: ['post-taipei.jpg', '#9c1c2c', '#c9a227', '台北101'],
-  台中: ['post-taichung.jpg', '#e07a3d', '#e07a3d', '高美濕地'],
-  台南: ['post-tainan.jpg', '#8c3a4a', '#8c3a4a', '赤嵌樓'],
-  高雄: ['post-kaohsiung.jpg', '#0f4c81', '#0f4c81', '龍虎塔'],
-  宜蘭: ['post-yilan.jpg', '#3e7a45', '#5c7c99', '龜山島'],
-  墾丁: ['post-kenting.jpg', '#148a96', '#1aa3a8', '鵝鑾鼻']
+  台北: ['post-taipei.jpg', 'taipei', '台北101'],
+  台中: ['post-taichung.jpg', 'taichung', '高美濕地'],
+  台南: ['post-tainan.jpg', 'tainan', '赤嵌樓'],
+  高雄: ['post-kaohsiung.jpg', 'kaohsiung', '龍虎塔'],
+  宜蘭: ['post-yilan.jpg', 'yilan', '龜山島'],
+  墾丁: ['post-kenting.jpg', 'kenting', '鵝鑾鼻']
 };
 Object.entries(cityCards).forEach(([dest, bits]) => {
   const html = J.souvenirMarkup(trip({ dest, souvenir: 'pass', sovLook: 4 }), [], { size: 'lg', look: 4 });
   assert.match(html, /sov-card/, dest);
-  assert.match(html, /post-sheet/, dest);
+  assert.match(html, /post-live/, dest);
+  assert.equal(/post-sheet|stampart|post-waves|post-marktext/.test(html), false, dest);
   assert.match(html, new RegExp(bits[0]), dest);
-  assert.match(html, new RegExp(bits[1]), dest);
+  assert.match(html, new RegExp('post-' + bits[1] + '-stamp\\.png'), dest);
+  assert.match(html, new RegExp('post-' + bits[1] + '-cancel\\.png'), dest);
+  assert.match(html, new RegExp('data-mark="' + bits[1] + '"'), dest);
   assert.match(html, new RegExp(bits[2]), dest);
-  assert.match(html, new RegExp(bits[3]), dest);
   assert.match(html, new RegExp(dest), dest);
   assert.match(html, /2026\.04\.01/, dest);
-  assert.match(html, /stampart/, dest);
-  assert.match(html, /post-waves/, dest);
-  assert.match(html, /post-marktext/, dest);
+  assert.match(html, /post-datemark/, dest);
   assert.equal(/sov-pass|sov-stamp|sov-charm|sov-badge|sov-plaque|sov-pack/.test(html), false, dest);
   assert.equal(/data-look="(?!gloss)/.test(html), false, dest);
 });
