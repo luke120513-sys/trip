@@ -369,10 +369,10 @@
     osa: { land: '大阪城', mark: 'castle', food: '章魚燒', foodEn: 'TAKOYAKI', dish: 'tako', blurb: '大阪・道頓堀的招牌小吃', scene: 'castle', en: 'OSAKA' },
     kyo: { land: '清水寺', mark: 'torii', food: '八橋', foodEn: 'YATSUHASHI', dish: 'sweet', blurb: '京都・清水坡上的和菓子', scene: 'temple', en: 'KYOTO' },
     spk: { land: '札幌時計台', mark: 'clock', food: '湯咖哩', foodEn: 'SOUP CURRY', dish: 'curry', blurb: '札幌・暖熱的湯咖哩', scene: 'snow', en: 'SAPPORO' },
-    oka: { land: '守禮門', mark: 'shuri', food: '紅芋塔', foodEn: 'BENIIMO', dish: 'tart', blurb: '沖繩・紅芋做的點心', scene: 'seagate', en: 'OKINAWA' },
-    fuk: { land: '太宰府', mark: 'shrine', food: '明太子', foodEn: 'MENTAIKO', dish: 'roe', blurb: '福岡・博多的明太子', scene: 'plum', en: 'FUKUOKA' },
+    oka: { land: '首里城', mark: 'shuri', food: '紅芋塔', foodEn: 'BENIIMO', dish: 'tart', blurb: '沖繩・首里城的正殿', scene: 'seagate', en: 'OKINAWA' },
+    fuk: { land: '福岡塔', mark: 'shrine', food: '明太子', foodEn: 'MENTAIKO', dish: 'roe', blurb: '福岡・海邊的福岡塔', scene: 'plum', en: 'FUKUOKA' },
     sel: { land: '景福宮', mark: 'palace', food: '韓式炸雞', foodEn: 'FRIED CHICKEN', dish: 'chicken', blurb: '首爾・晚一點的炸雞', scene: 'palace', en: 'SEOUL' },
-    pus: { land: '海雲臺', mark: 'beach', food: '豬肉湯飯', foodEn: 'PORK SOUP', dish: 'soup', blurb: '釜山・一碗豬肉湯飯', scene: 'bridge', en: 'BUSAN' },
+    pus: { land: '甘川文化村', mark: 'beach', food: '豬肉湯飯', foodEn: 'PORK SOUP', dish: 'soup', blurb: '釜山・山坡上的彩色房子', scene: 'bridge', en: 'BUSAN' },
     cju: { land: '城山日出峰', mark: 'peak', food: '柑橘', foodEn: 'TANGERINE', dish: 'citrus', blurb: '濟州・風裡的柑橘', scene: 'volcano', en: 'JEJU' },
     tpe: { land: '台北101', mark: 't101', food: '牛肉麵', foodEn: 'BEEF NOODLE', dish: 'noodle', blurb: '台北・一碗牛肉麵', scene: 'taipei', en: 'TAIPEI' },
     txg: { land: '高美濕地', mark: 'wind', food: '太陽餅', foodEn: 'SUN CAKE', dish: 'cake', blurb: '台中・酥皮的太陽餅', scene: 'wetland', en: 'TAICHUNG' },
@@ -502,8 +502,7 @@
     const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(dep || ''));
     return m ? m[1] + '.' + m[2] + '.' + m[3] : '';
   }
-  /* 亮面明信片的紙色。能對上目的地主題的城市，沿用 CITIES.color。
-     台北的照片是 101，紙色用九份燈籠的紅金；墾丁紙色是海水，不是地圖上的珊瑚。 */
+  /* 台北到墾丁用和花蓮、東京同一種奶油紙框。城市顏色只留在郵票和郵戳。 */
   const CARD_FACE = {
     tpe: { paper: '#fbf4e8', edge: '#c9a227', ink: '#9c1c2c', accent: '#c9a227', photo: 'assets/keepsakes/post-taipei.jpg', motifs: ['lantern', 'tower'] },
     txg: { paper: '#fff6ec', edge: '#e07a3d', ink: '#c45a28', accent: '#e07a3d', photo: 'assets/keepsakes/post-taichung.jpg', motifs: ['rainbow', 'sun'] },
@@ -586,16 +585,21 @@
   function sheetStyle(theme) {
     return '--paper:' + theme.paper + ';--edge:' + theme.edge + ';--ink:' + theme.ink + ';--accent:' + theme.accent + ';--map:' + theme.map;
   }
+  const PAINTED = { tpe: 'taipei', txg: 'taichung', tnn: 'tainan', khh: 'kaohsiung', yil: 'yilan', ktn: 'kenting', osa: 'osaka', kyo: 'kyoto', spk: 'sapporo', oka: 'okinawa', fuk: 'fukuoka', sel: 'seoul', pus: 'busan', cju: 'jeju' };
   function postcardHtml(mem) {
     const b = motifBits(mem);
     const label = (b.city || '') + (b.land ? ' ' + b.land : '');
     const mark = b.mark || '';
-    if (mark === 'gorge' || mark === 'skytree') {
-      const src = mark === 'gorge' ? 'assets/keepsakes/post-gorge.jpg' : 'assets/keepsakes/post-skytree.jpg';
+    const painted = PAINTED[(mem.motif && mem.motif.id) || ''] || '';
+    if (mark === 'gorge' || mark === 'skytree' || painted) {
+      const src = painted
+        ? 'assets/keepsakes/post-' + painted + '.jpg'
+        : (mark === 'gorge' ? 'assets/keepsakes/post-gorge.jpg' : 'assets/keepsakes/post-skytree.jpg');
+      const dataMark = painted || mark;
       const stamp = src.replace('.jpg', '-stamp.png');
       const cancel = src.replace('.jpg', '-cancel.png');
       const date = mem.stampDate ? '<small>' + esc(mem.stampDate) + '</small>' : '';
-      return '<span class="post post-print post-live" data-mark="' + esc(mark) + '" role="img" aria-label="' + esc(label) + '"><span class="post-card"><img class="post-base" src="' + src + '" alt="" draggable="false"><span class="post-window"><img class="postimg" src="' + src + '" alt="" draggable="false"></span><img class="post-stamp" src="' + stamp + '" alt="" draggable="false"><img class="post-cancel" src="' + cancel + '" alt="" draggable="false"><span class="post-datemark"><b>' + esc(mem.dest || '') + '</b>' + date + '</span></span></span>';
+      return '<span class="post post-print post-live" data-mark="' + esc(dataMark) + '" role="img" aria-label="' + esc(label) + '"><span class="post-card"><img class="post-base" src="' + src + '" alt="" draggable="false"><span class="post-window"><img class="postimg" src="' + src + '" alt="" draggable="false"></span><img class="post-stamp" src="' + stamp + '" alt="" draggable="false"><img class="post-cancel" src="' + cancel + '" alt="" draggable="false"><span class="post-datemark"><b>' + esc(mem.dest || '') + '</b>' + date + '</span></span></span>';
     }
     const theme = cardTheme(mem);
     const photo = theme.photo

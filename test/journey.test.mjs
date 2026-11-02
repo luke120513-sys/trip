@@ -279,11 +279,11 @@ assert.match(page, /theme-tw/);
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v91/);
+assert.match(sw, /tripmate-v92/);
 assert.match(sw, /journey\.js/);
 assert.match(sw, /post-gorge\.jpg/);
 assert.match(sw, /post-skytree\.jpg/);
-assert.match(page, /v2\.27\.0/);
+assert.match(page, /v2\.27\.2/);
 assert.match(page, /controllerchange/);
 assert.match(page, /發現新版本/);
 assert.match(page, /SKIP_WAITING/);
@@ -716,13 +716,13 @@ assert.equal(/桃園|TPE|HUN|sovpick|face-rail|登機證/.test(hulRecap), false)
 const see = trip({ dest: '京都', days: [[{ name: '清水寺', icon: 'sightseeing', visited: true }, { name: '伏見稻荷', visited: true }]] });
 assert.equal(J.suggestSouvenir(see, []), 'card');
 const kyotoCard = J.souvenirMarkup(see, [], { size: 'lg' });
-assert.match(kyotoCard, /post-sheet/);
-assert.match(kyotoCard, /data-mark="torii"/);
+assert.match(kyotoCard, /post-kyoto\.jpg/);
+assert.match(kyotoCard, /post-kyoto-stamp\.png/);
+assert.match(kyotoCard, /post-kyoto-cancel\.png/);
+assert.match(kyotoCard, /data-mark="kyoto"/);
 assert.match(kyotoCard, /清水寺/);
-assert.match(kyotoCard, /#6B4C7A/);
-assert.match(kyotoCard, /post-waves/);
-assert.match(kyotoCard, /post-marktext/);
-assert.equal(/mcard-shine|card-0\.webp|popupcard|scratch/.test(kyotoCard), false);
+assert.match(kyotoCard, /post-datemark/);
+assert.equal(/post-sheet|post-waves|stampart|mcard-shine|card-0\.webp|popupcard|scratch/.test(kyotoCard), false);
 const hulPost = J.souvenirMarkup(trip({ dest: '花蓮', souvenir: 'card', days: [[{ name: '太魯閣', icon: 'nature', visited: true }]] }), [], { size: 'lg' });
 assert.match(hulPost, /post-live/);
 assert.match(hulPost, /assets\/keepsakes\/post-gorge\.jpg/);
@@ -736,26 +736,32 @@ assert.match(tokyoCard, /data-mark="skytree"/);
 assert.equal(/post-sheet|post-gorge/.test(tokyoCard), false);
 assert.match(tokyoCard, /晴空塔/);
 const cityCards = {
-  台北: ['post-taipei.jpg', '#9c1c2c', '#c9a227', '台北101'],
-  台中: ['post-taichung.jpg', '#e07a3d', '#e07a3d', '高美濕地'],
-  台南: ['post-tainan.jpg', '#8c3a4a', '#8c3a4a', '赤嵌樓'],
-  高雄: ['post-kaohsiung.jpg', '#0f4c81', '#0f4c81', '龍虎塔'],
-  宜蘭: ['post-yilan.jpg', '#3e7a45', '#5c7c99', '龜山島'],
-  墾丁: ['post-kenting.jpg', '#148a96', '#1aa3a8', '鵝鑾鼻']
+  台北: ['post-taipei.jpg', 'taipei', '台北101'],
+  台中: ['post-taichung.jpg', 'taichung', '高美濕地'],
+  台南: ['post-tainan.jpg', 'tainan', '赤嵌樓'],
+  高雄: ['post-kaohsiung.jpg', 'kaohsiung', '龍虎塔'],
+  宜蘭: ['post-yilan.jpg', 'yilan', '龜山島'],
+  墾丁: ['post-kenting.jpg', 'kenting', '鵝鑾鼻'],
+  札幌: ['post-sapporo.jpg', 'sapporo', '札幌時計台'],
+  沖繩: ['post-okinawa.jpg', 'okinawa', '首里城'],
+  福岡: ['post-fukuoka.jpg', 'fukuoka', '福岡塔'],
+  首爾: ['post-seoul.jpg', 'seoul', '景福宮'],
+  釜山: ['post-busan.jpg', 'busan', '甘川文化村'],
+  濟州: ['post-jeju.jpg', 'jeju', '城山日出峰']
 };
 Object.entries(cityCards).forEach(([dest, bits]) => {
   const html = J.souvenirMarkup(trip({ dest, souvenir: 'pass', sovLook: 4 }), [], { size: 'lg', look: 4 });
   assert.match(html, /sov-card/, dest);
-  assert.match(html, /post-sheet/, dest);
+  assert.match(html, /post-live/, dest);
+  assert.equal(/post-sheet|stampart|post-waves|post-marktext/.test(html), false, dest);
   assert.match(html, new RegExp(bits[0]), dest);
-  assert.match(html, new RegExp(bits[1]), dest);
+  assert.match(html, new RegExp('post-' + bits[1] + '-stamp\\.png'), dest);
+  assert.match(html, new RegExp('post-' + bits[1] + '-cancel\\.png'), dest);
+  assert.match(html, new RegExp('data-mark="' + bits[1] + '"'), dest);
   assert.match(html, new RegExp(bits[2]), dest);
-  assert.match(html, new RegExp(bits[3]), dest);
   assert.match(html, new RegExp(dest), dest);
   assert.match(html, /2026\.04\.01/, dest);
-  assert.match(html, /stampart/, dest);
-  assert.match(html, /post-waves/, dest);
-  assert.match(html, /post-marktext/, dest);
+  assert.match(html, /post-datemark/, dest);
   assert.equal(/sov-pass|sov-stamp|sov-charm|sov-badge|sov-plaque|sov-pack/.test(html), false, dest);
   assert.equal(/data-look="(?!gloss)/.test(html), false, dest);
 });
@@ -767,7 +773,8 @@ assert.notEqual(jiufen, taipeiCard);
 ['pass', 'stamp', 'charm', 'badge', 'plaque', 'pack', 'card'].forEach(kind => {
   const html = J.souvenirMarkup(trip({ dest: '大阪', souvenir: kind, sovLook: 2 }), [], { size: 'lg', look: 2 });
   assert.match(html, /sov-card/, kind);
-  assert.match(html, /post-sheet/, kind);
+  assert.match(html, /post-osaka\.jpg/, kind);
+  assert.match(html, /data-mark="osaka"/, kind);
   assert.match(html, /大阪城/, kind);
   assert.equal(/sov-pass|sov-stamp|sov-charm|sov-badge|sov-plaque|sov-pack|ema-hul|stamp-tyo|charm-hul/.test(html), false, kind);
 });
