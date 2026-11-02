@@ -743,7 +743,9 @@ const cityCards = {
   宜蘭: ['post-yilan.jpg', 'yilan', '龜山島'],
   墾丁: ['post-kenting.jpg', 'kenting', '鵝鑾鼻'],
   札幌: ['post-sapporo.jpg', 'sapporo', '札幌時計台'],
-  沖繩: ['post-okinawa.jpg', 'okinawa', '首里城']
+  沖繩: ['post-okinawa.jpg', 'okinawa', '首里城'],
+  福岡: ['post-fukuoka.jpg', 'fukuoka', '福岡塔'],
+  首爾: ['post-seoul.jpg', 'seoul', '景福宮']
 };
 Object.entries(cityCards).forEach(([dest, bits]) => {
   const html = J.souvenirMarkup(trip({ dest, souvenir: 'pass', sovLook: 4 }), [], { size: 'lg', look: 4 });
