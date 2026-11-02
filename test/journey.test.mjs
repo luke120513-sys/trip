@@ -279,11 +279,11 @@ assert.match(page, /theme-tw/);
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v91/);
+assert.match(sw, /tripmate-v92/);
 assert.match(sw, /journey\.js/);
 assert.match(sw, /post-gorge\.jpg/);
 assert.match(sw, /post-skytree\.jpg/);
-assert.match(page, /v2\.27\.1/);
+assert.match(page, /v2\.27\.2/);
 assert.match(page, /controllerchange/);
 assert.match(page, /發現新版本/);
 assert.match(page, /SKIP_WAITING/);
@@ -745,7 +745,9 @@ const cityCards = {
   札幌: ['post-sapporo.jpg', 'sapporo', '札幌時計台'],
   沖繩: ['post-okinawa.jpg', 'okinawa', '首里城'],
   福岡: ['post-fukuoka.jpg', 'fukuoka', '福岡塔'],
-  首爾: ['post-seoul.jpg', 'seoul', '景福宮']
+  首爾: ['post-seoul.jpg', 'seoul', '景福宮'],
+  釜山: ['post-busan.jpg', 'busan', '甘川文化村'],
+  濟州: ['post-jeju.jpg', 'jeju', '城山日出峰']
 };
 Object.entries(cityCards).forEach(([dest, bits]) => {
   const html = J.souvenirMarkup(trip({ dest, souvenir: 'pass', sovLook: 4 }), [], { size: 'lg', look: 4 });

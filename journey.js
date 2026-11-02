@@ -372,7 +372,7 @@
     oka: { land: '首里城', mark: 'shuri', food: '紅芋塔', foodEn: 'BENIIMO', dish: 'tart', blurb: '沖繩・首里城的正殿', scene: 'seagate', en: 'OKINAWA' },
     fuk: { land: '福岡塔', mark: 'shrine', food: '明太子', foodEn: 'MENTAIKO', dish: 'roe', blurb: '福岡・海邊的福岡塔', scene: 'plum', en: 'FUKUOKA' },
     sel: { land: '景福宮', mark: 'palace', food: '韓式炸雞', foodEn: 'FRIED CHICKEN', dish: 'chicken', blurb: '首爾・晚一點的炸雞', scene: 'palace', en: 'SEOUL' },
-    pus: { land: '海雲臺', mark: 'beach', food: '豬肉湯飯', foodEn: 'PORK SOUP', dish: 'soup', blurb: '釜山・一碗豬肉湯飯', scene: 'bridge', en: 'BUSAN' },
+    pus: { land: '甘川文化村', mark: 'beach', food: '豬肉湯飯', foodEn: 'PORK SOUP', dish: 'soup', blurb: '釜山・山坡上的彩色房子', scene: 'bridge', en: 'BUSAN' },
     cju: { land: '城山日出峰', mark: 'peak', food: '柑橘', foodEn: 'TANGERINE', dish: 'citrus', blurb: '濟州・風裡的柑橘', scene: 'volcano', en: 'JEJU' },
     tpe: { land: '台北101', mark: 't101', food: '牛肉麵', foodEn: 'BEEF NOODLE', dish: 'noodle', blurb: '台北・一碗牛肉麵', scene: 'taipei', en: 'TAIPEI' },
     txg: { land: '高美濕地', mark: 'wind', food: '太陽餅', foodEn: 'SUN CAKE', dish: 'cake', blurb: '台中・酥皮的太陽餅', scene: 'wetland', en: 'TAICHUNG' },
@@ -585,7 +585,7 @@
   function sheetStyle(theme) {
     return '--paper:' + theme.paper + ';--edge:' + theme.edge + ';--ink:' + theme.ink + ';--accent:' + theme.accent + ';--map:' + theme.map;
   }
-  const PAINTED = { tpe: 'taipei', txg: 'taichung', tnn: 'tainan', khh: 'kaohsiung', yil: 'yilan', ktn: 'kenting', osa: 'osaka', kyo: 'kyoto', spk: 'sapporo', oka: 'okinawa', fuk: 'fukuoka', sel: 'seoul' };
+  const PAINTED = { tpe: 'taipei', txg: 'taichung', tnn: 'tainan', khh: 'kaohsiung', yil: 'yilan', ktn: 'kenting', osa: 'osaka', kyo: 'kyoto', spk: 'sapporo', oka: 'okinawa', fuk: 'fukuoka', sel: 'seoul', pus: 'busan', cju: 'jeju' };
   function postcardHtml(mem) {
     const b = motifBits(mem);
     const label = (b.city || '') + (b.land ? ' ' + b.land : '');
