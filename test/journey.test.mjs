@@ -243,7 +243,7 @@ assert.equal(newer.archiveAsked, true);
   assert.ok(n >= 6 && n <= 10, id + ' ' + n);
   assert.ok(J.CITIES.some(c => c.id === id));
 });
-['tpe', 'txg', 'tnn', 'khh', 'hul', 'ttt', 'cyi', 'ktn', 'yil', 'nto'].forEach(id => {
+['tpe', 'txg', 'tnn', 'khh', 'hul', 'ttt', 'cyi', 'ktn', 'yil', 'nto', 'tyn'].forEach(id => {
   const n = J.CARDS.filter(c => c.city === id && !c.legacy).length;
   assert.ok(n >= 4 && n <= 8, id + ' ' + n);
   const city = J.CITIES.find(c => c.id === id);
@@ -274,12 +274,12 @@ assert.match(page, /openThemeSet/);
 assert.match(page, /class="setrow"/);
 assert.match(page, /settingsPage/);
 assert.match(page, /theme-tw/);
-['tpe', 'txg', 'tnn', 'khh', 'hul', 'ttt', 'cyi', 'ktn', 'yil', 'nto'].forEach(id => {
+['tpe', 'txg', 'tnn', 'khh', 'hul', 'ttt', 'cyi', 'ktn', 'yil', 'nto', 'tyn'].forEach(id => {
   assert.match(page, new RegExp('ach\\.city-' + id));
 });
 
 const sw = fs.readFileSync(new URL('../sw.js', import.meta.url), 'utf8');
-assert.match(sw, /tripmate-v92/);
+assert.match(sw, /tripmate-v93/);
 assert.match(sw, /journey\.js/);
 assert.match(sw, /post-gorge\.jpg/);
 assert.match(sw, /post-skytree\.jpg/);
@@ -352,7 +352,8 @@ assert.ok(jpPins.find(p => p.id === 'oka').lat < 28);
 const twPins = J.mapPins('tw', places);
 assert.equal(twPins.find(p => p.id === 'tpe').on, true);
 assert.equal(twPins.find(p => p.id === 'hul').on, true);
-assert.equal(twPins.length, 14);
+assert.equal(twPins.length, 15);
+assert.equal(twPins.find(p => p.id === 'tyn').name, '桃園');
 assert.ok(twPins.find(p => p.id === 'tpe').lng > 121 && twPins.find(p => p.id === 'tpe').lng < 122);
 const twMap = J.visitMapMarkup('tw', places);
 assert.match(twMap, /台灣地圖/);
@@ -742,6 +743,7 @@ const cityCards = {
   高雄: ['post-kaohsiung.jpg', 'kaohsiung', '龍虎塔'],
   宜蘭: ['post-yilan.jpg', 'yilan', '龜山島'],
   墾丁: ['post-kenting.jpg', 'kenting', '鵝鑾鼻'],
+  桃園: ['post-taoyuan.jpg', 'taoyuan', '大溪老街'],
   札幌: ['post-sapporo.jpg', 'sapporo', '札幌時計台'],
   沖繩: ['post-okinawa.jpg', 'okinawa', '首里城'],
   福岡: ['post-fukuoka.jpg', 'fukuoka', '福岡塔'],
@@ -765,6 +767,19 @@ Object.entries(cityCards).forEach(([dest, bits]) => {
   assert.equal(/sov-pass|sov-stamp|sov-charm|sov-badge|sov-plaque|sov-pack/.test(html), false, dest);
   assert.equal(/data-look="(?!gloss)/.test(html), false, dest);
 });
+['中壢', '大溪', '青埔', '桃園機場'].forEach(dest => {
+  const html = J.souvenirMarkup(trip({ dest }), [], { size: 'lg' });
+  assert.match(html, /post-taoyuan\.jpg/, dest);
+  assert.match(html, /data-mark="taoyuan"/, dest);
+  assert.match(html, /大溪老街/, dest);
+});
+const daxiPlace = J.souvenirMarkup(trip({ dest: '週末', days: [[{ name: '大溪老街', icon: 'sightseeing' }]] }), [], { size: 'lg' });
+assert.match(daxiPlace, /post-taoyuan\.jpg/);
+assert.match(daxiPlace, /data-mark="taoyuan"/);
+assert.equal(J.detectCity({ name: '青埔' }, trip({ dest: '台北' })), 'tyn');
+assert.equal(J.detectCity({ name: '桃園機場', lat: 25.0777, lng: 121.2328 }, trip({ dest: '東京' })), 'tyn');
+assert.equal(J.detectCity({ name: '台北101', lat: 25.03384, lng: 121.5645 }, trip({ dest: '桃園' })), 'tpe');
+assert.equal(J.visitedPlaces([trip({ id: 'daxi', dest: '週末', days: [[{ name: '中壢夜市' }]] })]).find(p => p.id === 'tyn').on, true);
 const jiufen = J.souvenirMarkup(trip({ dest: '九份' }), [], { size: 'lg' });
 const taipeiCard = J.souvenirMarkup(trip({ dest: '台北' }), [], { size: 'lg' });
 assert.match(jiufen, /post-taipei\.jpg/);

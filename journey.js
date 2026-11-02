@@ -10,7 +10,7 @@
   const CITY_AIR = { NRT: 'tyo', HND: 'tyo', KIX: 'osa', ITM: 'osa', UKB: 'osa', FUK: 'fuk', OKA: 'oka', CTS: 'spk', ICN: 'sel', GMP: 'sel', PUS: 'pus', CJU: 'cju', TPE: 'tpe', TSA: 'tpe', RMQ: 'txg', TNN: 'tnn', KHH: 'khh', HUN: 'hul', TTT: 'ttt', CYI: 'cyi', PIF: 'ktn', KNH: 'kmn', LZN: 'mzu', MFK: 'mzu', KYD: 'lny', GNI: 'lud' };
   const JP_WORDS = ['日本', '東京', '大阪', '京都', '福岡', '札幌', '沖繩', '名古屋', '奈良', '神戶', '神戸', '橫濱', '横浜', '鎌倉', '箱根', '北海道', '廣島', '広島', '金澤', '金沢', '淺草', '浅草', '新宿', '澀谷', '渋谷', '上野', '晴空塔', '東京鐵塔', '東京塔', '道頓堀', '心齋橋', '心斎橋', '伏見稻荷', '伏見稲荷', '清水寺', '金閣寺', '嵐山', 'Tokyo', 'Osaka', 'Kyoto', 'Japan', 'Sapporo', 'Okinawa', 'Hiroshima', 'Nara', 'Kobe', 'Yokohama'];
   const KR_WORDS = ['韓國', '首爾', '釜山', '濟州', '仁川', '大邱', '光州', '慶州', '江陵', '明洞', '弘大', '弘益', '景福宮', '昌德宮', '昌慶宮', '德壽宮', '北村', '韓屋', 'Seoul', 'Busan', 'Korea', 'Jeju', 'Incheon', 'Myeongdong', 'Hongdae'];
-  const TW_WORDS = ['台灣', '臺灣', '台北', '臺北', '新北', '台中', '臺中', '台南', '臺南', '高雄', '花蓮', '台東', '臺東', '嘉義', '阿里山', '墾丁', '屏東', '宜蘭', '南投', '日月潭', '太魯閣', '九份', '野柳', '淡水', '駁二', '七星潭', '三仙台', '伯朗大道', '鵝鑾鼻', '傳藝', '九族', '金門', '馬祖', '蘭嶼', '綠島', 'Taipei', 'Taichung', 'Tainan', 'Kaohsiung', 'Hualien', 'Taitung', 'Chiayi', 'Alishan', 'Kenting', 'Pingtung', 'Yilan', 'Nantou', 'Taiwan', 'Sun Moon Lake', 'Kinmen', 'Matsu', 'Lanyu', 'Green Island'];
+  const TW_WORDS = ['台灣', '臺灣', '台北', '臺北', '新北', '桃園', '中壢', '大溪', '青埔', '台中', '臺中', '台南', '臺南', '高雄', '花蓮', '台東', '臺東', '嘉義', '阿里山', '墾丁', '屏東', '宜蘭', '南投', '日月潭', '太魯閣', '九份', '野柳', '淡水', '駁二', '七星潭', '三仙台', '伯朗大道', '鵝鑾鼻', '傳藝', '九族', '金門', '馬祖', '蘭嶼', '綠島', 'Taipei', 'Taoyuan', 'Taichung', 'Tainan', 'Kaohsiung', 'Hualien', 'Taitung', 'Chiayi', 'Alishan', 'Kenting', 'Pingtung', 'Yilan', 'Nantou', 'Taiwan', 'Sun Moon Lake', 'Kinmen', 'Matsu', 'Lanyu', 'Green Island'];
   const STYLES = [['auto', '自動（依目的地）'], ['jp', '日本'], ['kr', '韓國'], ['tw', '台灣'], ['plain', '系統預設']];
   const STYLE_SHORT = { auto: '自動', jp: '日本', kr: '韓國', tw: '台灣', plain: '系統預設' };
   /* 加一座城市：在這裡放一筆，再加 city 欄位相同的卡片即可。box 是 [南, 西, 北, 東]，不要跟別的城市重疊。 */
@@ -24,7 +24,8 @@
     { id: 'sel', country: 'kr', name: '首爾', color: '#0F6B56', box: [37.42, 126.80, 37.70, 127.18], words: ['首爾', '서울', '明洞', '명동', '弘大', '弘益', '홍대', '景福宮', '경복궁', '南山塔', 'Seoul', 'Myeongdong', 'Hongdae', 'Gyeongbok'] },
     { id: 'pus', country: 'kr', name: '釜山', color: '#2A6F9A', box: [35.05, 128.95, 35.30, 129.25], words: ['釜山', '부산', '海雲臺', '海雲台', '해운대', '甘川', '감천', '札嘎其', '자갈치', 'Busan', 'Haeundae', 'Gamcheon'] },
     { id: 'cju', country: 'kr', name: '濟州', color: '#C47B2B', box: [33.20, 126.15, 33.60, 126.95], words: ['濟州', '제주', '城山', '성산', '漢拿', '한라', 'Jeju', 'Hallasan', 'Seongsan'] },
-    { id: 'tpe', country: 'tw', name: '台北', color: '#1565C0', box: [24.96, 121.28, 25.30, 122.05], words: ['台北', '臺北', '新北', '台北101', '故宮', '九份', '淡水', '士林', '西門', '貓空', '象山', '野柳', '北投', '大稻埕', 'Taipei', 'Jiufen', 'Yehliu'] },
+    { id: 'tpe', country: 'tw', name: '台北', color: '#1565C0', box: [24.96, 121.36, 25.30, 122.05], words: ['台北', '臺北', '新北', '台北101', '故宮', '九份', '淡水', '士林', '西門', '貓空', '象山', '野柳', '北投', '大稻埕', 'Taipei', 'Jiufen', 'Yehliu'] },
+    { id: 'tyn', country: 'tw', name: '桃園', color: '#A34532', box: [24.58, 120.98, 25.15, 121.35], words: ['桃園', '桃園市', '中壢', '大溪', '青埔', '桃園機場', '桃園國際機場', '大溪老街', '石門水庫', 'Taoyuan', 'Zhongli', 'Daxi', 'Qingpu'] },
     { id: 'txg', country: 'tw', name: '台中', color: '#E07A3D', box: [24.02, 120.40, 24.50, 121.00], words: ['台中', '臺中', '科博館', '自然科學博物館', '高美', '彩虹眷村', '逢甲', '霧峰', '九二一', 'Taichung'] },
     { id: 'tnn', country: 'tw', name: '台南', color: '#8C3A4A', box: [22.88, 120.05, 23.12, 120.32], words: ['台南', '臺南', '奇美', '赤嵌', '赤崁', '安平', '億載', 'Tainan'] },
     { id: 'khh', country: 'tw', name: '高雄', color: '#0F4C81', box: [22.48, 120.22, 22.85, 120.42], words: ['高雄', '駁二', '蓮池潭', '龍虎塔', '打狗', '美麗島', '鹽埕', '旗津', 'Kaohsiung'] },
@@ -186,7 +187,7 @@
     首爾: 'ICN', 釜山: 'PUS', 濟州: 'CJU', 曼谷: 'BKK', 香港: 'HKG', 新加坡: 'SIN', 吉隆坡: 'KUL', 馬尼拉: 'MNL',
     胡志明市: 'SGN', 河內: 'HAN', 峇里島: 'DPS', 巴黎: 'CDG', 倫敦: 'LHR', 紐約: 'JFK',
     台北: 'TPE', 臺北: 'TPE', 台灣: 'TPE', 臺灣: 'TPE', 高雄: 'KHH', 台中: 'RMQ', 臺中: 'RMQ', 台南: 'TNN', 臺南: 'TNN',
-    花蓮: 'HUN', 台東: 'TTT', 臺東: 'TTT', 嘉義: 'CYI', 墾丁: 'KHH', 屏東: 'KHH', 宜蘭: 'TPE', 南投: 'RMQ', 日月潭: 'RMQ'
+    花蓮: 'HUN', 台東: 'TTT', 臺東: 'TTT', 嘉義: 'CYI', 墾丁: 'KHH', 屏東: 'KHH', 宜蘭: 'TPE', 南投: 'RMQ', 日月潭: 'RMQ', 桃園: 'TPE', 中壢: 'TPE', 大溪: 'TPE'
   };
   function kindOk(v) { return v === 'card'; }
   function kindLabel(v) { return (SOUVENIRS.find(x => x[0] === v) || ['', '紀念品'])[1]; }
@@ -375,6 +376,7 @@
     pus: { land: '甘川文化村', mark: 'beach', food: '豬肉湯飯', foodEn: 'PORK SOUP', dish: 'soup', blurb: '釜山・山坡上的彩色房子', scene: 'bridge', en: 'BUSAN' },
     cju: { land: '城山日出峰', mark: 'peak', food: '柑橘', foodEn: 'TANGERINE', dish: 'citrus', blurb: '濟州・風裡的柑橘', scene: 'volcano', en: 'JEJU' },
     tpe: { land: '台北101', mark: 't101', food: '牛肉麵', foodEn: 'BEEF NOODLE', dish: 'noodle', blurb: '台北・一碗牛肉麵', scene: 'taipei', en: 'TAIPEI' },
+    tyn: { land: '大溪老街', mark: 'daxi', food: '大溪豆干', foodEn: 'DAXI TOFU', dish: 'tofu', blurb: '桃園・大溪老街的紅磚牌樓', scene: 'oldtown', en: 'TAOYUAN' },
     txg: { land: '高美濕地', mark: 'wind', food: '太陽餅', foodEn: 'SUN CAKE', dish: 'cake', blurb: '台中・酥皮的太陽餅', scene: 'wetland', en: 'TAICHUNG' },
     tnn: { land: '赤嵌樓', mark: 'fort', food: '牛肉湯', foodEn: 'BEEF SOUP', dish: 'soup2', blurb: '台南・清晨的牛肉湯', scene: 'oldtown', en: 'TAINAN' },
     khh: { land: '龍虎塔', mark: 'dome', food: '鹽埕豆花', foodEn: 'DOUHUA', dish: 'tofu', blurb: '高雄・蓮池潭的龍虎塔', scene: 'harbor', en: 'KAOHSIUNG' },
@@ -460,7 +462,16 @@
   function sovId(prefix) { sovN += 1; return prefix + sovN.toString(36); }
   function motifOf(trip) {
     const dest = String(trip && trip.dest || '').trim() || '這趟';
-    const id = cityFromText(dest);
+    let id = cityFromText(dest);
+    if (!id && trip && trip.days) {
+      const days = trip.days;
+      for (let di = 0; di < days.length && !id; di++) {
+        const spots = days[di] || [];
+        for (let si = 0; si < spots.length; si++) {
+          if (spotCity(spots[si]) === 'tyn') { id = 'tyn'; break; }
+        }
+      }
+    }
     const city = id ? CITIES.find(c => c.id === id) : null;
     const base = city && MOTIFS[id];
     if (base && city) {
@@ -585,7 +596,7 @@
   function sheetStyle(theme) {
     return '--paper:' + theme.paper + ';--edge:' + theme.edge + ';--ink:' + theme.ink + ';--accent:' + theme.accent + ';--map:' + theme.map;
   }
-  const PAINTED = { tpe: 'taipei', txg: 'taichung', tnn: 'tainan', khh: 'kaohsiung', yil: 'yilan', ktn: 'kenting', osa: 'osaka', kyo: 'kyoto', spk: 'sapporo', oka: 'okinawa', fuk: 'fukuoka', sel: 'seoul', pus: 'busan', cju: 'jeju' };
+  const PAINTED = { tpe: 'taipei', txg: 'taichung', tnn: 'tainan', khh: 'kaohsiung', yil: 'yilan', ktn: 'kenting', tyn: 'taoyuan', osa: 'osaka', kyo: 'kyoto', spk: 'sapporo', oka: 'okinawa', fuk: 'fukuoka', sel: 'seoul', pus: 'busan', cju: 'jeju' };
   function postcardHtml(mem) {
     const b = motifBits(mem);
     const label = (b.city || '') + (b.land ? ' ' + b.land : '');
@@ -1036,6 +1047,10 @@
     card('nto-egg', 'tw', 'nto', '茶葉蛋', '🥚', '吃過日月潭茶葉蛋', '這是點心，不是正餐。茶香會留在手上。', ctx => foodHits(ctx, 'nto', /茶葉蛋/) >= 1),
     card('nto-tea', 'tw', 'nto', '阿薩姆紅茶', '🍵', '喝過阿薩姆或魚池紅茶', '這一帶的茶比較厚。喝完，湖還在外面。', ctx => foodHits(ctx, 'nto', /阿薩姆|紅茶/) >= 1),
     card('nto-pass', 'tw', 'nto', '日月潭通', '🚤', '在南投蓋上 3 個到此一遊', '潭、纜車、園區。這一片山你已經進來了。', ctx => ctx.city.nto.spots.filter(x => x.s.visited === true).length >= 3),
+    card('tyn-daxi', 'tw', 'tyn', '大溪老街', '🧱', '在大溪老街蓋上到此一遊', '紅磚牌樓一間接一間。你走在騎樓下了。', ctx => seen(ctx, 'tyn', /大溪老街|大溪/, [24.8836, 121.2872, 0.6])),
+    card('tyn-shimen', 'tw', 'tyn', '石門水庫', '🏞️', '在石門水庫蓋上到此一遊', '水很大，山圍在旁邊。你到過這一座壩。', ctx => seen(ctx, 'tyn', /石門/, [24.814, 121.243, 1.2])),
+    card('tyn-tofu', 'tw', 'tyn', '大溪豆干', '🟫', '吃過或買過大溪豆干', '這是帶回去的。滷香會留在袋子上。', ctx => foodHits(ctx, 'tyn', /豆干|豆乾/) >= 1),
+    card('tyn-pass', 'tw', 'tyn', '桃園通', '🗺️', '在桃園蓋上 2 個到此一遊', '老街和山邊的水庫，你都走過了。', ctx => ctx.city.tyn.spots.filter(x => x.s.visited === true).length >= 2),
     keep('jp-ramen', 'jp', '拉麵達人', '🍜', '行程或美食日記裡出現 3 次拉麵', '三碗拉麵，三種湯頭。這趟沒有白來。', ctx => countRe(ctx.jpSpots, /拉麵|ラーメン|ramen/i, x => blob(x.s)) + countRe(ctx.jpDiary, /拉麵|ラーメン|ramen/i, diaryBlob) >= 3),
     keep('jp-shrine', 'jp', '寺社巡禮', '⛩️', '5 座寺廟或神社蓋上到此一遊', '寺鐘和鳥居都蓋上了到此一遊。慢慢走就好。', ctx => ctx.jpSpots.filter(x => x.s.visited === true && /寺|神社|神宮|大社|佛閣/.test(blob(x.s))).length >= 5),
     keep('jp-rail', 'jp', '鐵道迷', '🚃', '累積 10 段大眾運輸', '十段電車或地鐵，沿線的風景都算旅費。', ctx => ctx.jp.reduce((n, t) => n + transitLegs(t), 0) >= 10),
@@ -1251,7 +1266,7 @@
     sel: [37.5665, 126.9780], pus: [35.1796, 129.0756], cju: [33.4996, 126.5312],
     tpe: [25.0330, 121.5654], txg: [24.1477, 120.6736], tnn: [22.9999, 120.2270],
     khh: [22.6273, 120.3014], hul: [23.9872, 121.6015], ttt: [22.7583, 121.1444],
-    cyi: [23.4801, 120.4491], ktn: [21.9466, 120.7987], yil: [24.7021, 121.7377],
+    cyi: [23.4801, 120.4491], ktn: [21.9466, 120.7987], yil: [24.7021, 121.7377], tyn: [24.9936, 121.3010],
     nto: [23.9609, 120.9719], kmn: [24.449, 118.376], mzu: [26.160, 119.950],
     lud: [22.661, 121.493], lny: [22.047, 121.549]
   };
