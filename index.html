@@ -370,6 +370,7 @@ html.dark .setgroup{border:1px solid var(--line)}
 .ach.city-cyi{box-shadow:inset 0 3px 0 #4A5D23}
 .ach.city-ktn{box-shadow:inset 0 3px 0 #E26D5A}
 .ach.city-yil{box-shadow:inset 0 3px 0 #5C7C99}
+.ach.city-tyn{box-shadow:inset 0 3px 0 #A34532}
 .ach.city-nto{box-shadow:inset 0 3px 0 #6B7C3A}
 .achpage h3{margin:16px 2px 8px;font-size:16px}
 .achgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -512,7 +513,7 @@ html.dark .sovstory{box-shadow:none;border:1px solid var(--line)}
 .post-stamp,.post-cancel{position:absolute;z-index:2;height:auto;pointer-events:none}
 .post-stamp{left:var(--sl);top:var(--st);width:var(--sw)}
 .post-cancel{left:var(--cl);top:var(--ct);width:var(--cw)}
-.post-live[data-mark="gorge"],.post-live[data-mark="taipei"],.post-live[data-mark="taichung"],.post-live[data-mark="tainan"],.post-live[data-mark="kaohsiung"],.post-live[data-mark="yilan"],.post-live[data-mark="kenting"],.post-live[data-mark="osaka"],.post-live[data-mark="kyoto"],.post-live[data-mark="sapporo"],.post-live[data-mark="okinawa"],.post-live[data-mark="fukuoka"],.post-live[data-mark="seoul"],.post-live[data-mark="busan"],.post-live[data-mark="jeju"]{--wl:3.897%;--wt:5.714%;--ww:82.256%;--wh:84.511%;--il:-4.738%;--it:-6.762%;--iw:121.571%;--ih:118.327%;--sl:73.026%;--st:7.068%;--sw:15.179%;--cl:89.026%;--ct:10.481%;--cw:3.692%;--ox:45.026%;--oy:47.97%}
+.post-live[data-mark="gorge"],.post-live[data-mark="taipei"],.post-live[data-mark="taichung"],.post-live[data-mark="tainan"],.post-live[data-mark="kaohsiung"],.post-live[data-mark="yilan"],.post-live[data-mark="kenting"],.post-live[data-mark="taoyuan"],.post-live[data-mark="osaka"],.post-live[data-mark="kyoto"],.post-live[data-mark="sapporo"],.post-live[data-mark="okinawa"],.post-live[data-mark="fukuoka"],.post-live[data-mark="seoul"],.post-live[data-mark="busan"],.post-live[data-mark="jeju"]{--wl:3.897%;--wt:5.714%;--ww:82.256%;--wh:84.511%;--il:-4.738%;--it:-6.762%;--iw:121.571%;--ih:118.327%;--sl:73.026%;--st:7.068%;--sw:15.179%;--cl:89.026%;--ct:10.481%;--cw:3.692%;--ox:45.026%;--oy:47.97%}
 .post-live[data-mark="skytree"]{--wl:3.818%;--wt:5.037%;--ww:84.518%;--wh:90.074%;--il:-4.517%;--it:-5.592%;--iw:118.319%;--ih:111.02%;--sl:77.731%;--st:8.593%;--sw:12.619%;--cl:90.987%;--ct:14.704%;--cw:7.423%;--ox:46.076%;--oy:50.074%}
 .post-live .post-window .postimg{position:absolute;left:var(--il);top:var(--it);width:var(--iw);height:var(--ih);max-width:none;border-radius:0;transform-origin:var(--ox) var(--oy);animation:postcardlive 16s ease-in-out infinite alternate}
 @keyframes postcardlive{from{transform:scale(1)}to{transform:scale(1.055) translate3d(-1.4%,.6%,0)}}
@@ -544,6 +545,7 @@ html.dark .sovstory{box-shadow:none;border:1px solid var(--line)}
 .post-live[data-mark="kaohsiung"] .post-datemark{color:#0f4c81;bottom:.4%;font-size:2cqw}
 .post-live[data-mark="yilan"] .post-datemark{color:#2f6a3a;bottom:.4%;font-size:2cqw}
 .post-live[data-mark="kenting"] .post-datemark{color:#0e6e78;bottom:.4%;font-size:2cqw}
+.post-live[data-mark="taoyuan"] .post-datemark{color:#a34532;bottom:.4%;font-size:2cqw}
 .post-live[data-mark="osaka"] .post-datemark{color:#c45a3a;bottom:.4%;font-size:2cqw}
 .post-live[data-mark="kyoto"] .post-datemark{color:#6b4c7a;bottom:.4%;font-size:2cqw}
 .post-live[data-mark="sapporo"] .post-datemark{color:#2f6f8f;bottom:.4%;font-size:2cqw}
@@ -585,7 +587,7 @@ html.dark .sovstory{box-shadow:none;border:1px solid var(--line)}
 <script>
 const P='trip_',$=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ls={get:(k,d)=>{try{return JSON.parse(localStorage.getItem(P+k))??d}catch{return d}},set:(k,v)=>localStorage.setItem(P+k,JSON.stringify(v))};
-const CITY={東京:'NRT',大阪:'KIX',京都:'KIX',福岡:'FUK',札幌:'CTS',沖繩:'OKA',名古屋:'NGO',首爾:'ICN',釜山:'PUS',曼谷:'BKK',香港:'HKG',新加坡:'SIN',吉隆坡:'KUL',馬尼拉:'MNL',胡志明市:'SGN',河內:'HAN',峇里島:'DPS',巴黎:'CDG',倫敦:'LHR',紐約:'JFK',高雄:'KHH',台中:'RMQ',台南:'TNN',花蓮:'HUN',台東:'TTT',嘉義:'CYI',阿里山:'CYI',墾丁:'KHH',屏東:'KHH',宜蘭:'TPE',南投:'RMQ',日月潭:'RMQ',台北:'TPE',台灣:'TPE'};
+const CITY={東京:'NRT',大阪:'KIX',京都:'KIX',福岡:'FUK',札幌:'CTS',沖繩:'OKA',名古屋:'NGO',首爾:'ICN',釜山:'PUS',曼谷:'BKK',香港:'HKG',新加坡:'SIN',吉隆坡:'KUL',馬尼拉:'MNL',胡志明市:'SGN',河內:'HAN',峇里島:'DPS',巴黎:'CDG',倫敦:'LHR',紐約:'JFK',高雄:'KHH',台中:'RMQ',台南:'TNN',花蓮:'HUN',台東:'TTT',嘉義:'CYI',阿里山:'CYI',墾丁:'KHH',屏東:'KHH',宜蘭:'TPE',南投:'RMQ',日月潭:'RMQ',桃園:'TPE',中壢:'TPE',大溪:'TPE',台北:'TPE',台灣:'TPE'};
 const AP={TPE:'桃園',TSA:'松山',KHH:'高雄',RMQ:'台中',TNN:'台南',HUN:'花蓮',TTT:'台東',CYI:'嘉義',PIF:'屏東',NRT:'成田（東京）',HND:'羽田（東京）',KIX:'關西（大阪）',ITM:'伊丹（大阪）',UKB:'神戶',NGO:'中部（名古屋）',CTS:'新千歲（札幌）',FUK:'福岡',OKA:'那霸（沖繩）',KOJ:'鹿兒島',HIJ:'廣島',SDJ:'仙台',KMQ:'小松',TAK:'高松',ICN:'仁川（首爾）',GMP:'金浦（首爾）',PUS:'金海（釜山）',CJU:'濟州',TAE:'大邱',BKK:'素萬那普（曼谷）',DMK:'廊曼（曼谷）',CNX:'清邁',HKT:'普吉',HKG:'香港',MFM:'澳門',SIN:'樟宜（新加坡）',KUL:'吉隆坡',MNL:'馬尼拉',CEB:'宿霧',SGN:'胡志明市',HAN:'河內',DAD:'峴港',DPS:'峇里島',PVG:'上海浦東',SHA:'上海虹橋',PEK:'北京首都',CDG:'巴黎戴高樂',LHR:'倫敦希斯洛',JFK:'紐約甘迺迪',LAX:'洛杉磯',SFO:'舊金山',SYD:'雪梨',BNE:'布里斯本'};
 const apN=c=>AP[String(c||'').toUpperCase()]||c,apS=c=>apN(c).replace(/（.*）/,''),apTxt=x=>String(x||'').replace(/\b([A-Z]{3})(\s*(?:→|->|–|~)\s*)([A-Z]{3})\b/g,(m,a,ar,b)=>AP[a]||AP[b]?apS(a)+' → '+apN(b):m).replace(/(→\s*)([A-Z]{3})\b/g,(m,ar,b)=>AP[b]?ar+apN(b):m).replace(/\b([A-Z]{3})(\s*→)/g,(m,a,ar)=>AP[a]?apS(a)+ar:m);
 const apOpts=v=>{v=String(v||'').toUpperCase();const k=Object.keys(AP);return(v&&!AP[v]?`<option value="${esc(v)}" selected>${esc(v)}</option>`:'')+k.map(c=>`<option value="${c}"${c===v?' selected':''}>${AP[c]}</option>`).join('')};
@@ -704,7 +706,7 @@ function setIco(k){if(!CATSET.has(k))return;spotIcoPick=k;document.querySelector
 const WX_C={0:['☀️','晴'],1:['🌤️','大致晴'],2:['⛅','多雲'],3:['☁️','陰'],45:['🌫️','霧'],48:['🌫️','霧淞'],51:['🌦️','毛毛雨'],53:['🌦️','毛毛雨'],55:['🌧️','濃毛毛雨'],56:['🌧️','凍毛毛雨'],57:['🌧️','凍毛毛雨'],61:['🌦️','小雨'],63:['🌧️','中雨'],65:['🌧️','大雨'],66:['🌧️','凍雨'],67:['🌧️','凍雨'],71:['🌨️','小雪'],73:['🌨️','中雪'],75:['❄️','大雪'],77:['🌨️','雪粒'],80:['🌦️','陣雨'],81:['🌧️','強陣雨'],82:['⛈️','豪雨'],85:['🌨️','陣雪'],86:['❄️','強陣雪'],95:['⛈️','雷雨'],96:['⛈️','雷雨夾冰雹'],99:['⛈️','強雷雨夾冰雹']};
 const WX_TC={clear:0,night:0,cloud:3,rain:63,storm:95,snow:73,fog:45};
 const WX_T=(location.search.match(/[?&]wxtest=(\w+)/)||[])[1]||'';
-const GEO_EN={東京:'Tokyo',大阪:'Osaka',京都:'Kyoto',福岡:'Fukuoka',沖繩:'Naha',札幌:'Sapporo',名古屋:'Nagoya',首爾:'Seoul',釜山:'Busan',曼谷:'Bangkok',香港:'Hong Kong',新加坡:'Singapore',吉隆坡:'Kuala Lumpur',馬尼拉:'Manila',胡志明市:'Ho Chi Minh City',河內:'Hanoi',峇里島:'Bali',巴黎:'Paris',倫敦:'London',紐約:'New York',高雄:'Kaohsiung',台北:'Taipei',台灣:'Taipei',台中:'Taichung',台南:'Tainan',花蓮:'Hualien',台東:'Taitung',嘉義:'Chiayi',阿里山:'Alishan',墾丁:'Kenting',屏東:'Pingtung',宜蘭:'Yilan',南投:'Nantou',日月潭:'Sun Moon Lake'};
+const GEO_EN={東京:'Tokyo',大阪:'Osaka',京都:'Kyoto',福岡:'Fukuoka',沖繩:'Naha',札幌:'Sapporo',名古屋:'Nagoya',首爾:'Seoul',釜山:'Busan',曼谷:'Bangkok',香港:'Hong Kong',新加坡:'Singapore',吉隆坡:'Kuala Lumpur',馬尼拉:'Manila',胡志明市:'Ho Chi Minh City',河內:'Hanoi',峇里島:'Bali',巴黎:'Paris',倫敦:'London',紐約:'New York',高雄:'Kaohsiung',台北:'Taipei',台灣:'Taipei',台中:'Taichung',台南:'Tainan',花蓮:'Hualien',台東:'Taitung',嘉義:'Chiayi',阿里山:'Alishan',墾丁:'Kenting',屏東:'Pingtung',宜蘭:'Yilan',南投:'Nantou',日月潭:'Sun Moon Lake',桃園:'Taoyuan',中壢:'Zhongli',大溪:'Daxi'};
 function wxc(c){return WX_C[c]||['🌡️','—']}
 function wxKind(c,night){c=+c;if(c===0||c===1)return night?'night':'clear';if(c===2||c===3)return 'cloud';if(c===45||c===48)return 'fog';if(c>=95)return 'storm';if((c>=71&&c<=77)||c===85||c===86)return 'snow';return 'rain'}
 function wxFx(k){let h='',i;const rn=(a,b)=>(a+Math.random()*(b-a)).toFixed(1);if(k==='clear')h='<i class="wsun"></i>';if(k==='night'){h='<i class="wmoon"></i>';for(i=0;i<7;i++)h+=`<i class="wstar" style="left:${rn(8,78)}%;top:${rn(8,70)}%;animation-delay:${rn(0,2.5)}s"></i>`}if(k==='cloud'||k==='rain'||k==='storm')for(i=0;i<3;i++)h+=`<i class="wcl" style="top:${8+i*22}px;animation-duration:${16+i*6}s;animation-delay:-${rn(0,18)}s;opacity:${0.9-i*0.2}"></i>`;if(k==='rain'||k==='storm')for(i=0;i<18;i++)h+=`<i class="wdrop" style="left:${rn(0,100)}%;animation-delay:-${rn(0,.8)}s;animation-duration:${rn(.55,.95)}s"></i>`;if(k==='storm')h+='<i class="wfl"></i>';if(k==='snow')for(i=0;i<14;i++)h+=`<i class="wflk" style="left:${rn(0,100)}%;animation-delay:-${rn(0,5)}s;animation-duration:${rn(3.5,6.5)}s"></i>`;if(k==='fog')for(i=0;i<3;i++)h+=`<i class="wmist" style="top:${12+i*24}px;animation-delay:-${i*2.2}s"></i>`;return `<div class="wfx" aria-hidden="true">${h}</div>`}
