@@ -29,6 +29,12 @@ assert.equal(pk['台北'], 'taipei');
 assert.equal(key['台北'], 'taipei');
 assert.equal(pk.TPE, 'taipei');
 assert.equal(key.TPE, 'taipei');
+assert.equal(pk['札幌'], 'sapporo');
+assert.equal(key.CTS, 'sapporo');
+assert.equal(pk.CJU, 'jeju');
+assert.equal(key['濟州'], 'jeju');
+assert.equal(pk['京都'], 'kyoto');
+assert.notEqual(key['京都'], 'osaka');
 
 const window = {};
 vm.runInNewContext(plannerSrc, { window });
