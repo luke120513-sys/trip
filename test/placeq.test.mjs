@@ -42,12 +42,12 @@ assert.doesNotMatch(food, /foodGeo\(q \+/);
 assert.match(food, /setTimeout\(\(\) => diarySearch\(tok\), 300\)/);
 assert.match(food, /搜尋店名/);
 assert.match(html, /setTimeout\(\(\)=>runSugg\(q,tok\),300\)/);
-assert.match(html, /placeSearch\(q,t&&t\.dest\)/);
+assert.match(html, /placeSearch\(q,t&&t\.dest(?:,bias)?\)/);
 assert.match(importer, /placeSearch\(q, dest\)|placeSearch\(q,dest\)|find\(q,dest\)/);
 assert.match(readFileSync(new URL('../placeurl.js', import.meta.url), 'utf8'), /PlaceQ\.search/);
 assert.ok(html.includes('placeq.js'));
 assert.ok(extras.includes('這家有多間分店'));
-assert.match(sw, /tripmate-v96/);
+assert.match(sw, /tripmate-v97/);
 assert.ok(sw.includes('placeq.js'));
 
 assert.equal(PlaceQ.hint('玄品ふぐ'), '玄品河豚');
